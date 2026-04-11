@@ -334,6 +334,11 @@
                 <h1 id="result-title" class="font-title text-5xl mb-2 text-gray-800">게임 종료!</h1>
                 <p id="result-subtitle" class="text-gray-500 font-medium">모두 수고하셨습니다. 우리 반의 놀라운 발견들을 확인해볼까요? ✨</p>
                 
+                <!-- NEW: Final Ranking Summary for Teacher -->
+                <div id="teacher-final-ranking" class="mt-6 mb-2 hidden flex-col gap-2 max-w-sm mx-auto items-center w-full">
+                    <!-- JS renders ranking here -->
+                </div>
+                
                 <div class="mt-6 flex justify-center gap-4">
                     <button id="btn-new-round" onclick="prepareNewRound()" class="hidden btn-ghibli btn-secondary px-6 py-2 rounded-full font-bold text-gray-600 flex items-center gap-2">
                         <i data-lucide="play-circle" class="w-4 h-4"></i> 새로운 라운드 설정하기
@@ -886,6 +891,7 @@
                     document.getElementById('result-title').textContent = "시간 종료!";
                 }
                 document.getElementById('result-dashboard').classList.add('hidden');
+                document.getElementById('teacher-final-ranking').classList.add('hidden');
                 document.getElementById('btn-new-round').classList.add('hidden');
             } else {
                 document.getElementById('result-title').textContent = "최종 강평 및 랭킹";
@@ -901,14 +907,39 @@
 
         function renderDashboard() {
             const dash = document.getElementById('result-dashboard');
+            const rankCont = document.getElementById('teacher-final-ranking');
+            
             dash.innerHTML = '';
+            rankCont.innerHTML = '<h3 class="font-title text-2xl text-gray-600 mb-3 w-full text-center">🏆 최종 순위표 🏆</h3>';
+            rankCont.classList.remove('hidden');
+            rankCont.classList.add('flex');
             
             if (STATE.allScores.length === 0) {
                 dash.innerHTML = '<div class="col-span-full text-center text-gray-500">제출된 데이터가 없습니다.</div>';
+                rankCont.innerHTML += '<div class="text-gray-400">데이터 없음</div>';
                 return;
             }
             
             STATE.allScores.forEach((row, idx) => {
+                // 1. 달성 랭킹 요약 (상단)
+                let topIcon = '';
+                if(idx === 0 && row.score > 0) topIcon = '🥇';
+                else if(idx === 1 && row.score > 0) topIcon = '🥈';
+                else if(idx === 2 && row.score > 0) topIcon = '🥉';
+
+                rankCont.innerHTML += `
+                    <div class="w-full flex justify-between items-center bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 mb-1">
+                        <div class="font-bold text-gray-700 flex items-center gap-2 text-lg">
+                            <span class="w-6 text-center text-gray-400 font-title">${idx+1}</span>
+                            <span>${row.team_name}</span> <span class="drop-shadow-sm">${topIcon}</span>
+                        </div>
+                        <div class="font-number font-bold text-xl text-ghibli-lavender filter brightness-90">
+                            ${row.score} <span class="text-sm">PTS</span>
+                        </div>
+                    </div>
+                `;
+
+                // 2. 조별 디테일 대시보드 (하단)
                 let answersHtml = '';
                 if (row.answers && row.answers.length > 0) {
                     // Sort answers by result ascending for neatness
