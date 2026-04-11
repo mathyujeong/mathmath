@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에라토스테네스의 체 - 유정쌤의 실험실</title>
+    <link rel="icon" href="../assets/favicon.png" type="image/png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        title: ['"Black Han Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    colors: {
+                        ghibli: {
+                            bg: '#fdfbf7',
+                            pink: '#ffd6e0',
+                            mint: '#bdf1d5',
+                            peach: '#ffdfba',
+                            lavender: '#e2d5f8',
+                            olive: '#dff1a3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- CDN Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body { background-color: #fdfbf7; color: #4b5563; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-ghibli {
+            background: white;
+            border: 2px solid #f3f4f6;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), inset 0 -3px 0 rgba(0,0,0,0.05);
+        }
+        .btn-ghibli:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05), inset 0 -3px 0 rgba(0,0,0,0.05);
+        }
+        .btn-ghibli:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 2px 0 rgba(0,0,0,0.05);
+        }
+
+        .number-cell {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .number-cell.prime-candidate {
+            background: white;
+            border: 2px solid #bdf1d5;
+            color: #047857;
+            cursor: pointer;
+        }
+        
+        .number-cell.prime-candidate:hover {
+            transform: scale(1.1);
+            background: #bdf1d5;
+        }
+        
+        .number-cell.eliminated {
+            background: #f3f4f6;
+            color: #d1d5db;
+            text-decoration: line-through;
+            border: 1px solid transparent;
+        }
+        
+        .number-cell.current-base {
+            background: #ffd6e0;
+            color: #c026d3;
+            border-color: #fbcfe8;
+            font-weight: 700;
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 15px rgba(251, 207, 232, 0.5);
+        }
+
+        .number-cell.found-prime {
+            background: #e2d5f8;
+            color: #7c3aed;
+            border-color: #c4b5fd;
+            font-weight: 700;
+        }
+        
+        .number-cell.just-eliminated {
+            animation: shrinkFade 0.5s ease-out forwards;
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes shrinkFade {
+            0% { 
+                background: #ffdfba;
+                color: #b45309;
+                transform: scale(1.1);
+            }
+            100% { 
+                background: #f3f4f6;
+                color: #d1d5db;
+                transform: scale(1);
+            }
+        }
+
+        .scroll-area::-webkit-scrollbar { width: 5px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+
+        .message-box {
+            animation: fadeInUp 0.4s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans">
+    
+    <!-- Navbar -->
+    <nav class="flex items-center justify-between px-6 py-4 fixed top-0 w-full z-50">
+        <button onclick="location.href='../index.html'" class="flex items-center gap-2 text-gray-400 hover:text-gray-700 transition">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="font-bold">연구실로 돌아가기</span>
+        </button>
+        <div class="font-title text-2xl text-gray-700 tracking-wider">
+            🌿 SIEVE OF ERATOSTHENES
+        </div>
+        <div class="w-24"></div> <!-- Spacer -->
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 pt-24 relative overflow-y-auto">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-8">
+            <h1 class="font-title text-4xl text-gray-800 mb-2">에라토스테네스의 체</h1>
+            <p class="text-gray-500 font-medium italic">"소수를 남기고, 그 배수를 걸러내는 가장 아름다운 방법"</p>
+        </div>
+
+        <!-- Control Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="glass-panel p-6 rounded-3xl flex flex-col justify-center gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="font-bold text-gray-600 whitespace-nowrap">탐구 범위 : 1부터</label>
+                    <input type="number" id="max-number" value="100" min="10" max="1000" 
+                        class="font-mono bg-white border-2 border-gray-100 rounded-xl px-4 py-2 w-24 text-center text-gray-700 focus:outline-none focus:border-ghibli-mint shadow-inner">
+                    <label class="font-bold text-gray-600">까지</label>
+                </div>
+                <div class="flex gap-2">
+                    <button id="start-btn" class="flex-1 btn-ghibli bg-ghibli-mint text-green-700 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <i data-lucide="play" class="w-4 h-4"></i> 숫자판 생성
+                    </button>
+                    <button id="reset-btn" class="btn-ghibli px-6 py-3 rounded-xl font-bold text-gray-500">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="message-area" class="lg:col-span-2 flex items-center justify-center h-full">
+                <!-- Messages will appear here -->
+                <div class="text-gray-400 italic">왼쪽에서 범위를 입력하고 숫자판을 생성하세요.</div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-6 mb-12">
+            <!-- Grid Area -->
+            <div class="flex-1 flex flex-col gap-4">
+                <div class="glass-panel p-6 rounded-3xl min-h-[400px]">
+                    <div id="number-grid" class="grid gap-2">
+                        <!-- Numbers generated by JS -->
+                    </div>
+                </div>
+                <div class="text-center">
+                    <p id="instruction-text" class="text-sm font-bold text-gray-400">
+                        소수 후보를 클릭하여 그 배수를 모두 제거해보세요!
+                    </p>
+                </div>
+            </div>
+
+            <!-- Result Area -->
+            <div id="prime-result" class="lg:w-80 w-full hidden">
+                <div class="glass-panel p-6 rounded-3xl h-full flex flex-col">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="award" class="text-ghibli-peach w-6 h-6"></i>
+                        <h2 class="font-title text-2xl text-gray-700">발견한 소수</h2>
+                    </div>
+                    <p id="prime-count" class="text-blue-500 font-bold text-sm mb-4"></p>
+                    <div id="prime-list" class="scroll-area flex-1 overflow-y-auto pr-2">
+                        <!-- Primes will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // State
+        let maxNum = 100;
+        let numbers = []; 
+        let currentPrimes = [];
+        let isComplete = false;
+        
+        // DOM
+        const maxNumberInput = document.getElementById('max-number');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const numberGrid = document.getElementById('number-grid');
+        const messageArea = document.getElementById('message-area');
+        const primeResult = document.getElementById('prime-result');
+        const primeCount = document.getElementById('prime-count');
+        const primeList = document.getElementById('prime-list');
+        const instructionText = document.getElementById('instruction-text');
+        
+        function initGrid() {
+            maxNum = parseInt(maxNumberInput.value) || 100;
+            maxNum = Math.max(10, Math.min(1000, maxNum));
+            maxNumberInput.value = maxNum;
+            
+            numbers = new Array(maxNum + 1).fill(true);
+            numbers[0] = false;
+            numbers[1] = false; 
+            currentPrimes = [];
+            isComplete = false;
+            
+            // Grid columns optimization
+            let cols = 10;
+            if (maxNum > 100) cols = 15;
+            if (maxNum > 300) cols = 20;
+            if (window.innerWidth < 640) cols = 8;
+            
+            numberGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
+            renderGrid();
+            messageArea.innerHTML = '<div class="message-box bg-white px-6 py-4 rounded-3xl border-2 border-gray-100 text-gray-500 font-bold shadow-sm">소수(Prime Number) 후보인 초록색 박스를 클릭해보세요!</div>';
+            primeResult.classList.add('hidden');
+            instructionText.innerHTML = '<span class="text-ghibli-mint font-title text-lg uppercase tracking-widest text-[#059669]">Let\'s Start!</span>';
+        }
+        
+        function renderGrid() {
+            numberGrid.innerHTML = '';
+            for (let i = 1; i <= maxNum; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'number-cell font-mono text-sm sm:text-base h-10 sm:h-12 rounded-xl flex items-center justify-center font-bold shadow-sm';
+                cell.textContent = i;
+                cell.dataset.num = i;
+                
+                if (i === 1) {
+                    cell.classList.add('eliminated');
+                } else if (numbers[i]) {
+                    cell.classList.add('prime-candidate');
+                    cell.onclick = () => handlePrimeClick(i);
+                } else {
+                    cell.classList.add('eliminated');
+                }
+                numberGrid.appendChild(cell);
+            }
+        }
+        
+        function handlePrimeClick(num) {
+            if (!numbers[num] || isComplete) return;
+            
+            const baseCell = numberGrid.querySelector(`[data-num="${num}"]`);
+            baseCell.classList.remove('prime-candidate');
+            baseCell.classList.add('current-base');
+            baseCell.onclick = null;
+            
+            let eliminatedCount = 0;
+            const toEliminate = [];
+            
+            for (let i = num * 2; i <= maxNum; i += num) {
+                if (numbers[i]) {
+                    toEliminate.push(i);
+                    numbers[i] = false;
+                    eliminatedCount++;
+                }
+            }
+            
+            currentPrimes.push(num);
+            
+            toEliminate.forEach((n, index) => {
+                const cell = numberGrid.querySelector(`[data-num="${n}"]`);
+                if (cell) {
+                    setTimeout(() => {
+                        cell.classList.remove('prime-candidate');
+                        cell.classList.add('just-eliminated');
+                        setTimeout(() => {
+                            cell.classList.remove('just-eliminated');
+                            cell.classList.add('eliminated');
+                            cell.onclick = null;
+                        }, 500);
+                    }, index * 20); // Faster animation
+                }
+            });
+            
+            showMessage(num, eliminatedCount);
+            
+            setTimeout(() => {
+                checkCompletion();
+            }, toEliminate.length * 20 + 600);
+        }
+        
+        function showMessage(base, count) {
+            messageArea.innerHTML = `
+                <div class="message-box bg-white border-2 border-ghibli-pink px-6 py-4 rounded-3xl shadow-sm text-center">
+                    <span class="text-ghibli-pink font-bold text-2xl filter brightness-75 mr-2">${base}</span>를 발견했습니다! 
+                    <br class="sm:hidden">
+                    <span class="text-gray-400 text-sm italic">${base}의 배수 ${count}개가 제거되었습니다.</span>
+                </div>
+            `;
+        }
+        
+        function checkCompletion() {
+            let nextCandidate = -1;
+            for (let i = 2; i <= maxNum; i++) {
+                if (numbers[i] && !currentPrimes.includes(i)) {
+                    // check if it can eliminate anything
+                    let canEliminate = false;
+                    for (let j = i * 2; j <= maxNum; j += i) {
+                        if (numbers[j]) {
+                            canEliminate = true;
+                            break;
+                        }
+                    }
+                    if (canEliminate) {
+                        nextCandidate = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (nextCandidate === -1) {
+                // No more eliminations possible, fill the rest as primes
+                for (let i = 2; i <= maxNum; i++) {
+                    if (numbers[i] && !currentPrimes.includes(i)) {
+                        currentPrimes.push(i);
+                    }
+                }
+                completeGame();
+            }
+        }
+        
+        function completeGame() {
+            isComplete = true;
+            const allPrimes = currentPrimes.sort((a,b) => a - b);
+            
+            messageArea.innerHTML = `
+                <div class="message-box bg-ghibli-mint border-2 border-white px-8 py-4 rounded-3xl shadow-lg text-center animate-bounce">
+                    <span class="text-green-700 font-title text-2xl">탐구 완료! 🎉</span>
+                    <p class="text-green-600 text-sm mt-1">1부터 ${maxNum}까지 모든 소수를 찾아냈습니다.</p>
+                </div>
+            `;
+            
+            primeCount.textContent = `총 발견된 소수: ${allPrimes.length}개`;
+            primeList.innerHTML = `
+                <div class="flex flex-wrap gap-2">
+                    ${allPrimes.map(p => `<span class="font-mono text-sm bg-indigo-50 text-indigo-500 px-3 py-1 rounded-lg border border-indigo-100 shadow-sm">${p}</span>`).join('')}
+                </div>
+            `;
+            
+            primeResult.classList.remove('hidden');
+            instructionText.textContent = '아름다운 소수의 정원을 완성했습니다! 다른 범위로 탐험해보세요.';
+            
+            // Mark all as found
+            for (let i = 2; i <= maxNum; i++) {
+                const cell = numberGrid.querySelector(`[data-num="${i}"]`);
+                if (cell && numbers[i]) {
+                    cell.classList.remove('prime-candidate', 'current-base');
+                    cell.classList.add('found-prime');
+                    cell.onclick = null;
+                }
+            }
+
+            // Confetti!
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ffd6e0', '#bdf1d5', '#ffdfba', '#e2d5f8']
+            });
+        }
+        
+        startBtn.onclick = initGrid;
+        resetBtn.onclick = initGrid;
+        maxNumberInput.onkeypress = (e) => { if (e.key === 'Enter') initGrid(); };
+        
+        // Init
+        initGrid();
+    </script>
+</body>
+</html>
