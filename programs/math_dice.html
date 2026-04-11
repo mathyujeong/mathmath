@@ -428,7 +428,10 @@
             STATE.roomId = document.getElementById('sel-room').value;
             
             // 1. Initialise Score Row (Ensure room exists first silently, just in case)
-            await sb.from('rooms').upsert({ id: STATE.roomId }, { onConflict: 'id' });
+            const { data: roomData } = await sb.from('rooms').select('*').eq('id', STATE.roomId).single();
+            if (!roomData) {
+                await sb.from('rooms').upsert({ id: STATE.roomId }, { onConflict: 'id' });
+            }
             
             const { data, error } = await sb.from('scores')
                 .upsert({ room_id: STATE.roomId, team_name: STATE.teamName, score: 0, answers: [] }, { onConflict: 'room_id, team_name'})
@@ -449,13 +452,19 @@
             document.getElementById('display-wait-room').textContent = document.getElementById('sel-room').options[document.getElementById('sel-room').selectedIndex].text;
             document.getElementById('display-wait-team').textContent = STATE.teamName;
 
-            document.getElementById('wait-teacher').classList.add('hidden');
-            document.getElementById('wait-student').classList.remove('hidden');
-            showScreen('screen-waiting');
-
             // 2. Subscribe to Room Status
             subscribeToRoom();
             subscribeToScores();
+            
+            // FETCH LATEST STATUS AND JUMP TO GAME IF APPLICABLE
+            if (roomData && roomData.status === 'playing') {
+                STATE.currentDice = roomData.dice_values || [];
+                setupGameScreen();
+            } else {
+                document.getElementById('wait-teacher').classList.add('hidden');
+                document.getElementById('wait-student').classList.remove('hidden');
+                showScreen('screen-waiting');
+            }
         });
 
         function resetToLobby() {
@@ -536,7 +545,7 @@
         // ===================== REALTIME SUBSCRIPTIONS =====================
         function subscribeToRoom() {
             STATE.roomSub = sb.channel('public:rooms')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${STATE.roomId}` }, payload => {
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `id=eq.${STATE.roomId}` }, payload => {
                     const room = payload.new;
                     if (room.status === 'playing') {
                         STATE.currentDice = room.dice_values;
