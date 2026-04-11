@@ -233,11 +233,11 @@
         </section>
 
         <!-- ==================== SCREEN 3: GAME SCREEN ==================== -->
-        <section id="screen-game" class="absolute inset-0 flex flex-col p-4 hidden overflow-hidden">
+        <section id="screen-game" class="absolute inset-0 flex flex-col p-4 hidden overflow-y-auto pb-24 mt-16">
             
-            <div class="flex flex-col md:flex-row gap-4 h-full">
+            <div class="flex flex-col md:flex-row gap-4 min-h-full">
                 <!-- Left: Leaderboard -->
-                <div class="w-full md:w-1/3 flex flex-col gap-4 order-2 md:order-1 h-1/2 md:h-full">
+                <div class="w-full md:w-1/3 flex flex-col gap-4 order-2 md:order-1 min-h-[50vh]">
                     
                     <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col overflow-hidden">
                         <div class="flex items-center justify-between mb-4">
@@ -259,7 +259,7 @@
                 </div>
 
                 <!-- Right: Play Area (Students only) or Monitor Area (Teacher) -->
-                <div class="w-full md:w-2/3 flex flex-col gap-4 order-1 md:order-2 h-1/2 md:h-full">
+                <div class="w-full md:w-2/3 flex flex-col gap-4 order-1 md:order-2 flex-1">
                     
                     <!-- Dice Area -->
                     <div class="glass-panel p-6 rounded-3xl text-center">
