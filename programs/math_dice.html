@@ -241,7 +241,7 @@
                     
                     <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col overflow-hidden">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-title text-2xl text-gray-700 flex items-center gap-2">
+                            <h3 id="board-title" class="font-title text-xl text-gray-700 flex items-center gap-2">
                                 <i data-lucide="bar-chart-2" class="text-ghibli-peach"></i> 실시간 게임 현황
                             </h3>
                         </div>
@@ -1014,29 +1014,45 @@
         // ===================== RENDERERS =====================
         function renderLeaderboard(scoresData) {
             const list = document.getElementById('leaderboard-list');
+            const titleEl = document.getElementById('board-title');
             if(!list) return;
             list.innerHTML = '';
             
-            scoresData.forEach((row, idx) => {
-                const isMe = STATE.role === 'student' && row.team_name === STATE.teamName;
-                const bg = isMe ? 'bg-ghibli-lavender bg-opacity-40 border-purple-300' : 'bg-white border-gray-100';
+            if (STATE.role === 'student') {
+                if (titleEl) titleEl.innerHTML = '<i data-lucide="list-checks" class="text-ghibli-peach"></i> 우리 팀이 만든 수식들';
                 
-                let icon = '';
-                if(idx === 0 && row.score > 0) icon = '👑';
+                if (STATE.myAnswers.length === 0) {
+                    list.innerHTML = '<div class="text-sm text-gray-400 text-center mt-4">아직 성공한 수식이 없습니다.<br>멋진 수식을 만들어보세요!</div>';
+                } else {
+                    [...STATE.myAnswers].reverse().forEach(ans => {
+                        let dispRes = ans.formatted !== undefined ? ans.formatted : ans.result;
+                        list.innerHTML += `
+                            <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white shadow-sm mb-2 transform transition hover:scale-105">
+                                <div class="font-bold text-gray-700 w-16 text-lg flex-shrink-0">${dispRes}</div>
+                                <div class="font-number text-indigo-400 text-right break-all text-sm flex-1 leading-tight">${ans.formula}</div>
+                            </div>
+                        `;
+                    });
+                }
+            } else {
+                if (titleEl) titleEl.innerHTML = '<i data-lucide="lock" class="text-ghibli-peach"></i> 각 조별 진행 상황 (점수 비공개)';
                 
-                list.innerHTML += `
-                    <div class="flex items-center justify-between p-3 rounded-xl border-2 ${bg} shadow-sm transition-all duration-300 transform ${isMe ? 'scale-105 my-2' : ''}">
-                        <div class="flex items-center gap-2">
-                            <span class="font-title text-gray-400 w-4 pl-1">${idx+1}</span>
-                            <span class="font-bold text-gray-700">${row.team_name} ${icon}</span>
-                            ${isMe ? '<span class="text-[10px] bg-purple-500 text-white px-2 py-0.5 rounded-full font-bold ml-1">우리 조</span>' : ''}
+                // 알파벳/이름 순 정렬하여 교사 화면(TV)에서 1위가 누군지 유추 불가능하게 함
+                let sortedData = [...scoresData].sort((a, b) => a.team_name.localeCompare(b.team_name));
+                
+                sortedData.forEach(row => {
+                    let isPlaying = row.score > 0;
+                    let statusLabel = isPlaying ? '<span class="text-green-500 font-bold text-xs bg-green-50 px-2 py-1 rounded-full"><i data-lucide="flame" class="w-3 h-3 inline mb-0.5"></i> 열렬히 참여 중!</span>' : '<span class="text-gray-400 text-xs italic">고민 중...</span>';
+                    
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white shadow-sm mb-2">
+                            <div class="font-bold text-gray-700">${row.team_name}</div>
+                            <div>${statusLabel}</div>
                         </div>
-                        <div class="font-number font-bold text-lg text-ghibli-lavender filter brightness-90">
-                            ${row.score} <span class="text-xs">PTS</span>
-                        </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }
+            lucide.createIcons();
         }
 
         function showResultScreen() {
