@@ -145,6 +145,12 @@
    <div id="ranking-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20 hidden">
     <div class="bg-gray-900/90 border border-cyan-500/30 rounded-2xl p-6 w-full max-w-md mx-4">
      <h2 class="orbitron text-2xl text-cyan-400 text-center mb-4">🏆 RANKING</h2>
+     <div class="flex justify-center gap-2 mb-4">
+      <button class="rank-filter-btn active orbitron text-xs px-3 py-1 bg-cyan-500/20 border border-cyan-500 text-cyan-300 rounded-full hover:bg-cyan-500/40 transition-all" data-level="all">ALL</button>
+      <button class="rank-filter-btn orbitron text-xs px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-full hover:bg-white/10 transition-all" data-level="easy">EASY</button>
+      <button class="rank-filter-btn orbitron text-xs px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-full hover:bg-white/10 transition-all" data-level="normal">NORMAL</button>
+      <button class="rank-filter-btn orbitron text-xs px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-full hover:bg-white/10 transition-all" data-level="hard">HARD</button>
+     </div>
      <div id="ranking-list" class="ranking-scroll max-h-64 overflow-y-auto space-y-2 mb-4">
       <p class="text-gray-500 text-center">기록이 없습니다</p>
      </div><button id="btn-ranking-back" class="w-full orbitron py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 돌아가기 </button>
@@ -274,9 +280,11 @@ async function saveGameScore() {
 
     if (!supabaseClient) throw new Error('데이터베이스 연결에 실패했습니다. (SDK 로드 오류)');
 
+    const level = gameState.difficulty; // 난이도 값 추가
+
     const { error } = await supabaseClient
       .from('primenumber')
-      .insert([{ name, score }]);
+      .insert([{ name, score, level }]);
 
     if (error) throw error;
 
@@ -292,18 +300,24 @@ async function saveGameScore() {
   }
 }
 
-async function loadRanking() {
+async function loadRanking(difficulty = 'all') {
   const listEl = document.getElementById('ranking-list');
   listEl.innerHTML = '<p class="text-gray-500 text-center animate-pulse">실험 기록을 불러오고 있습니다...</p>';
 
   try {
     if (!supabaseClient) throw new Error('데이터베이스 연결 실패');
 
-    const { data, error } = await supabaseClient
+    let query = supabaseClient
       .from('primenumber')
-      .select('name, score')
+      .select('name, score, level')
       .order('score', { ascending: false })
       .limit(10);
+      
+    if (difficulty !== 'all') {
+      query = query.eq('level', difficulty);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -322,10 +336,17 @@ async function loadRanking() {
       else if (index === 1) rankColor = 'text-gray-300 font-bold';
       else if (index === 2) rankColor = 'text-orange-400 font-bold';
 
+      const diffColor = item.level === 'easy' ? 'text-green-400 border-green-500/30' : 
+                        item.level === 'hard' ? 'text-red-400 border-red-500/30' : 'text-yellow-400 border-yellow-500/30';
+      const diffBadge = item.level ? `<span class="text-[10px] uppercase border px-1.5 py-0.5 rounded ${diffColor} mt-1 inline-block w-fit">${item.level}</span>` : '';
+
       row.innerHTML = `
         <div class="flex items-center gap-3">
-          <span class="orbitron ${rankColor} w-6">${index + 1}</span>
-          <span class="text-white font-medium">${item.name}</span>
+          <span class="orbitron ${rankColor} w-6 text-center">${index + 1}</span>
+          <div class="flex flex-col">
+            <span class="text-white font-medium text-sm leading-tight">${item.name}</span>
+            ${diffBadge}
+          </div>
         </div>
         <span class="orbitron text-cyan-400 font-bold">${item.score.toLocaleString()}</span>
       `;
@@ -849,8 +870,31 @@ document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-resume').addEventListener('click', resumeGame);
 document.getElementById('btn-ranking').addEventListener('click', () => {
   showScreen('ranking-screen');
-  loadRanking();
+  
+  // 버튼 스타일 초기화 (ALL 선택 상태로)
+  document.querySelectorAll('.rank-filter-btn').forEach(b => {
+    b.className = 'rank-filter-btn orbitron text-xs px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-full hover:bg-white/10 transition-all';
+  });
+  document.querySelector('.rank-filter-btn[data-level="all"]').className = 'rank-filter-btn active orbitron text-xs px-3 py-1 bg-cyan-500/20 border border-cyan-500 text-cyan-300 rounded-full hover:bg-cyan-500/40 transition-all';
+  
+  loadRanking('all');
 });
+
+// 난이도 필터 버튼 이벤트
+document.querySelectorAll('.rank-filter-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    // 모든 버튼 비활성화 스타일
+    document.querySelectorAll('.rank-filter-btn').forEach(b => {
+      b.className = 'rank-filter-btn orbitron text-xs px-3 py-1 bg-white/5 border border-white/10 text-gray-400 rounded-full hover:bg-white/10 transition-all';
+    });
+    // 클릭한 버튼 활성화 스타일
+    e.target.className = 'rank-filter-btn active orbitron text-xs px-3 py-1 bg-cyan-500/20 border border-cyan-500 text-cyan-300 rounded-full hover:bg-cyan-500/40 transition-all';
+    
+    // 데이터 새로 불러오기
+    loadRanking(e.target.dataset.level);
+  });
+});
+
 document.getElementById('btn-ranking-back').addEventListener('click', () => showScreen('menu-screen'));
 document.getElementById('btn-save-score').addEventListener('click', saveGameScore);
 document.getElementById('btn-retry').addEventListener('click', () => showScreen('difficulty-screen'));
