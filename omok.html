@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>좌표평면 오목 - 유정쌤의 실험실</title>
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 100px 5% 50px;
+            min-height: 100vh;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 2rem;
+        }
+
+        .game-panel {
+            flex: 1;
+            min-width: 250px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .game-panel h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            color: var(--text-color);
+        }
+
+        .board-container {
+            position: relative;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--glass-border);
+        }
+
+        canvas#board {
+            display: block;
+            border-radius: 4px;
+        }
+
+        .axis-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .axis-block {
+            flex: 1;
+        }
+
+        .axis-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .coord-btn {
+            padding: 8px 0;
+            font-size: 0.85rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .coord-btn:hover {
+            border-color: #f472b6;
+            background: #fff5f8;
+        }
+
+        .coord-btn.selected {
+            background: linear-gradient(135deg, #f472b6, #a78bfa);
+            color: white;
+            border: none;
+        }
+
+        .status-badge {
+            margin-bottom: 2rem;
+            padding: 0.8rem 2rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .game-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            .game-panel {
+                width: 100%;
+                max-width: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar scrolled">
+        <div class="logo" onclick="location.href='index.html'">유정쌤의 실험실</div>
+        <div class="nav-links">
+            <a href="index.html#home">홈</a>
+            <a href="index.html#programs">학습 프로그램</a>
+        </div>
+        <button class="login-btn" onclick="location.href='index.html'">돌아가기</button>
+    </nav>
+
+    <div class="game-container">
+        <div id="status" class="status-badge blur-glass">현재 차례: <span style="color: #6366f1;">흑돌</span></div>
+        
+        <div class="game-wrapper">
+            <!-- Player 1 Panel -->
+            <div class="game-panel blur-glass" id="panel1">
+                <h3>Player 1 (흑돌)</h3>
+                <div class="axis-row">
+                    <div class="axis-block">
+                        <div class="axis-label">X 좌표</div>
+                        <div class="btn-grid" id="p1x"></div>
+                    </div>
+                    <div class="axis-block">
+                        <div class="axis-label">Y 좌표</div>
+                        <div class="btn-grid" id="p1y"></div>
+                    </div>
+                </div>
+                <button class="btn-primary action-btn" id="p1Place">착수하기</button>
+            </div>
+
+            <!-- Board -->
+            <div class="board-container">
+                <canvas id="board" width="600" height="600"></canvas>
+            </div>
+
+            <!-- Player 2 Panel -->
+            <div class="game-panel blur-glass" id="panel2">
+                <h3>Player 2 (백돌)</h3>
+                <div class="axis-row">
+                    <div class="axis-block">
+                        <div class="axis-label">X 좌표</div>
+                        <div class="btn-grid" id="p2x"></div>
+                    </div>
+                    <div class="axis-block">
+                        <div class="axis-label">Y 좌표</div>
+                        <div class="btn-grid" id="p2y"></div>
+                    </div>
+                </div>
+                <button class="btn-secondary action-btn" id="p2Place">착수하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const boardSize = 31;
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const margin = 35;
+        const gridCells = boardSize - 1;
+        const cell = (canvas.width - margin * 2) / gridCells;
+        const board = Array.from({length: boardSize}, () => Array(boardSize).fill(0));
+        let current = 1, gameOver = false;
+        const selections = {1: {x: null, y: null}, 2: {x: null, y: null}};
+
+        function drawBoard() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid Lines
+            ctx.strokeStyle = "#e2e8f0"; 
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= gridCells; i++) {
+                const pos = margin + i * cell;
+                ctx.beginPath(); ctx.moveTo(pos, margin); ctx.lineTo(pos, margin + gridCells * cell); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(margin, pos); ctx.lineTo(margin + gridCells * cell, pos); ctx.stroke();
+            }
+
+            // Axis Lines (0,0 center)
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 2;
+            const zeroPos = margin + 15 * cell;
+            ctx.beginPath(); ctx.moveTo(zeroPos, margin); ctx.lineTo(zeroPos, margin + gridCells * cell); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(margin, zeroPos); ctx.lineTo(margin + gridCells * cell, zeroPos); ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = "#64748b";
+            ctx.font = "bold 11px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            for (let i = -15; i <= 15; i += 5) {
+                ctx.fillText(i, margin + (i + 15) * cell, zeroPos + 5);
+            }
+            ctx.textAlign = "right";
+            ctx.textBaseline = "middle";
+            for (let i = -15; i <= 15; i += 5) {
+                if (i === 0) continue;
+                ctx.fillText(i, zeroPos - 5, margin + (15 - i) * cell);
+            }
+
+            // Stones
+            for (let r = 0; r < boardSize; r++) {
+                for (let c = 0; c < boardSize; c++) {
+                    if (board[r][c] !== 0) drawStone(r, c, board[r][c] === 1 ? "#334155" : "#f8fafc");
+                }
+            }
+        }
+
+        function drawStone(r, c, color) {
+            const x = margin + c * cell, y = margin + r * cell, radius = cell * 0.42;
+            
+            // Shadow
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetY = 2;
+
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // Gradient for stone
+            const grad = ctx.createRadialGradient(x - radius/3, y - radius/3, radius/10, x, y, radius);
+            grad.addColorStop(0, "rgba(255,255,255,0.2)");
+            grad.addColorStop(1, "rgba(0,0,0,0.1)");
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Outline
+            ctx.shadowColor = "transparent";
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        function buildButtons(gridId, axis, player) {
+            const grid = document.getElementById(gridId);
+            for (let v = -15; v <= 15; v++) {
+                const btn = document.createElement('button');
+                btn.textContent = v;
+                btn.className = 'coord-btn';
+                btn.dataset.axis = axis;
+                btn.dataset.value = v;
+                btn.dataset.player = player;
+                btn.addEventListener('click', coordClick);
+                grid.appendChild(btn);
+            }
+        }
+
+        ["x", "y"].forEach(a => {
+            buildButtons("p1" + a, a, 1);
+            buildButtons("p2" + a, a, 2);
+        });
+
+        function coordClick(e) {
+            const btn = e.target, axis = btn.dataset.axis, val = parseInt(btn.dataset.value, 10);
+            const player = parseInt(btn.dataset.player, 10);
+            const grid = document.getElementById(`p${player}${axis}`);
+            [...grid.children].forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selections[player][axis] = val;
+        }
+
+        function updateButtons() {
+            document.getElementById('p1Place').style.opacity = (current !== 1 || gameOver) ? "0.5" : "1";
+            document.getElementById('p2Place').style.opacity = (current !== 2 || gameOver) ? "0.5" : "1";
+            document.getElementById('p1Place').disabled = current !== 1 || gameOver;
+            document.getElementById('p2Place').disabled = current !== 2 || gameOver;
+        }
+
+        function attemptPlace(player) {
+            if (gameOver || current !== player) return;
+            const {x, y} = selections[player];
+            if (x === null || y === null) { alert("X, Y 좌표를 모두 선택하세요!"); return; }
+            const col = x + 15, row = 15 - y;
+            if (board[row][col] !== 0) { alert("이미 돌이 놓여 있습니다!"); return; }
+            
+            board[row][col] = player;
+            if (checkWin(row, col, player)) {
+                drawBoard();
+                document.getElementById('status').innerHTML = `<span style="color: #f472b6;">${player === 1 ? "흑돌" : "백돌"} 승리! 축하합니다!</span>`;
+                gameOver = true; updateButtons(); return;
+            }
+            current = current === 1 ? 2 : 1;
+            const turnText = current === 1 ? "흑돌" : "백돌";
+            const turnColor = current === 1 ? "#6366f1" : "#f472b6";
+            document.getElementById('status').innerHTML = `현재 차례: <span style="color: ${turnColor};">${turnText}</span>`;
+            drawBoard(); updateButtons();
+        }
+
+        function countDir(r, c, dr, dc, p) {
+            let k = 0, nr = r + dr, nc = c + dc;
+            while (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize && board[nr][nc] === p) { k++; nr += dr; nc += dc; }
+            return k;
+        }
+
+        function checkWin(r, c, p) {
+            const dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
+            return dirs.some(([dr, dc]) => 1 + countDir(r, c, dr, dc, p) + countDir(r, c, -dr, -dc, p) >= 5);
+        }
+
+        document.getElementById('p1Place').addEventListener('click', () => attemptPlace(1));
+        document.getElementById('p2Place').addEventListener('click', () => attemptPlace(2));
+        drawBoard(); updateButtons();
+    </script>
+</body>
+</html>
