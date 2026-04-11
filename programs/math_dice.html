@@ -160,6 +160,7 @@
                         <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">4조</button>
                         <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">5조</button>
                         <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">6조</button>
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">7조</button>
                     </div>
                     <button id="btn-join-student" class="btn-ghibli btn-primary w-full py-3 rounded-xl text-lg disabled:opacity-50" disabled>
                         입장하기
@@ -192,11 +193,18 @@
                             <span>3개</span><span>4개</span><span>5개</span>
                         </div>
                     </div>
+                    <div id="teacher-preview-dice" class="flex justify-center flex-wrap gap-2 pt-4 border-t border-gray-100 min-h-[4rem]">
+                        <!-- JS Renders Preview Dice here -->
+                        <span class="text-sm text-gray-400 mt-2">먼저 주사위를 굴려 숫자를 확인하세요.</span>
+                    </div>
                 </div>
 
-                <div class="flex gap-3">
-                    <button onclick="startGameRound()" class="flex-1 btn-ghibli btn-secondary py-4 rounded-xl text-lg flex items-center justify-center gap-2">
-                        <i data-lucide="play-circle"></i> 주사위 굴리기 & 시작
+                <div class="flex flex-col gap-3">
+                    <button onclick="previewDice()" class="w-full btn-ghibli py-3 rounded-xl text-md font-bold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50">
+                        <i data-lucide="dices"></i> 주사위 굴려보기 (숫자 확인)
+                    </button>
+                    <button id="btn-start-game" onclick="startGameRound()" class="hidden w-full btn-ghibli btn-primary py-4 rounded-xl text-lg flex items-center justify-center gap-2 mt-2">
+                        <i data-lucide="play-circle"></i> 이 숫자로 학생들에게 게임 시작!
                     </button>
                 </div>
             </div>
@@ -458,23 +466,45 @@
         }
 
         // ===================== TEACHER LOGIC =====================
-        async function startGameRound() {
+        function previewDice() {
             const diceCount = parseInt(document.getElementById('setting-dice-count').value);
-            const diceVals = Array.from({length: diceCount}, () => Math.floor(Math.random() * 6) + 1);
+            STATE.currentDice = [];
             
+            for(let i=0; i<diceCount; i++) {
+                let val;
+                do {
+                    val = Math.floor(Math.random() * 19) - 9; // -9 to 9
+                } while (val === 0);
+                STATE.currentDice.push(val);
+            }
+            
+            // Render Preview
+            const previewContainer = document.getElementById('teacher-preview-dice');
+            previewContainer.innerHTML = '';
+            STATE.currentDice.forEach(val => {
+                previewContainer.innerHTML += `<div class="bg-ghibli-mint text-gray-800 font-number text-2xl font-bold w-12 h-12 rounded-xl flex items-center justify-center border-2 border-white shadow-sm">${val}</div>`;
+            });
+            
+            document.getElementById('btn-start-game').classList.remove('hidden');
+        }
+
+        async function startGameRound() {
+            if (!STATE.currentDice || STATE.currentDice.length === 0) {
+                showToast('주사위를 먼저 굴려주세요!'); return;
+            }
+
             // Reset scores for new round
             await sb.from('scores').update({score: 0, answers: []}).eq('room_id', STATE.roomId);
 
             const { error } = await sb.from('rooms').update({ 
                 status: 'playing', 
-                dice_values: diceVals 
+                dice_values: STATE.currentDice 
             }).eq('id', STATE.roomId);
 
             if (error) {
                 showToast('게임 시작 중 오류 발생!'); return;
             }
 
-            STATE.currentDice = diceVals;
             setupGameScreen();
         }
 
@@ -494,7 +524,13 @@
             // Return to settings
             document.getElementById('wait-teacher').classList.remove('hidden');
             document.getElementById('wait-student').classList.add('hidden');
+            
+            STATE.currentDice = [];
+            document.getElementById('teacher-preview-dice').innerHTML = '<span class="text-sm text-gray-400 mt-2">먼저 주사위를 굴려 숫자를 확인하세요.</span>';
+            document.getElementById('btn-start-game').classList.add('hidden');
+            
             showScreen('screen-waiting');
+            sb.from('rooms').update({ status: 'waiting' }).eq('id', STATE.roomId);
         }
 
         // ===================== REALTIME SUBSCRIPTIONS =====================
@@ -570,11 +606,11 @@
             const diceContainer = document.getElementById('dice-container');
             diceContainer.innerHTML = '';
             STATE.currentDice.forEach(val => {
-                const colors = ['text-ghibli-pink', 'text-ghibli-mint', 'text-ghibli-peach', 'text-ghibli-lavender', 'text-ghibli-olive'];
-                const bgs = ['bg-pink-100', 'bg-teal-100', 'bg-orange-100', 'bg-purple-100', 'bg-lime-100'];
-                const rnd = Math.floor(Math.random() * colors.length);
-                const color = colors[rnd]; const bg = bgs[rnd];
-                diceContainer.innerHTML += `<div class="${bg} w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-white shadow-sm ${color} transform rotate-${Math.floor(Math.random()*6)-3}">${val}</div>`;
+                const bgs = ['bg-pink-300', 'bg-teal-300', 'bg-orange-300', 'bg-purple-300', 'bg-lime-300'];
+                const rnd = Math.floor(Math.random() * bgs.length);
+                const bg = bgs[rnd];
+                
+                diceContainer.innerHTML += `<div class="${bg} w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-white shadow-sm text-gray-800 transform rotate-${Math.floor(Math.random()*6)-3}">${val}</div>`;
             });
 
             // Make Input Buttons for Students
