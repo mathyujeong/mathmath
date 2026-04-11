@@ -562,7 +562,8 @@
                 showToast('게임 종료 중 오류 발생!'); return;
             }
 
-            // Results UI setup happens automatically via realtime channel
+            // Results UI setup for Teacher (students handled via realtime)
+            showResultScreen();
         }
         
         function prepareNewRound() {
