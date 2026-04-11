@@ -218,7 +218,7 @@
 const SUPABASE_URL = 'https://vowdvdgafuyujxiwkelt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_BvgKKPJOm9fPSZMuR7j0TA_MWtMAiNB';
 // ReferenceError 방지를 위해 선언 방식 변경 및 안전하게 초기화
-const supabase = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabaseClient = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 // ===================== GAME STATE =====================
 const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
@@ -272,9 +272,9 @@ async function saveGameScore() {
     statusEl.textContent = '기록을 전송하고 있습니다...';
     statusEl.className = 'text-xs mt-2 h-4 text-cyan-400';
 
-    if (!supabase) throw new Error('데이터베이스 연결에 실패했습니다. (SDK 로드 오류)');
+    if (!supabaseClient) throw new Error('데이터베이스 연결에 실패했습니다. (SDK 로드 오류)');
 
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('primenumber')
       .insert([{ name, score }]);
 
@@ -297,9 +297,9 @@ async function loadRanking() {
   listEl.innerHTML = '<p class="text-gray-500 text-center animate-pulse">실험 기록을 불러오고 있습니다...</p>';
 
   try {
-    if (!supabase) throw new Error('데이터베이스 연결 실패');
+    if (!supabaseClient) throw new Error('데이터베이스 연결 실패');
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('primenumber')
       .select('name, score')
       .order('score', { ascending: false })
