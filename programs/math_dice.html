@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수학 다이스 팀 배틀 - 유정쌤의 실험실</title>
+    <link rel="icon" href="../assets/favicon.png" type="image/png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        title: ['"Black Han Sans"', 'sans-serif'],
+                        number: ['"Orbitron"', 'sans-serif']
+                    },
+                    colors: {
+                        ghibli: {
+                            bg: '#fdfbf7',
+                            pink: '#ffd6e0',
+                            mint: '#bdf1d5',
+                            peach: '#ffdfba',
+                            lavender: '#e2d5f8',
+                            olive: '#dff1a3'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- CDN Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body { background-color: #fdfbf7; color: #4b5563; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-ghibli {
+            background: white;
+            border: 2px solid #f3f4f6;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), inset 0 -3px 0 rgba(0,0,0,0.05);
+        }
+        .btn-ghibli:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05), inset 0 -3px 0 rgba(0,0,0,0.05);
+        }
+        .btn-ghibli:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 2px 0 rgba(0,0,0,0.05);
+        }
+
+        .btn-primary {
+            background: #ffd6e0; color: #c026d3; font-weight: 700;
+            border: 2px solid #fbcfe8;
+        }
+        .btn-primary:hover { background: #fbcfe8; border-color: #f9a8d4; }
+        
+        .btn-secondary {
+            background: #bdf1d5; color: #047857; font-weight: 700;
+            border: 2px solid #a7f3d0;
+        }
+        .btn-secondary:hover { background: #a7f3d0; border-color: #6ee7b7; }
+
+        .dice-display {
+            font-family: 'Black Han Sans', sans-serif;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        @keyframes flash-success {
+            0%, 100% { background-color: rgba(255, 255, 255, 0.8); }
+            50% { background-color: #bdf1d5; transform: scale(1.02); }
+        }
+        .animate-flash { animation: flash-success 0.6s ease-out; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100%);
+            opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 9999;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans">
+    
+    <!-- Navbar -->
+    <nav class="flex items-center justify-between px-6 py-4 fixed top-0 w-full z-50">
+        <button onclick="location.href='../index.html'" class="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span class="font-bold">연구실로 돌아가기</span>
+        </button>
+        <div class="font-title text-2xl text-gray-700 tracking-wider">
+            🎲 MATH DICE
+        </div>
+        <div class="w-24"></div> <!-- Spacer -->
+    </nav>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="toast glass-panel px-6 py-3 rounded-full text-red-500 font-bold shadow-lg border-red-200 bg-red-50">
+        메시지
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main id="app" class="flex-1 max-w-5xl w-full mx-auto p-4 pt-24 relative">
+        
+        <!-- ==================== SCREEN 1: LOBBY ==================== -->
+        <section id="screen-lobby" class="absolute inset-0 flex flex-col items-center justify-center p-4">
+            <div class="glass-panel p-10 rounded-3xl w-full max-w-md text-center">
+                <i data-lucide="layout-dashboard" class="w-16 h-16 mx-auto mb-4 text-ghibli-peach"></i>
+                <h1 class="font-title text-5xl mb-2 text-gray-800">다이스 배틀</h1>
+                <p class="text-gray-500 mb-8 font-medium">수학의 즐거움을 함께 나누어요 🌱</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-600 mb-1 text-left">어느 반 인가요?</label>
+                        <select id="sel-room" class="w-full p-3 rounded-xl border-2 border-gray-100 bg-white shadow-inner focus:outline-none focus:border-ghibli-peach font-bold text-gray-700">
+                            <option value="1-1">1학년 1반</option>
+                            <option value="1-2">1학년 2반</option>
+                            <option value="1-3">1학년 3반</option>
+                            <option value="1-4">1학년 4반</option>
+                            <option value="1-5">1학년 5반</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-4">
+                        <button onclick="showRoleSelect('teacher')" class="btn-ghibli py-4 rounded-2xl flex flex-col items-center justify-center gap-2">
+                            <i data-lucide="graduation-cap" class="w-8 h-8 text-ghibli-lavender"></i>
+                            <span class="font-bold text-gray-700">선생님</span>
+                        </button>
+                        <button onclick="showRoleSelect('student')" class="btn-ghibli py-4 rounded-2xl flex flex-col items-center justify-center gap-2">
+                            <i data-lucide="users" class="w-8 h-8 text-ghibli-mint"></i>
+                            <span class="font-bold text-gray-700">학생 (조)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student Team Selection (Hidden by default) -->
+                <div id="student-team-select" class="hidden mt-6 pt-6 border-t border-gray-100">
+                    <label class="block text-sm font-bold text-gray-600 mb-3 text-left">우리 조를 선택하세요</label>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">1조</button>
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">2조</button>
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">3조</button>
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">4조</button>
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">5조</button>
+                        <button class="team-btn btn-ghibli py-2 rounded-xl font-bold text-gray-600">6조</button>
+                    </div>
+                    <button id="btn-join-student" class="btn-ghibli btn-primary w-full py-3 rounded-xl text-lg disabled:opacity-50" disabled>
+                        입장하기
+                    </button>
+                </div>
+
+                <!-- Teacher Login (Hidden by default) -->
+                <div id="teacher-entry" class="hidden mt-6 pt-6 border-t border-gray-100">
+                    <button id="btn-join-teacher" class="btn-ghibli btn-secondary w-full py-3 rounded-xl text-lg font-bold">
+                        교사 통제실 입장하기
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SCREEN 2: WAITING ROOM ==================== -->
+        <section id="screen-waiting" class="absolute inset-0 flex flex-col items-center justify-center p-4 hidden">
+            <!-- Teacher View -->
+            <div id="wait-teacher" class="glass-panel p-8 rounded-3xl w-full max-w-lg hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="settings" class="w-8 h-8 text-gray-600"></i>
+                    <h2 class="font-title text-3xl text-gray-800">새 라운드 설정</h2>
+                </div>
+                
+                <div class="bg-white p-6 rounded-2xl shadow-inner mb-6 space-y-4">
+                    <div>
+                        <label class="block font-bold text-gray-600 mb-2">주사위 개수</label>
+                        <input type="range" id="setting-dice-count" min="3" max="5" value="4" class="w-full accent-ghibli-mint">
+                        <div class="flex justify-between text-sm text-gray-400 font-bold px-1 mt-1">
+                            <span>3개</span><span>4개</span><span>5개</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="startGameRound()" class="flex-1 btn-ghibli btn-secondary py-4 rounded-xl text-lg flex items-center justify-center gap-2">
+                        <i data-lucide="play-circle"></i> 주사위 굴리기 & 시작
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student View -->
+            <div id="wait-student" class="glass-panel p-10 rounded-3xl w-full max-w-sm text-center hidden">
+                <i data-lucide="loader-2" class="w-16 h-16 mx-auto mb-6 text-ghibli-mint animate-spin"></i>
+                <h2 class="font-title text-3xl mb-2 text-gray-800">대기 중...</h2>
+                <p class="text-gray-500 font-medium leading-relaxed">
+                    조원들과 함께 머리를 맞대고<br>선생님이 게임을 시작할 때까지 기다려주세요!
+                </p>
+                <div class="mt-6 inline-block bg-white px-4 py-2 rounded-full shadow-sm">
+                    <span id="display-wait-room" class="font-bold text-gray-700"></span> - 
+                    <span id="display-wait-team" class="font-bold text-ghibli-lavender"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SCREEN 3: GAME SCREEN ==================== -->
+        <section id="screen-game" class="absolute inset-0 flex flex-col p-4 hidden overflow-hidden">
+            
+            <div class="flex flex-col md:flex-row gap-4 h-full">
+                <!-- Left: Leaderboard -->
+                <div class="w-full md:w-1/3 flex flex-col gap-4 order-2 md:order-1 h-1/2 md:h-full">
+                    
+                    <div class="glass-panel rounded-2xl p-4 flex-1 flex flex-col overflow-hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-title text-2xl text-gray-700 flex items-center gap-2">
+                                <i data-lucide="bar-chart-2" class="text-ghibli-peach"></i> 실시간 게임 현황
+                            </h3>
+                        </div>
+                        <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                            <!-- JS Renders here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Teacher End Game Button -->
+                    <div id="teacher-controls" class="hidden">
+                        <button onclick="endGameRound()" class="w-full btn-ghibli py-4 border-red-200 bg-red-50 text-red-500 font-bold rounded-2xl flex items-center justify-center gap-2 mb-20 lg:mb-0">
+                            <i data-lucide="stop-circle"></i> 게임 종료 및 평가 보기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Play Area (Students only) or Monitor Area (Teacher) -->
+                <div class="w-full md:w-2/3 flex flex-col gap-4 order-1 md:order-2 h-1/2 md:h-full">
+                    
+                    <!-- Dice Area -->
+                    <div class="glass-panel p-6 rounded-3xl text-center">
+                         <h3 class="font-title text-xl text-gray-500 mb-4">공통 주사위 숫자</h3>
+                         <div id="dice-container" class="flex justify-center flex-wrap gap-4 dice-display text-5xl">
+                             <!-- JS Renders dice here -->
+                         </div>
+                    </div>
+
+                    <!-- Input Area (Student Only) -->
+                    <div id="student-play-area" class="glass-panel p-6 rounded-3xl flex-1 flex flex-col hidden mb-8 lg:mb-0">
+                        
+                        <div class="bg-white rounded-2xl p-6 shadow-inner flex-1 flex flex-col justify-center mb-4">
+                            <div class="text-center font-bold text-gray-400 mb-2">만들어진 수식</div>
+                            <div id="formula-display" class="font-number text-4xl text-center text-gray-800 tracking-wider break-all min-h-[3rem]">
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3">
+                            <div class="grid grid-cols-5 gap-2">
+                                <button class="op-btn py-3 text-xl" onclick="appendToFormula('+')">+</button>
+                                <button class="op-btn py-3 text-xl" onclick="appendToFormula('-')">-</button>
+                                <button class="op-btn py-3 text-xl" onclick="appendToFormula('*')">×</button>
+                                <button class="op-btn py-3 text-xl" onclick="appendToFormula('/')">÷</button>
+                                <button class="op-btn py-3 text-xl text-red-400" onclick="clearFormula()"><i data-lucide="delete" class="mx-auto w-5 h-5"></i></button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button class="op-btn py-3 text-xl" onclick="appendToFormula('(')">(</button>
+                                <button class="op-btn py-3 text-xl" onclick="appendToFormula(')')">)</button>
+                            </div>
+                            <!-- Dice buttons generated by JS -->
+                            <div id="dice-input-container" class="grid gap-2"></div>
+                            
+                            <button onclick="submitFormula()" class="mt-2 btn-ghibli btn-primary py-4 rounded-2xl text-xl w-full flex items-center justify-center gap-2">
+                                <i data-lucide="send"></i> 수식 제출하기 +1점
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Monitor Area (Teacher Only) -->
+                    <div id="teacher-monitor-area" class="glass-panel p-6 rounded-3xl flex-1 hidden items-center justify-center">
+                        <div class="text-center">
+                            <i data-lucide="activity" class="w-16 h-16 mx-auto mb-4 text-ghibli-olive animate-pulse"></i>
+                            <h2 class="font-title text-3xl text-gray-700">모니터링 중...</h2>
+                            <p class="text-gray-500 mt-2">학생들이 열심히 수식을 만들고 있습니다.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SCREEN 4: RESULT DASHBOARD ==================== -->
+        <section id="screen-result" class="absolute inset-0 flex flex-col p-4 pb-12 hidden overflow-y-auto mt-16">
+            <div class="glass-panel p-6 rounded-3xl max-w-4xl mx-auto w-full text-center mb-6">
+                <i data-lucide="award" class="w-16 h-16 mx-auto mb-4 text-yellow-400 drop-shadow-md"></i>
+                <h1 id="result-title" class="font-title text-5xl mb-2 text-gray-800">게임 종료!</h1>
+                <p id="result-subtitle" class="text-gray-500 font-medium">모두 수고하셨습니다. 우리 반의 놀라운 발견들을 확인해볼까요? ✨</p>
+                
+                <div class="mt-6 flex justify-center gap-4">
+                    <button id="btn-new-round" onclick="prepareNewRound()" class="hidden btn-ghibli btn-secondary px-6 py-2 rounded-full font-bold text-gray-600 flex items-center gap-2">
+                        <i data-lucide="play-circle" class="w-4 h-4"></i> 새로운 라운드 설정하기
+                    </button>
+                    <button onclick="resetToLobby()" class="btn-ghibli px-6 py-2 rounded-full font-bold text-gray-600 flex items-center gap-2 hover:bg-white">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 처음으로 돌아가기
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid (Teacher View) -->
+            <div id="result-dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto w-full hidden">
+                <!-- JS Renders team cards here -->
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // ===================== SUPABASE CONFIG =====================
+        const SUPABASE_URL = 'https://ivpxdmmsdulidcjrkcjh.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_AIrRcoIfhXmB5OgKY2FZFg_AQ9WuZGC';
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ===================== STATE =====================
+        let STATE = {
+            role: null, // 'teacher' | 'student'
+            roomId: '1-1',
+            teamName: null, // '1조' ...
+            scoreId: null, // ID of the row in scores table
+            myScore: 0,
+            
+            // Game variables
+            currentDice: [],
+            usedDiceIndices: [],
+            currentFormula: "",
+            myAnswers: [], // Array of {result, formula}
+            
+            // Subscriptions
+            roomSub: null,
+            scoreSub: null,
+
+            // Dashboard Data
+            allScores: []
+        };
+
+        // ===================== UTILS =====================
+        function showScreen(id) {
+            document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function showToast(msg, isError = true) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast glass-panel px-6 py-3 rounded-full font-bold shadow-lg text-white ${isError ? 'bg-red-400 border-red-300' : 'bg-green-400 border-green-300'} show`;
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        function triggerConfetti() {
+            var duration = 4000;
+            var end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 6, angle: 60, spread: 65, origin: { x: 0 }, colors: ['#ffd6e0', '#bdf1d5', '#ffdfba'] });
+                confetti({ particleCount: 6, angle: 120, spread: 65, origin: { x: 1 }, colors: ['#ffd6e0', '#bdf1d5', '#ffdfba'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // ===================== INIT =====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Team Select behavior
+            document.querySelectorAll('.team-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.team-btn').forEach(b => {
+                        b.classList.remove('bg-ghibli-lavender', 'text-white', 'border-purple-300');
+                        b.classList.add('text-gray-600');
+                    });
+                    const target = e.target;
+                    target.classList.add('bg-ghibli-lavender', 'text-white', 'border-purple-300');
+                    target.classList.remove('text-gray-600');
+                    STATE.teamName = target.textContent;
+                    document.getElementById('btn-join-student').disabled = false;
+                });
+            });
+        });
+
+        // ===================== ROUTING =====================
+        function showRoleSelect(role) {
+            STATE.role = role;
+            if (role === 'student') {
+                document.getElementById('student-team-select').classList.remove('hidden');
+                document.getElementById('teacher-entry').classList.add('hidden');
+            } else {
+                document.getElementById('student-team-select').classList.add('hidden');
+                document.getElementById('teacher-entry').classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('btn-join-teacher').addEventListener('click', async () => {
+            STATE.roomId = document.getElementById('sel-room').value;
+            // Setup waiting room for teacher
+            document.getElementById('wait-teacher').classList.remove('hidden');
+            document.getElementById('wait-student').classList.add('hidden');
+            showScreen('screen-waiting');
+            subscribeToScores();
+            
+            // Re-activate room safely if it was stuck
+            await sb.from('rooms').upsert({ id: STATE.roomId, status: 'waiting'}, { onConflict: 'id' });
+        });
+
+        document.getElementById('btn-join-student').addEventListener('click', async () => {
+            STATE.roomId = document.getElementById('sel-room').value;
+            
+            // 1. Initialise Score Row (Ensure room exists first silently, just in case)
+            await sb.from('rooms').upsert({ id: STATE.roomId }, { onConflict: 'id' });
+            
+            const { data, error } = await sb.from('scores')
+                .upsert({ room_id: STATE.roomId, team_name: STATE.teamName, score: 0, answers: [] }, { onConflict: 'room_id, team_name'})
+                .select()
+                .single();
+            
+            if (error) {
+                showToast('서버 접속 중 오류가 발생했습니다.');
+                console.error(error);
+                return;
+            }
+            
+            STATE.scoreId = data.id;
+            STATE.myAnswers = [];
+            STATE.myScore = 0;
+
+            // Setup display
+            document.getElementById('display-wait-room').textContent = document.getElementById('sel-room').options[document.getElementById('sel-room').selectedIndex].text;
+            document.getElementById('display-wait-team').textContent = STATE.teamName;
+
+            document.getElementById('wait-teacher').classList.add('hidden');
+            document.getElementById('wait-student').classList.remove('hidden');
+            showScreen('screen-waiting');
+
+            // 2. Subscribe to Room Status
+            subscribeToRoom();
+            subscribeToScores();
+        });
+
+        function resetToLobby() {
+            // Unsubscribe
+            if(STATE.roomSub) sb.removeChannel(STATE.roomSub);
+            if(STATE.scoreSub) sb.removeChannel(STATE.scoreSub);
+            location.reload();
+        }
+
+        // ===================== TEACHER LOGIC =====================
+        async function startGameRound() {
+            const diceCount = parseInt(document.getElementById('setting-dice-count').value);
+            const diceVals = Array.from({length: diceCount}, () => Math.floor(Math.random() * 6) + 1);
+            
+            // Reset scores for new round
+            await sb.from('scores').update({score: 0, answers: []}).eq('room_id', STATE.roomId);
+
+            const { error } = await sb.from('rooms').update({ 
+                status: 'playing', 
+                dice_values: diceVals 
+            }).eq('id', STATE.roomId);
+
+            if (error) {
+                showToast('게임 시작 중 오류 발생!'); return;
+            }
+
+            STATE.currentDice = diceVals;
+            setupGameScreen();
+        }
+
+        async function endGameRound() {
+            const { error } = await sb.from('rooms').update({ 
+                status: 'ended'
+            }).eq('id', STATE.roomId);
+
+            if (error) {
+                showToast('게임 종료 중 오류 발생!'); return;
+            }
+
+            // Results UI setup happens automatically via realtime channel
+        }
+        
+        function prepareNewRound() {
+            // Return to settings
+            document.getElementById('wait-teacher').classList.remove('hidden');
+            document.getElementById('wait-student').classList.add('hidden');
+            showScreen('screen-waiting');
+        }
+
+        // ===================== REALTIME SUBSCRIPTIONS =====================
+        function subscribeToRoom() {
+            STATE.roomSub = sb.channel('public:rooms')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${STATE.roomId}` }, payload => {
+                    const room = payload.new;
+                    if (room.status === 'playing') {
+                        STATE.currentDice = room.dice_values;
+                        setupGameScreen();
+                    } else if (room.status === 'ended') {
+                        showResultScreen();
+                    } else if (room.status === 'waiting' && STATE.role === 'student') {
+                        // Teacher restarted
+                        showScreen('screen-waiting');
+                        STATE.myAnswers = [];
+                        STATE.myScore = 0;
+                        updateFormulaDisplay();
+                        clearFormula();
+                    }
+                })
+                .subscribe();
+        }
+
+        function subscribeToScores() {
+            // Fetch initial
+            fetchLeaderboard();
+
+            STATE.scoreSub = sb.channel('public:scores')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'scores', filter: `room_id=eq.${STATE.roomId}` }, payload => {
+                    fetchLeaderboard();
+                })
+                .subscribe();
+        }
+
+        async function fetchLeaderboard() {
+            const { data, error } = await sb.from('scores')
+                .select('*')
+                .eq('room_id', STATE.roomId)
+                .order('score', { ascending: false });
+            
+            if (data && !error) {
+                STATE.allScores = data;
+                renderLeaderboard(data);
+                
+                // update local state ref
+                if (STATE.role === 'student' && STATE.scoreId) {
+                    const myRow = data.find(d => d.id === STATE.scoreId);
+                    if (myRow) {
+                        STATE.myAnswers = myRow.answers || [];
+                        STATE.myScore = myRow.score;
+                    }
+                }
+            }
+        }
+
+        // ===================== GAME SCREEN UI =====================
+        function setupGameScreen() {
+            // Render Config
+            if (STATE.role === 'teacher') {
+                document.getElementById('teacher-controls').classList.remove('hidden');
+                document.getElementById('teacher-monitor-area').classList.remove('hidden');
+                document.getElementById('student-play-area').classList.add('hidden');
+                document.getElementById('student-play-area').classList.remove('flex');
+            } else {
+                document.getElementById('teacher-controls').classList.add('hidden');
+                document.getElementById('teacher-monitor-area').classList.add('hidden');
+                document.getElementById('student-play-area').classList.remove('hidden');
+                document.getElementById('student-play-area').classList.add('flex');
+            }
+
+            // Render Dice Top
+            const diceContainer = document.getElementById('dice-container');
+            diceContainer.innerHTML = '';
+            STATE.currentDice.forEach(val => {
+                const colors = ['text-ghibli-pink', 'text-ghibli-mint', 'text-ghibli-peach', 'text-ghibli-lavender', 'text-ghibli-olive'];
+                const bgs = ['bg-pink-100', 'bg-teal-100', 'bg-orange-100', 'bg-purple-100', 'bg-lime-100'];
+                const rnd = Math.floor(Math.random() * colors.length);
+                const color = colors[rnd]; const bg = bgs[rnd];
+                diceContainer.innerHTML += `<div class="${bg} w-20 h-20 rounded-2xl flex items-center justify-center border-4 border-white shadow-sm ${color} transform rotate-${Math.floor(Math.random()*6)-3}">${val}</div>`;
+            });
+
+            // Make Input Buttons for Students
+            if (STATE.role === 'student') {
+                const inputCont = document.getElementById('dice-input-container');
+                inputCont.className = `grid grid-cols-${STATE.currentDice.length} gap-2`;
+                inputCont.innerHTML = '';
+                
+                STATE.usedDiceIndices = [];
+                clearFormula();
+
+                STATE.currentDice.forEach((val, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'dice-btn font-number text-2xl font-bold py-3 text-gray-700';
+                    btn.textContent = val;
+                    btn.id = `input-dice-${idx}`;
+                    btn.onclick = () => useDice(idx, val);
+                    inputCont.appendChild(btn);
+                });
+            }
+
+            showScreen('screen-game');
+        }
+
+        // ===================== INPUT LOGIC =====================
+        function appendToFormula(str) {
+            STATE.currentFormula += str;
+            updateFormulaDisplay();
+        }
+
+        function useDice(idx, val) {
+            if (STATE.usedDiceIndices.includes(idx)) return;
+            STATE.usedDiceIndices.push(idx);
+            document.getElementById(`input-dice-${idx}`).classList.add('dice-used');
+            appendToFormula(val.toString());
+        }
+
+        function clearFormula() {
+            STATE.currentFormula = "";
+            STATE.usedDiceIndices = [];
+            document.querySelectorAll('.dice-btn').forEach(btn => btn.classList.remove('dice-used'));
+            updateFormulaDisplay();
+        }
+
+        function updateFormulaDisplay() {
+            document.getElementById('formula-display').textContent = STATE.currentFormula;
+        }
+
+        // ===================== SUBMISSION =====================
+        async function submitFormula() {
+            const rawFormula = STATE.currentFormula;
+            if (!rawFormula) { showToast('수식을 입력해주세요.'); return; }
+            
+            // Validating all dice were used
+            if (STATE.usedDiceIndices.length < window.Math.min(1, STATE.currentDice.length)) {
+                 showToast('주사위 숫자를 최소 하나는 사용해야 합니다.'); return;
+            }
+
+            let result;
+            try {
+                // Remove trailing operators before computing securely
+                let cleaned = rawFormula.replace(/[\+\-\*\/]$/, '');
+                result = math.evaluate(cleaned);
+                
+                if (typeof result !== 'number' || isNaN(result) || result === Infinity || result === -Infinity) {
+                    throw new Error('계산 불가');
+                }
+                
+                // Keep integers only
+                // Use a tiny epsilon for float arithmetic weirdness
+                if (Math.abs(result - Math.round(result)) > 1e-10) {
+                    showToast('정수가 떨어지는 수식을 만들어보세요! 소수는 안 돼요.');
+                    return;
+                }
+                result = Math.round(result);
+
+            } catch(e) {
+                showToast('올바르지 않은 수식입니다.');
+                return;
+            }
+
+            // Check Duplicate
+            const isDup = STATE.myAnswers.some(ans => ans.result === result);
+            if (isDup) {
+                showToast(`🚨 이미 ${result}에 대한 수식을 제출했습니다. 다른 숫자를 만드세요!`);
+                return;
+            }
+
+            // SUCCESS!
+            document.getElementById('student-play-area').classList.add('animate-flash');
+            setTimeout(() => document.getElementById('student-play-area').classList.remove('animate-flash'), 600);
+            showToast(`${result} 만들기 성공! +1점`, false);
+
+            const newAnswers = [...STATE.myAnswers, { result, formula: rawFormula }];
+            const newScore = STATE.myScore + 1;
+
+            // Optimistic Unblock UI
+            clearFormula();
+
+            const { error } = await sb.from('scores').update({
+                score: newScore,
+                answers: newAnswers
+            }).eq('id', STATE.scoreId);
+
+            if(error) showToast('서버 저장 실패.. 다시 시도해주세요.');
+        }
+
+        // ===================== RENDERERS =====================
+        function renderLeaderboard(scoresData) {
+            const list = document.getElementById('leaderboard-list');
+            if(!list) return;
+            list.innerHTML = '';
+            
+            scoresData.forEach((row, idx) => {
+                const isMe = STATE.role === 'student' && row.team_name === STATE.teamName;
+                const bg = isMe ? 'bg-ghibli-lavender bg-opacity-40 border-purple-300' : 'bg-white border-gray-100';
+                
+                let icon = '';
+                if(idx === 0 && row.score > 0) icon = '👑';
+                
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-3 rounded-xl border-2 ${bg} shadow-sm transition-all duration-300 transform ${isMe ? 'scale-105 my-2' : ''}">
+                        <div class="flex items-center gap-2">
+                            <span class="font-title text-gray-400 w-4 pl-1">${idx+1}</span>
+                            <span class="font-bold text-gray-700">${row.team_name} ${icon}</span>
+                            ${isMe ? '<span class="text-[10px] bg-purple-500 text-white px-2 py-0.5 rounded-full font-bold ml-1">우리 조</span>' : ''}
+                        </div>
+                        <div class="font-number font-bold text-lg text-ghibli-lavender filter brightness-90">
+                            ${row.score} <span class="text-xs">PTS</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function showResultScreen() {
+            // Update Title
+            if (STATE.role === 'student') {
+                const winner = STATE.allScores[0];
+                if (winner && winner.score > 0) {
+                    if (winner.team_name === STATE.teamName) {
+                        document.getElementById('result-title').textContent = "우리 팀 우승!";
+                    } else {
+                        document.getElementById('result-title').textContent = `${winner.team_name} 우승!`;
+                    }
+                } else {
+                    document.getElementById('result-title').textContent = "시간 종료!";
+                }
+                document.getElementById('result-dashboard').classList.add('hidden');
+                document.getElementById('btn-new-round').classList.add('hidden');
+            } else {
+                document.getElementById('result-title').textContent = "최종 강평 및 랭킹";
+                document.getElementById('result-subtitle').textContent = "각 조가 어떤 재미있는 수식을 만들어냈는지 살펴볼까요? 🔍";
+                document.getElementById('result-dashboard').classList.remove('hidden');
+                document.getElementById('btn-new-round').classList.remove('hidden');
+                renderDashboard();
+            }
+
+            showScreen('screen-result');
+            triggerConfetti();
+        }
+
+        function renderDashboard() {
+            const dash = document.getElementById('result-dashboard');
+            dash.innerHTML = '';
+            
+            if (STATE.allScores.length === 0) {
+                dash.innerHTML = '<div class="col-span-full text-center text-gray-500">제출된 데이터가 없습니다.</div>';
+                return;
+            }
+            
+            STATE.allScores.forEach((row, idx) => {
+                let answersHtml = '';
+                if (row.answers && row.answers.length > 0) {
+                    // Sort answers by result ascending for neatness
+                    const sorted = [...row.answers].sort((a,b) => a.result - b.result);
+                    sorted.forEach(ans => {
+                        answersHtml += `
+                            <div class="flex justify-between items-center mb-1 pb-1 border-b border-gray-100 border-dashed hover:bg-white transition px-2 rounded">
+                                <span class="font-number font-bold text-gray-700 w-10 text-lg">${ans.result}</span>
+                                <span class="text-indigo-400 font-number text-right break-all ml-2 font-bold">${ans.formula}</span>
+                            </div>
+                        `;
+                    });
+                } else {
+                    answersHtml = '<div class="text-sm text-gray-400 text-center italic py-4">등록된 수식이 없습니다.</div>';
+                }
+
+                const styleColors = ['border-pink-300', 'border-teal-300', 'border-orange-300', 'border-purple-300', 'border-lime-300'];
+                const bgs = ['bg-pink-50', 'bg-teal-50', 'bg-orange-50', 'bg-purple-50', 'bg-lime-50'];
+                const borderColor = styleColors[idx % styleColors.length];
+                const bgColor = bgs[idx % typeof(bgs) !== 'undefined' ? bgs.length : 1];
+
+                let rankBadge = '';
+                if(idx === 0 && row.score > 0) rankBadge = '<div class="absolute -top-5 -right-5 text-5xl transform rotate-12 drop-shadow-lg z-10">👑</div>';
+
+                dash.innerHTML += `
+                    <div class="glass-panel rounded-3xl relative border-t-8 ${borderColor} flex flex-col h-full overflow-hidden">
+                        ${rankBadge}
+                        <div class="p-6 pb-2 text-center bg-white">
+                            <h3 class="font-title text-3xl text-gray-800 mb-1">${row.team_name}</h3>
+                            <div class="text-sm text-gray-400 mb-0 font-bold">최종 기록: <span class="font-number text-gray-600 text-lg ml-1">${row.score}점</span></div>
+                        </div>
+                        <div class="${bgColor} p-4 flex-1 overflow-y-auto max-h-64 shadow-inner">
+                            ${answersHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
