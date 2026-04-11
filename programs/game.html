@@ -3,12 +3,44 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prime Defender - 유정쌤의 실험실</title>
+  <title>소인수분해 수호자 - 유정쌤의 실험실</title>
   <link rel="icon" href="../assets/favicon.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <style>
-  html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-color: #334155;
+  }
+
+  html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
+
+  /* Navbar Styles matching Laboratory theme */
+  .lab-navbar {
+    position: fixed;
+    top: 0; width: 100%;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 5%;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+  }
+  .lab-navbar .logo {
+    font-size: 1.5rem; font-weight: 700; cursor: pointer;
+    background: linear-gradient(135deg, #f472b6, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .lab-navbar .back-btn {
+    padding: 0.6rem 1.2rem; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+  }
+  .lab-navbar .back-btn:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
 
   @keyframes pulse-neon { 0%,100%{ box-shadow: 0 0 8px var(--c), 0 0 20px var(--c); } 50%{ box-shadow: 0 0 16px var(--c), 0 0 40px var(--c); } }
   @keyframes explode { 0%{ transform: scale(1); opacity:1; } 100%{ transform: scale(2.5); opacity:0; } }
@@ -73,38 +105,19 @@
 
   .orbitron { font-family: 'Orbitron', monospace; }
 
+  /* Scrollbar for ranking */
   .ranking-scroll::-webkit-scrollbar { width: 6px; }
   .ranking-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
   .ranking-scroll::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.3); border-radius: 3px; }
-
-  /* Top Back Button */
-  .home-btn {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 100;
-    padding: 5px 15px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(0, 240, 255, 0.3);
-    color: #00f0ff;
-    border-radius: 999px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
-  }
-  .home-btn:hover {
-    background: rgba(0, 240, 255, 0.2);
-    border-color: #00f0ff;
-    transform: translateX(5px);
-  }
 </style>
  </head>
- <body class="h-full">
-  <div id="app" class="game-wrapper">
-   <button class="home-btn" onclick="location.href='../index.html'">&larr; HOME</button>
-   
+ <body class="h-full bg-[#070716]">
+  <nav class="lab-navbar">
+    <div class="logo" onclick="location.href='../index.html'">유정쌤의 실험실</div>
+    <button class="back-btn" onclick="location.href='../index.html'">돌아가기</button>
+  </nav>
+
+  <div id="app" class="game-wrapper pt-20">
    <!-- Stars background -->
    <div id="stars-container" class="absolute inset-0 pointer-events-none"></div><!-- MENU SCREEN -->
    <div id="menu-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20">
@@ -198,48 +211,579 @@
     </div>
    </div>
   </div>
-
   <script>
-    // Audio / Prime Defender logic ported from metadata
-    const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
-    const NEON_CLASSES = ['neon-cyan','neon-pink','neon-green','neon-yellow','neon-purple','neon-orange'];
+// ===================== GAME STATE =====================
+const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
+const NEON_CLASSES = ['neon-cyan','neon-pink','neon-green','neon-yellow','neon-purple','neon-orange'];
 
-    let gameState = {
-      running: false,
-      paused: false,
-      pauseChances: 2,
-      score: 0,
-      lives: 5,
-      level: 1,
-      difficulty: 'normal',
-      blocks: [],
-      selectedBlockId: null,
-      combo: 0,
-      comboGauge: 0,
-      fever: false,
-      feverTimer: null,
-      spawnInterval: null,
-      gameLoop: null,
-      blockIdCounter: 0,
-      lastSpawnTime: 0,
-      blocksDestroyed: 0,
-      pauseTimer: null
-    };
+let gameState = {
+  running: false,
+  paused: false,
+  pauseChances: 2,
+  score: 0,
+  lives: 5,
+  level: 1,
+  difficulty: 'normal',
+  blocks: [],
+  selectedBlockId: null,
+  combo: 0,
+  comboGauge: 0,
+  fever: false,
+  feverTimer: null,
+  spawnInterval: null,
+  gameLoop: null,
+  blockIdCounter: 0,
+  lastSpawnTime: 0,
+  blocksDestroyed: 0,
+  pauseTimer: null
+};
 
-    // Stars background
-    function createStars() {
-      const container = document.getElementById('stars-container');
-      for (let i = 0; i < 80; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
-        star.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${1.5+Math.random()*3}s;--delay:${Math.random()*3}s;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;`;
-        container.appendChild(star);
+// ===================== STARS BACKGROUND =====================
+function createStars() {
+  const container = document.getElementById('stars-container');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${1.5+Math.random()*3}s;--delay:${Math.random()*3}s;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;`;
+    container.appendChild(star);
+  }
+}
+createStars();
+
+// ===================== AUDIO (Web Audio API) =====================
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', vol = 0.15) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function sfxDivide() { playTone(600, 0.12, 'square', 0.1); setTimeout(() => playTone(800, 0.1, 'square', 0.08), 60); }
+function sfxExplode() { playTone(200, 0.3, 'sawtooth', 0.12); playTone(400, 0.2, 'sine', 0.08); }
+function sfxError() { playTone(150, 0.2, 'sawtooth', 0.1); }
+function sfxCombo() { playTone(800, 0.15, 'sine', 0.1); setTimeout(() => playTone(1000, 0.15, 'sine', 0.1), 80); setTimeout(() => playTone(1200, 0.2, 'sine', 0.1), 160); }
+function sfxFever() { [600,800,1000,1200].forEach((f,i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.12), i * 100)); }
+function sfxLifeLost() { playTone(200, 0.4, 'sawtooth', 0.15); setTimeout(() => playTone(100, 0.5, 'sawtooth', 0.12), 200); }
+
+// ===================== MATH HELPERS =====================
+function generateComposite(level) {
+  const maxPrimeIdx = Math.min(2 + Math.floor(level / 2), PRIMES.length - 1);
+  const numFactors = 2 + Math.floor(Math.random() * Math.min(level, 4));
+  let n = 1;
+  for (let i = 0; i < numFactors; i++) {
+    const pIdx = Math.floor(Math.random() * (maxPrimeIdx + 1));
+    n *= PRIMES[pIdx];
+    if (n > 1000) break;
+  }
+  if (n <= 1 || n > 1000) n = PRIMES[0] * PRIMES[Math.floor(Math.random() * 3)];
+  if (isPrime(n)) n *= PRIMES[0];
+  if (n > 1000) n = 12;
+  return n;
+}
+
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) { if (n % i === 0) return false; }
+  return true;
+}
+
+// ===================== UI HELPERS =====================
+function showScreen(id) {
+  ['menu-screen','difficulty-screen','ranking-screen','game-screen','gameover-screen'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+function updateLives() {
+  const container = document.getElementById('lives-display');
+  container.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const heart = document.createElement('span');
+    heart.textContent = i < gameState.lives ? '❤️' : '🖤';
+    heart.className = 'text-lg';
+    container.appendChild(heart);
+  }
+}
+
+function updatePauseDisplay() {
+  document.getElementById('pause-display').textContent = `${gameState.pauseChances} / 2`;
+}
+
+function updateScore() {
+  document.getElementById('score-display').textContent = gameState.score.toLocaleString();
+}
+
+function updateLevel() {
+  document.getElementById('level-display').textContent = gameState.level;
+}
+
+function updateComboBar() {
+  const pct = Math.min(gameState.comboGauge / 10 * 100, 100);
+  document.getElementById('combo-bar').style.width = pct + '%';
+  const label = document.getElementById('combo-label');
+  if (gameState.fever) {
+    label.textContent = '⚡ FEVER TIME ⚡';
+    label.className = 'orbitron text-xs text-yellow-300 font-bold';
+  } else if (gameState.combo > 1) {
+    label.textContent = `COMBO x${gameState.combo}`;
+    label.className = 'orbitron text-xs text-pink-300 font-bold';
+  } else {
+    label.textContent = 'COMBO GAUGE';
+    label.className = 'orbitron text-xs text-white/70';
+  }
+}
+
+function showFloatingText(x, y, text, color = '#00f0ff') {
+  const container = document.getElementById('float-container');
+  const el = document.createElement('div');
+  el.className = 'score-float orbitron absolute pointer-events-none font-bold';
+  el.style.cssText = `left:${x}px;top:${y}px;color:${color};font-size:18px;z-index:50;text-shadow:0 0 10px ${color};`;
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+function showComboPopup(combo) {
+  const popup = document.getElementById('combo-popup');
+  popup.classList.remove('hidden');
+  popup.querySelector('span').textContent = `COMBO x${combo}!`;
+  popup.querySelector('span').className = 'combo-text orbitron text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-400';
+  setTimeout(() => popup.classList.add('hidden'), 1200);
+}
+
+function updateSelectedInfo() {
+  const info = document.getElementById('selected-info');
+  const block = gameState.blocks.find(b => b.id === gameState.selectedBlockId);
+  if (block) {
+    info.textContent = `선택: ${block.value}`;
+    info.className = 'orbitron text-sm text-cyan-300 font-bold';
+  } else {
+    info.textContent = '블록을 선택하세요';
+    info.className = 'orbitron text-sm text-gray-500';
+  }
+}
+
+// ===================== PRIME PAD =====================
+function buildPrimePad() {
+  const pad = document.getElementById('prime-pad');
+  pad.innerHTML = '';
+  PRIMES.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = `prime-btn ${NEON_CLASSES[i % NEON_CLASSES.length]} px-6 py-3 rounded-xl text-white font-bold text-lg border border-white/20 bg-white/5 backdrop-blur-sm`;
+    btn.style.cssText = `animation: pulse-neon 2s ease-in-out infinite; animation-delay: ${i * 0.1}s; font-family: 'JetBrains Mono', monospace;`;
+    btn.textContent = p;
+    btn.addEventListener('click', () => onPrimeClick(p));
+    pad.appendChild(btn);
+  });
+}
+
+// ===================== BLOCK RENDERING =====================
+function getBlockColor(value) {
+  if (value <= 10) return { bg: 'from-cyan-500 to-cyan-700', border: 'border-cyan-400' };
+  if (value <= 50) return { bg: 'from-blue-500 to-indigo-700', border: 'border-blue-400' };
+  if (value <= 100) return { bg: 'from-purple-500 to-purple-800', border: 'border-purple-400' };
+  if (value <= 500) return { bg: 'from-pink-500 to-red-700', border: 'border-pink-400' };
+  return { bg: 'from-red-500 to-red-900', border: 'border-red-400' };
+}
+
+function getBlockSize(value) {
+  if (value <= 10) return 52;
+  if (value <= 50) return 60;
+  if (value <= 100) return 68;
+  if (value <= 500) return 76;
+  return 84;
+}
+
+function createBlockElement(block) {
+  const zone = document.getElementById('falling-zone');
+  const colors = getBlockColor(block.value);
+  const size = getBlockSize(block.value);
+
+  const el = document.createElement('div');
+  el.id = 'block-' + block.id;
+  el.className = `absolute cursor-pointer flex items-center justify-center rounded-xl bg-gradient-to-br ${colors.bg} border-2 ${colors.border} shadow-lg transition-colors duration-200`;
+  el.style.cssText = `width:${size}px;height:${size}px;left:${block.x}px;top:${block.y}px;z-index:10;`;
+
+  const numSpan = document.createElement('span');
+  numSpan.className = 'orbitron font-black text-white drop-shadow-lg';
+  numSpan.style.cssText = `font-family: 'JetBrains Mono', monospace; ${block.value >= 100 ? 'font-size: 20px' : block.value >= 10 ? 'font-size: 26px' : 'font-size: 32px'};`;
+  numSpan.textContent = block.value;
+  el.appendChild(numSpan);
+
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectBlock(block.id);
+  });
+
+  zone.appendChild(el);
+  return el;
+}
+
+function updateBlockElement(block) {
+  const el = document.getElementById('block-' + block.id);
+  if (!el) return;
+
+  el.style.top = block.y + 'px';
+  const colors = getBlockColor(block.value);
+  const size = getBlockSize(block.value);
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.className = `absolute cursor-pointer flex items-center justify-center rounded-xl bg-gradient-to-br ${colors.bg} border-2 ${colors.border} shadow-lg transition-colors duration-200 ${block.id === gameState.selectedBlockId ? 'block-selected' : ''}`;
+
+  const numSpan = el.querySelector('span');
+  if (numSpan) {
+    numSpan.textContent = block.value;
+    numSpan.style.cssText = `font-family: 'JetBrains Mono', monospace; ${block.value >= 100 ? 'font-size: 20px' : block.value >= 10 ? 'font-size: 26px' : 'font-size: 32px'};`;
+  }
+}
+
+function removeBlockElement(blockId, explode = false) {
+  const el = document.getElementById('block-' + blockId);
+  if (!el) return;
+  if (explode) {
+    el.classList.add('block-explode');
+    setTimeout(() => el.remove(), 400);
+  } else {
+    el.remove();
+  }
+}
+
+// ===================== GAME LOGIC =====================
+function selectBlock(blockId) {
+  gameState.selectedBlockId = blockId;
+  gameState.blocks.forEach(b => {
+    const el = document.getElementById('block-' + b.id);
+    if (el) el.classList.toggle('block-selected', b.id === blockId);
+  });
+  updateSelectedInfo();
+}
+
+function onPrimeClick(prime) {
+  if (!gameState.running) return;
+  const block = gameState.blocks.find(b => b.id === gameState.selectedBlockId);
+  if (!block) return;
+
+  if (block.value % prime === 0) {
+    sfxDivide();
+    block.value = block.value / prime;
+
+    const el = document.getElementById('block-' + block.id);
+    const rect = el ? el.getBoundingClientRect() : null;
+    const zoneRect = document.getElementById('falling-zone').getBoundingClientRect();
+
+    if (block.value === 1) {
+      sfxExplode();
+      gameState.blocksDestroyed++;
+
+      const baseScore = 100;
+      const comboMultiplier = 1 + gameState.combo * 0.5;
+      const feverMultiplier = gameState.fever ? 2 : 1;
+      const points = Math.floor(baseScore * comboMultiplier * feverMultiplier);
+      gameState.score += points;
+
+      gameState.combo++;
+      gameState.comboGauge = Math.min(gameState.comboGauge + 1, 10);
+
+      if (gameState.combo >= 3) {
+        sfxCombo();
+        showComboPopup(gameState.combo);
+      }
+
+      if (gameState.comboGauge >= 10 && !gameState.fever) {
+        activateFever();
+      }
+
+      if (rect) {
+        showFloatingText(rect.left - zoneRect.left + 10, rect.top - zoneRect.top, `+${points}`, gameState.fever ? '#ffee00' : '#00f0ff');
+      }
+
+      removeBlockElement(block.id, true);
+      gameState.blocks = gameState.blocks.filter(b => b.id !== block.id);
+      gameState.selectedBlockId = null;
+
+      const newLevel = 1 + Math.floor(gameState.blocksDestroyed / 5);
+      if (newLevel > gameState.level) {
+        gameState.level = newLevel;
+        updateLevel();
+        if (rect) showFloatingText(rect.left - zoneRect.left, rect.top - zoneRect.top - 30, `LEVEL ${newLevel}!`, '#a855f7');
+      }
+
+      updateScore();
+      updateSelectedInfo();
+      updateComboBar();
+    } else {
+      updateBlockElement(block);
+      updateSelectedInfo();
+      if (rect) {
+        showFloatingText(rect.left - zoneRect.left + 10, rect.top - zoneRect.top - 10, `÷${prime}`, '#00ff88');
       }
     }
-    createStars();
+  } else {
+    sfxError();
+    gameState.combo = 0;
+    gameState.comboGauge = Math.max(gameState.comboGauge - 0.5, 0);
+    updateComboBar();
 
-    // Logic implementation... [Shortened for the response but usually full content]
-    // ... (rest of the game script from user's game.html)
-  </script>
+    const el = document.getElementById('block-' + block.id);
+    if (el) {
+      el.classList.add('block-shake');
+      el.style.borderColor = '#ff4444';
+      el.style.boxShadow = '0 0 20px rgba(255,0,0,0.5)';
+      setTimeout(() => {
+        el.classList.remove('block-shake');
+        el.style.borderColor = '';
+        el.style.boxShadow = '';
+      }, 400);
+    }
+  }
+}
+
+function activateFever() {
+  gameState.fever = true;
+  gameState.comboGauge = 10;
+  sfxFever();
+  document.getElementById('fever-overlay').classList.remove('hidden');
+  document.getElementById('falling-zone').classList.add('fever-active');
+  updateComboBar();
+
+  gameState.feverTimer = setTimeout(() => {
+    gameState.fever = false;
+    gameState.comboGauge = 0;
+    document.getElementById('fever-overlay').classList.add('hidden');
+    document.getElementById('falling-zone').classList.remove('fever-active');
+    updateComboBar();
+  }, 5000);
+}
+
+function spawnBlock() {
+  const zone = document.getElementById('falling-zone');
+  const zoneWidth = zone.clientWidth;
+  const value = generateComposite(gameState.level);
+  const size = getBlockSize(value);
+  const x = Math.random() * (zoneWidth - size - 20) + 10;
+
+  const block = {
+    id: ++gameState.blockIdCounter,
+    value,
+    originalValue: value,
+    x,
+    y: -size,
+    speed: getBlockSpeed()
+  };
+
+  gameState.blocks.push(block);
+  createBlockElement(block);
+}
+
+function getBlockSpeed() {
+  const baseSpeed = gameState.difficulty === 'easy' ? 0.25 : gameState.difficulty === 'hard' ? 0.65 : 0.4;
+  const levelBonus = gameState.level * (gameState.difficulty === 'easy' ? 0.05 : gameState.difficulty === 'hard' ? 0.12 : 0.08);
+  return baseSpeed + levelBonus + Math.random() * 0.2;
+}
+
+function blockHitBottom(block) {
+  sfxLifeLost();
+  gameState.lives--;
+  gameState.combo = 0;
+  gameState.comboGauge = Math.max(gameState.comboGauge - 2, 0);
+  updateLives();
+  updateComboBar();
+
+  if (block.id === gameState.selectedBlockId) {
+    gameState.selectedBlockId = null;
+    updateSelectedInfo();
+  }
+
+  const zone = document.getElementById('falling-zone');
+  zone.style.boxShadow = 'inset 0 -40px 40px rgba(255,0,0,0.3)';
+  setTimeout(() => zone.style.boxShadow = '', 300);
+
+  removeBlockElement(block.id);
+  gameState.blocks = gameState.blocks.filter(b => b.id !== block.id);
+
+  if (gameState.lives <= 0) {
+    endGame();
+  }
+}
+
+let lastTimestamp = 0;
+let spawnAccum = 0;
+
+function gameLoop(timestamp) {
+  if (!gameState.running) return;
+
+  const dt = lastTimestamp ? (timestamp - lastTimestamp) : 16;
+  lastTimestamp = timestamp;
+
+  const spawnRateBase = gameState.difficulty === 'easy' ? 3000 : gameState.difficulty === 'hard' ? 1200 : 2000;
+  const spawnRate = Math.max(spawnRateBase - gameState.level * 150, gameState.difficulty === 'easy' ? 1500 : gameState.difficulty === 'hard' ? 400 : 600);
+  spawnAccum += dt;
+  if (spawnAccum >= spawnRate) {
+    spawnAccum = 0;
+    const maxBlocksBase = gameState.difficulty === 'easy' ? 3 : gameState.difficulty === 'hard' ? 8 : 5;
+    const maxBlocks = Math.min(maxBlocksBase + Math.floor(gameState.level / 3), gameState.difficulty === 'easy' ? 8 : gameState.difficulty === 'hard' ? 20 : 15);
+    if (gameState.blocks.length < maxBlocks) {
+      spawnBlock();
+      if (gameState.blocks.length === 1 && !gameState.selectedBlockId) {
+        selectBlock(gameState.blocks[0].id);
+      }
+    }
+  }
+
+  const zone = document.getElementById('falling-zone');
+  const zoneHeight = zone.clientHeight;
+  const warningLineHeight = 4;
+
+  const speedMult = gameState.fever ? 0.15 : 1;
+
+  for (let i = gameState.blocks.length - 1; i >= 0; i--) {
+    const block = gameState.blocks[i];
+    block.y += block.speed * speedMult * (dt / 16);
+    updateBlockElement(block);
+
+    const size = getBlockSize(block.value);
+    if (block.y + size >= zoneHeight - warningLineHeight) {
+      blockHitBottom(block);
+    }
+  }
+
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+function togglePause() {
+  if (!gameState.running || gameState.paused) {
+    resumeGame();
+  } else {
+    pauseGame();
+  }
+}
+
+function pauseGame() {
+  if (gameState.pauseChances <= 0) return;
+  gameState.paused = true;
+  gameState.pauseChances--;
+  updatePauseDisplay();
+  document.getElementById('pause-overlay').classList.remove('hidden');
+  if (gameState.gameLoop) {
+    cancelAnimationFrame(gameState.gameLoop);
+    gameState.gameLoop = null;
+  }
+  gameState.pauseTimer = setTimeout(() => {
+    if (gameState.paused) resumeGame();
+  }, 5000);
+}
+
+function resumeGame() {
+  if (!gameState.paused) return;
+  gameState.paused = false;
+  document.getElementById('pause-overlay').classList.add('hidden');
+  if (gameState.pauseTimer) {
+    clearTimeout(gameState.pauseTimer);
+    gameState.pauseTimer = null;
+  }
+  lastTimestamp = 0;
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+function startGame(difficulty = 'normal') {
+  gameState = {
+    running: true,
+    paused: false,
+    pauseChances: 2,
+    score: 0,
+    lives: 5,
+    level: 1,
+    difficulty: difficulty,
+    blocks: [],
+    selectedBlockId: null,
+    combo: 0,
+    comboGauge: 0,
+    fever: false,
+    feverTimer: null,
+    spawnInterval: null,
+    gameLoop: null,
+    blockIdCounter: 0,
+    lastSpawnTime: 0,
+    blocksDestroyed: 0,
+    pauseTimer: null
+  };
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  updateScore();
+  updateLives();
+  updateLevel();
+  updatePauseDisplay();
+  updateComboBar();
+  updateSelectedInfo();
+  document.getElementById('fever-overlay').classList.add('hidden');
+  document.getElementById('falling-zone').classList.remove('fever-active');
+  document.getElementById('pause-overlay').classList.add('hidden');
+  showScreen('game-screen');
+  buildPrimePad();
+  lastTimestamp = 0;
+  spawnAccum = 0;
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameState.running = false;
+  if (gameState.gameLoop) cancelAnimationFrame(gameState.gameLoop);
+  if (gameState.feverTimer) clearTimeout(gameState.feverTimer);
+  if (gameState.pauseTimer) clearTimeout(gameState.pauseTimer);
+  document.getElementById('final-score').textContent = gameState.score.toLocaleString();
+  document.getElementById('final-level').textContent = `LEVEL ${gameState.level}`;
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('player-name').value = '';
+  document.getElementById('btn-save-score').disabled = false;
+  document.getElementById('btn-save-score').textContent = '점수 저장';
+  showScreen('gameover-screen');
+}
+
+document.getElementById('btn-start').addEventListener('click', () => showScreen('difficulty-screen'));
+document.getElementById('btn-easy').addEventListener('click', () => startGame('easy'));
+document.getElementById('btn-normal').addEventListener('click', () => startGame('normal'));
+document.getElementById('btn-hard').addEventListener('click', () => startGame('hard'));
+document.getElementById('btn-difficulty-back').addEventListener('click', () => showScreen('menu-screen'));
+document.getElementById('btn-pause').addEventListener('click', togglePause);
+document.getElementById('btn-resume').addEventListener('click', resumeGame);
+document.getElementById('btn-ranking').addEventListener('click', () => showScreen('ranking-screen'));
+document.getElementById('btn-ranking-back').addEventListener('click', () => showScreen('menu-screen'));
+document.getElementById('btn-retry').addEventListener('click', () => showScreen('difficulty-screen'));
+document.getElementById('btn-menu').addEventListener('click', () => {
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  showScreen('menu-screen');
+});
+document.getElementById('btn-menu-from-pause').addEventListener('click', () => {
+  gameState.running = false;
+  document.getElementById('pause-overlay').classList.add('hidden');
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  showScreen('menu-screen');
+});
+
+document.getElementById('falling-zone').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget || e.target.id === 'falling-zone') {
+    gameState.selectedBlockId = null;
+    gameState.blocks.forEach(b => {
+      const el = document.getElementById('block-' + b.id);
+      if (el) el.classList.remove('block-selected');
+    });
+    updateSelectedInfo();
+  }
+});
+</script>
  </body>
 </html>
