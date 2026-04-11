@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <style>
   :root {
@@ -213,6 +214,11 @@
    </div>
   </div>
   <script>
+// ===================== SUPABASE CONFIG =====================
+const SUPABASE_URL = 'https://vowdvdgafuyujxiwkelt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BvgKKPJOm9fPSZMuR7j0TA_MWtMAiNB';
+const supabase = typeof supabase !== 'undefined' ? supabase : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ===================== GAME STATE =====================
 const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
 const NEON_CLASSES = ['neon-cyan','neon-pink','neon-green','neon-yellow','neon-purple','neon-orange'];
@@ -250,6 +256,81 @@ function createStars() {
   }
 }
 createStars();
+
+// ===================== RANKING LOGIC =====================
+async function saveGameScore() {
+  const nameInput = document.getElementById('player-name');
+  const name = nameInput.value.trim() || '익명의 실험가';
+  const score = gameState.score;
+  const statusEl = document.getElementById('save-status');
+  const saveBtn = document.getElementById('btn-save-score');
+
+  try {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '저장 중...';
+    statusEl.textContent = '기록을 전송하고 있습니다...';
+    statusEl.className = 'text-xs mt-2 h-4 text-cyan-400';
+
+    const { error } = await supabase
+      .from('primenumber')
+      .insert([{ name, score }]);
+
+    if (error) throw error;
+
+    statusEl.textContent = '성공적으로 저장되었습니다!';
+    statusEl.className = 'text-xs mt-2 h-4 text-green-400';
+    saveBtn.textContent = '저장 완료';
+  } catch (err) {
+    console.error('Save error:', err);
+    statusEl.textContent = '저장 실패: ' + err.message;
+    statusEl.className = 'text-xs mt-2 h-4 text-red-400';
+    saveBtn.disabled = false;
+    saveBtn.textContent = '다시 시도';
+  }
+}
+
+async function loadRanking() {
+  const listEl = document.getElementById('ranking-list');
+  listEl.innerHTML = '<p class="text-gray-500 text-center animate-pulse">실험 기록을 불러오고 있습니다...</p>';
+
+  try {
+    const { data, error } = await supabase
+      .from('primenumber')
+      .select('name, score')
+      .order('score', { ascending: false })
+      .limit(10);
+
+    if (error) throw error;
+
+    listEl.innerHTML = '';
+    if (!data || data.length === 0) {
+      listEl.innerHTML = '<p class="text-gray-500 text-center">아직 등록된 실험 기록이 없습니다.</p>';
+      return;
+    }
+
+    data.forEach((item, index) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:border-cyan-500/30 transition-all';
+      
+      let rankColor = 'text-gray-400';
+      if (index === 0) rankColor = 'text-yellow-400 font-bold';
+      else if (index === 1) rankColor = 'text-gray-300 font-bold';
+      else if (index === 2) rankColor = 'text-orange-400 font-bold';
+
+      row.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="orbitron ${rankColor} w-6">${index + 1}</span>
+          <span class="text-white font-medium">${item.name}</span>
+        </div>
+        <span class="orbitron text-cyan-400 font-bold">${item.score.toLocaleString()}</span>
+      `;
+      listEl.appendChild(row);
+    });
+  } catch (err) {
+    console.error('Load error:', err);
+    listEl.innerHTML = '<p class="text-red-400 text-center">기록을 불러오지 못했습니다.</p>';
+  }
+}
 
 // ===================== AUDIO (Web Audio API) =====================
 let audioCtx;
@@ -761,8 +842,12 @@ document.getElementById('btn-hard').addEventListener('click', () => startGame('h
 document.getElementById('btn-difficulty-back').addEventListener('click', () => showScreen('menu-screen'));
 document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-resume').addEventListener('click', resumeGame);
-document.getElementById('btn-ranking').addEventListener('click', () => showScreen('ranking-screen'));
+document.getElementById('btn-ranking').addEventListener('click', () => {
+  showScreen('ranking-screen');
+  loadRanking();
+});
 document.getElementById('btn-ranking-back').addEventListener('click', () => showScreen('menu-screen'));
+document.getElementById('btn-save-score').addEventListener('click', saveGameScore);
 document.getElementById('btn-retry').addEventListener('click', () => showScreen('difficulty-screen'));
 document.getElementById('btn-menu').addEventListener('click', () => {
   document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
