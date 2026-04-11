@@ -18,29 +18,32 @@
 
   html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
 
-  /* Navbar Styles matching Laboratory theme */
-  .lab-navbar {
+  /* Floating Back Button Style */
+  .floating-back-btn {
     position: fixed;
-    top: 0; width: 100%;
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1.25rem 5%;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 1000;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 0.8rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    color: #00f0ff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 2000;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
-  .lab-navbar .logo {
-    font-size: 1.5rem; font-weight: 700; cursor: pointer;
-    background: linear-gradient(135deg, #f472b6, #a78bfa);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  .floating-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #00f0ff;
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
   }
-  .lab-navbar .back-btn {
-    padding: 0.6rem 1.2rem; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
-  }
-  .lab-navbar .back-btn:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
 
   @keyframes pulse-neon { 0%,100%{ box-shadow: 0 0 8px var(--c), 0 0 20px var(--c); } 50%{ box-shadow: 0 0 16px var(--c), 0 0 40px var(--c); } }
   @keyframes explode { 0%{ transform: scale(1); opacity:1; } 100%{ transform: scale(2.5); opacity:0; } }
@@ -112,12 +115,10 @@
 </style>
  </head>
  <body class="h-full bg-[#070716]">
-  <nav class="lab-navbar">
-    <div class="logo" onclick="location.href='../index.html'">유정쌤의 실험실</div>
-    <button class="back-btn" onclick="location.href='../index.html'">돌아가기</button>
-  </nav>
-
-  <div id="app" class="game-wrapper pt-20">
+  <button class="floating-back-btn" onclick="location.href='../index.html'">
+    돌아가기
+  </button>
+  <div id="app" class="game-wrapper pt-8">
    <!-- Stars background -->
    <div id="stars-container" class="absolute inset-0 pointer-events-none"></div><!-- MENU SCREEN -->
    <div id="menu-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20">
