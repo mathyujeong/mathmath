@@ -278,11 +278,64 @@
                             </div>
 
                             <!-- RESULT INPUT SECTION -->
-                            <div class="mt-4 flex items-center justify-center gap-3">
-                                <span class="text-3xl font-bold font-number text-gray-400">=</span>
-                                <input type="number" id="manual-result-input" class="w-32 py-2 px-4 rounded-xl border-2 border-gray-200 text-2xl font-number text-center focus:border-ghibli-peach shadow-sm" placeholder="정답">
+                            <div class="mt-4 flex flex-col items-center justify-center gap-2">
+                                <div class="flex items-center justify-center gap-3 w-full">
+                                    <span class="text-3xl font-bold font-number text-gray-400">=</span>
+                                    
+                                    <!-- DISPLAY AREA -->
+                                    <div class="relative bg-gray-50 border-2 border-gray-200 rounded-xl px-4 py-2 flex items-center justify-center min-w-[8rem] min-h-[4rem] cursor-pointer hover:border-ghibli-peach shadow-inner transition" onclick="openKeypad()">
+                                        
+                                        <!-- Integer Mode -->
+                                        <div id="res-view-mode-int" class="font-number text-3xl font-bold text-gray-800">
+                                            <span class="text-gray-300 text-lg">결과 입력</span>
+                                        </div>
+
+                                        <!-- Fraction Mode -->
+                                        <div id="res-view-mode-frac" class="hidden flex items-center gap-2 font-number text-2xl font-bold text-gray-800">
+                                            <span id="res-display-sign"></span>
+                                            <div class="flex flex-col items-center gap-1">
+                                                <div id="res-display-num" class="text-blue-600 px-2 py-1 rounded bg-blue-50 border-2 border-blue-400 min-w-[3rem] text-center shadow-md transform scale-105" onclick="setResFocus('num'); event.stopPropagation();"></div>
+                                                <div class="w-full h-1 bg-gray-600 rounded"></div>
+                                                <div id="res-display-den" class="text-gray-400 px-2 py-1 rounded bg-white min-w-[3rem] text-center border-2 border-transparent" onclick="setResFocus('den'); event.stopPropagation();"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="openKeypad()" id="btn-show-keypad" class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full"><i data-lucide="keyboard" class="inline w-3 h-3"></i> 키패드 열기</button>
                             </div>
                         </div>
+
+                        <!-- CUSTOM VIRTUAL KEYPAD (Hidden) -->
+                        <div id="custom-keypad" class="hidden bg-white border-2 border-gray-200 rounded-2xl p-4 shadow-xl flex-col gap-2 relative z-10 w-full mb-4">
+                            <div class="flex justify-between items-center mb-1 px-1">
+                                <span class="font-bold text-xs text-gray-400 flex items-center gap-1"><i data-lucide="calculator" class="w-4 h-4"></i> 정답 패드</span>
+                                <button onclick="closeKeypad()" class="text-gray-400 hover:text-gray-600 border border-gray-100 rounded-full p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+                            </div>
+                            
+                            <div class="flex justify-between gap-2 mb-2">
+                                <button onclick="toggleResMode()" id="btn-res-mode" class="flex-1 py-2 font-bold text-sm bg-purple-50 text-purple-600 border border-purple-200 rounded-xl hover:bg-purple-100 transition shadow-sm">분수로 입력하기</button>
+                            </div>
+
+                            <div class="grid grid-cols-4 gap-2">
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('7')">7</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('8')">8</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('9')">9</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-red-200 bg-red-50 shadow-sm hover:bg-red-100 active:scale-95 transition-all text-red-500" onclick="kpType('BACK')"><i data-lucide="delete" class="w-5 h-5 mx-auto"></i></button>
+
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('4')">4</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('5')">5</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('6')">6</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-blue-200 bg-blue-50 shadow-sm hover:bg-blue-100 active:scale-95 transition-all text-blue-600" onclick="kpType('SIGN')">+/-</button>
+
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('1')">1</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('2')">2</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('3')">3</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-200 bg-gray-100 shadow-sm hover:bg-gray-200 active:scale-95 transition-all text-gray-600" onclick="kpType('CLEAR')">C</button>
+
+                                <button class="col-span-2 py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('0')">0</button>
+                                <button class="py-3 rounded-xl font-number font-bold text-xl border-2 border-gray-100 bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700" onclick="kpType('.')">.</button>
+                                <button class="py-3 rounded-xl font-bold text-md border-2 border-orange-200 bg-ghibli-peach shadow-sm hover:bg-orange-200 active:scale-95 transition-all text-gray-800" onclick="closeKeypad()">완료</button>
+                            </div>
 
                         <!-- POWER MODE HELPER (Hidden normally) -->
                         <div id="power-mode-helper" class="hidden bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4 text-center items-center justify-center gap-3">
@@ -386,6 +439,14 @@
             powerBaseIdx: null,
             powerExp: null,
             powerExpIdx: null,
+            
+            // Result Input State
+            resMode: 'int', // 'int' | 'frac'
+            resSign: 1,
+            resInt: "",
+            resNum: "",
+            resDen: "",
+            resFocus: 'num', // 'num' | 'den'
             
             // Subscriptions
             roomSub: null,
@@ -572,6 +633,12 @@
             document.getElementById('wait-student').classList.add('hidden');
             
             STATE.currentDice = [];
+            STATE.resInt = "";
+            STATE.resNum = "";
+            STATE.resDen = "";
+            STATE.resSign = 1;
+            renderResultUI();
+            
             document.getElementById('teacher-preview-dice').innerHTML = '<span class="text-sm text-gray-400 mt-2">먼저 주사위를 굴려 숫자를 확인하세요.</span>';
             document.getElementById('btn-start-game').classList.add('hidden');
             
@@ -683,6 +750,88 @@
         }
 
         // ===================== INPUT LOGIC =====================
+        function openKeypad() {
+            document.getElementById('custom-keypad').classList.remove('hidden');
+            document.getElementById('custom-keypad').classList.add('flex');
+            document.getElementById('btn-show-keypad').classList.add('hidden');
+            renderResultUI();
+        }
+
+        function closeKeypad() {
+            document.getElementById('custom-keypad').classList.add('hidden');
+            document.getElementById('custom-keypad').classList.remove('flex');
+            document.getElementById('btn-show-keypad').classList.remove('hidden');
+        }
+
+        function toggleResMode() {
+            STATE.resMode = STATE.resMode === 'int' ? 'frac' : 'int';
+            STATE.resSign = 1;
+            STATE.resInt = "";
+            STATE.resNum = "";
+            STATE.resDen = "";
+            STATE.resFocus = 'num';
+            renderResultUI();
+            document.getElementById('btn-res-mode').textContent = STATE.resMode === 'int' ? '분수로 입력하기' : '정수/소수로 입력하기';
+        }
+
+        function setResFocus(focus) {
+            STATE.resFocus = focus;
+            renderResultUI();
+        }
+
+        function kpType(val) {
+            let target = STATE.resMode === 'int' ? 'resInt' : (STATE.resFocus === 'num' ? 'resNum' : 'resDen');
+            let current = STATE[target] || "";
+            
+            if (val === 'CLEAR') {
+                STATE[target] = "";
+            } else if (val === 'BACK') {
+                STATE[target] = current.slice(0, -1);
+            } else if (val === 'SIGN') {
+                STATE.resSign *= -1;
+            } else if (val === '.') {
+                if (!current.includes('.')) STATE[target] = current + '.';
+            } else { // Number 0-9
+                STATE[target] = current + val;
+            }
+            renderResultUI();
+        }
+
+        function renderResultUI() {
+            let sInt = document.getElementById('res-view-mode-int');
+            let sFrac = document.getElementById('res-view-mode-frac');
+            
+            if (STATE.resMode === 'int') {
+                sFrac.classList.add('hidden');
+                sInt.classList.remove('hidden');
+                
+                let text = STATE.resInt || '<span class="text-gray-300 text-lg">결과 입력</span>';
+                if (STATE.resSign === -1 && STATE.resInt) text = '-' + text;
+                else if (STATE.resSign === -1) text = '-';
+                
+                sInt.innerHTML = text;
+            } else {
+                sInt.classList.add('hidden');
+                sFrac.classList.remove('hidden');
+                
+                document.getElementById('res-display-sign').textContent = STATE.resSign === -1 ? '-' : '';
+                
+                let nEl = document.getElementById('res-display-num');
+                let dEl = document.getElementById('res-display-den');
+                
+                nEl.textContent = STATE.resNum || '분자';
+                dEl.textContent = STATE.resDen || '분모';
+                
+                if (STATE.resFocus === 'num') {
+                    nEl.className = "text-blue-600 px-2 py-1 rounded bg-blue-50 border-2 border-blue-400 min-w-[3rem] text-center shadow-md transform scale-105 transition";
+                    dEl.className = "text-gray-400 px-2 py-1 rounded bg-white min-w-[3rem] text-center border-2 border-transparent transition";
+                } else {
+                    nEl.className = "text-gray-400 px-2 py-1 rounded bg-white min-w-[3rem] text-center border-2 border-transparent transition";
+                    dEl.className = "text-green-600 px-2 py-1 rounded bg-green-50 border-2 border-green-400 min-w-[3rem] text-center shadow-md transform scale-105 transition";
+                }
+            }
+        }
+
         function togglePowerMode() {
             if (STATE.powerMode) return;
             STATE.powerMode = true;
@@ -763,9 +912,16 @@
             STATE.currentFormula = "";
             STATE.usedDiceIndices = [];
             STATE.powerMode = false;
+            
+            STATE.resInt = "";
+            STATE.resNum = "";
+            STATE.resDen = "";
+            STATE.resSign = 1;
+            renderResultUI();
+
             document.getElementById('power-mode-helper').classList.add('hidden');
             document.getElementById('power-mode-helper').classList.remove('flex');
-            document.getElementById('manual-result-input').value = "";
+            closeKeypad();
             document.querySelectorAll('.dice-btn').forEach(btn => btn.classList.remove('dice-used'));
             updateFormulaDisplay();
         }
@@ -783,11 +939,23 @@
 
             const rawFormula = STATE.currentFormula;
             if (!rawFormula) { showToast('수식을 먼저 만들어주세요.'); return; }
-            
-            const manualRaw = document.getElementById('manual-result-input').value;
-            if (manualRaw === "") {
-                showToast('계산한 값을 입력칸에 적어주세요!');
-                return;
+
+            // Parse Manual Input via Numpad
+            let manualResultVal = null;
+            let formattedDisplayResult = "";
+
+            if (STATE.resMode === 'int') {
+                if(!STATE.resInt) { showToast('결과값을 입력해주세요!'); return; }
+                manualResultVal = parseFloat(STATE.resInt) * STATE.resSign;
+                formattedDisplayResult = STATE.resSign === -1 ? `-${STATE.resInt}` : STATE.resInt;
+            } else {
+                if(!STATE.resNum || !STATE.resDen) { showToast('분자와 분모를 모두 입력해주세요!'); return; }
+                if(parseFloat(STATE.resDen) === 0) { showToast('분모는 0이 될 수 없습니다.'); return; }
+                
+                manualResultVal = (parseFloat(STATE.resNum) / parseFloat(STATE.resDen)) * STATE.resSign;
+                let numStr = parseFloat(STATE.resNum).toString();
+                let denStr = parseFloat(STATE.resDen).toString();
+                formattedDisplayResult = (STATE.resSign === -1 ? '-' : '') + `${numStr}/${denStr}`;
             }
 
             // Validating all dice were used
@@ -795,48 +963,40 @@
                  showToast('주사위 숫자를 최소 하나는 사용해야 합니다.'); return;
             }
 
-            let result;
+            let computedResult;
             try {
                 // Remove trailing operators before computing securely
                 let cleaned = rawFormula.replace(/[\+\-\*\/]$/, '');
-                result = math.evaluate(cleaned);
+                computedResult = math.evaluate(cleaned);
                 
-                if (typeof result !== 'number' || isNaN(result) || result === Infinity || result === -Infinity) {
+                if (typeof computedResult !== 'number' || isNaN(computedResult) || computedResult === Infinity || computedResult === -Infinity) {
                     throw new Error('계산 불가');
                 }
-                
-                // Keep integers only
-                // Use a tiny epsilon for float arithmetic weirdness
-                if (Math.abs(result - Math.round(result)) > 1e-10) {
-                    showToast('정수가 떨어지는 수식을 만들어보세요! 소수는 안 돼요.');
-                    return;
-                }
-                result = Math.round(result);
-
+                // No longer forcing integers! Fractions and floats are valid.
             } catch(e) {
                 showToast('올바르지 않은 문법의 수식입니다.');
                 return;
             }
 
-            const manualResult = parseFloat(manualRaw);
-            if (result !== manualResult) {
-                showToast(`실제 계산 결과 수식 값과 입력한 값이 다릅니다. 다시 머리로 계산해보세요!`);
+            // Margin of error for floating point precision comparison
+            if (Math.abs(computedResult - manualResultVal) > 1e-10) {
+                showToast(`실제 계산 결과 수식 값과 윗칸에 입력한 값이 다릅니다. 다시 생각해보세요!`);
                 return;
             }
 
-            // Check Duplicate
-            const isDup = STATE.myAnswers.some(ans => ans.result === result);
+            // Check Duplicate (using computed float result)
+            const isDup = STATE.myAnswers.some(ans => Math.abs(ans.result - computedResult) < 1e-10);
             if (isDup) {
-                showToast(`🚨 이미 ${result}에 대한 수식을 제출했습니다. 다른 숫자를 만드세요!`);
+                showToast(`🚨 이미 이 결괏값과 같은 수식을 제출했습니다. 다른 결과를 만들어보세요!`);
                 return;
             }
 
             // SUCCESS!
             document.getElementById('student-play-area').classList.add('animate-flash');
             setTimeout(() => document.getElementById('student-play-area').classList.remove('animate-flash'), 600);
-            showToast(`${result} 만들기 성공! +1점`, false);
+            showToast(`${formattedDisplayResult} 만들기 성공! +1점`, false);
 
-            const newAnswers = [...STATE.myAnswers, { result, formula: rawFormula }];
+            const newAnswers = [...STATE.myAnswers, { result: computedResult, formatted: formattedDisplayResult, formula: rawFormula }];
             const newScore = STATE.myScore + 1;
 
             // Optimistic Unblock UI
@@ -946,10 +1106,11 @@
                     // Sort answers by result ascending for neatness
                     const sorted = [...row.answers].sort((a,b) => a.result - b.result);
                     sorted.forEach(ans => {
+                        let dispRes = ans.formatted !== undefined ? ans.formatted : ans.result;
                         answersHtml += `
                             <div class="flex justify-between items-center mb-1 pb-1 border-b border-gray-100 border-dashed hover:bg-white transition px-2 rounded">
-                                <span class="font-number font-bold text-gray-700 w-10 text-lg">${ans.result}</span>
-                                <span class="text-indigo-400 font-number text-right break-all ml-2 font-bold">${ans.formula}</span>
+                                <span class="font-number font-bold text-gray-700 w-16 flex-shrink-0 text-lg">${dispRes}</span>
+                                <span class="text-indigo-400 font-number text-right break-all ml-2 font-bold text-sm">${ans.formula}</span>
                             </div>
                         `;
                     });
