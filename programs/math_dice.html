@@ -692,9 +692,8 @@
             
             if (data && !error) {
                 STATE.allScores = data;
-                renderLeaderboard(data);
                 
-                // update local state ref
+                // update local state ref BEFORE rendering to prevent 1-off lag
                 if (STATE.role === 'student' && STATE.scoreId) {
                     const myRow = data.find(d => d.id === STATE.scoreId);
                     if (myRow) {
@@ -702,6 +701,8 @@
                         STATE.myScore = myRow.score;
                     }
                 }
+
+                renderLeaderboard(data);
             }
         }
 
