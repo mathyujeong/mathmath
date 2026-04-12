@@ -304,6 +304,43 @@ html {
     gap: 0.8rem;
 }
 
+/* Locked Program State */
+.program-card.locked {
+    filter: grayscale(0.8);
+    opacity: 0.7;
+    cursor: not-allowed;
+    position: relative;
+    overflow: hidden;
+}
+
+.program-card.locked:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--glass-border);
+}
+
+.program-card.locked::after {
+    content: "곧 만나요! 🔒";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    background: #ffd6e0;
+    color: #c026d3;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    z-index: 10;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.program-card.locked .card-link {
+    display: none;
+}
+
 /* Footer */
 .footer {
     padding: 4rem 5% 2rem;

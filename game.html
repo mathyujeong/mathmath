@@ -1,0 +1,1861 @@
+<!doctype html>
+<html lang="ko" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prime Defender</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Noto+Sans+KR:wght@400;700&amp;family=JetBrains+Mono:wght@400;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+  html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+
+  @keyframes pulse-neon { 0%,100%{ box-shadow: 0 0 8px var(--c), 0 0 20px var(--c); } 50%{ box-shadow: 0 0 16px var(--c), 0 0 40px var(--c); } }
+  @keyframes explode { 0%{ transform: scale(1); opacity:1; } 100%{ transform: scale(2.5); opacity:0; } }
+  @keyframes shake { 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-6px); } 75%{ transform: translateX(6px); } }
+  @keyframes combo-pop { 0%{ transform: scale(0) rotate(-10deg); opacity:0; } 50%{ transform: scale(1.3) rotate(5deg); opacity:1; } 100%{ transform: scale(1) rotate(0); opacity:1; } }
+  @keyframes float-up { 0%{ transform: translateY(0); opacity:1; } 100%{ transform: translateY(-60px); opacity:0; } }
+  @keyframes warning-flash { 0%,100%{ opacity:0.3; } 50%{ opacity:0.8; } }
+  @keyframes fever-bg { 0%{ background-position: 0% 50%; } 50%{ background-position: 100% 50%; } 100%{ background-position: 0% 50%; } }
+  @keyframes star-twinkle { 0%,100%{ opacity:0.2; } 50%{ opacity:1; } }
+  @keyframes slide-down { 0%{ transform: translateY(-20px); opacity:0; } 100%{ transform: translateY(0); opacity:1; } }
+
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: white;
+    border-radius: 50%;
+    animation: star-twinkle var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+
+  .block-explode { animation: explode 0.4s ease-out forwards; }
+  .block-shake { animation: shake 0.3s ease-in-out; }
+  .combo-text { animation: combo-pop 0.5s ease-out forwards; }
+  .score-float { animation: float-up 0.8s ease-out forwards; }
+  .warning-line { animation: warning-flash 1s ease-in-out infinite; }
+
+  .fever-active {
+    background: linear-gradient(270deg, #0a0a2e, #1a0a3e, #0a1a3e, #0a0a2e);
+    background-size: 600% 600%;
+    animation: fever-bg 2s ease infinite;
+  }
+
+  .prime-btn {
+    --c: #00f0ff;
+    position: relative;
+    font-family: 'Orbitron', monospace;
+    transition: all 0.15s ease;
+  }
+  .prime-btn:hover { transform: scale(1.1); }
+  .prime-btn:active { transform: scale(0.95); }
+  .prime-btn.neon-cyan { --c: #00f0ff; }
+  .prime-btn.neon-pink { --c: #ff00aa; }
+  .prime-btn.neon-green { --c: #00ff88; }
+  .prime-btn.neon-yellow { --c: #ffee00; }
+  .prime-btn.neon-purple { --c: #aa55ff; }
+  .prime-btn.neon-orange { --c: #ff8800; }
+
+  .block-selected {
+    outline: 3px solid #00f0ff;
+    outline-offset: 2px;
+    box-shadow: 0 0 20px rgba(0,240,255,0.5);
+  }
+
+  .game-wrapper {
+    font-family: 'Noto Sans KR', 'Orbitron', sans-serif;
+    background: #070716;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .orbitron { font-family: 'Orbitron', monospace; }
+
+  /* Scrollbar for ranking */
+  .ranking-scroll::-webkit-scrollbar { width: 6px; }
+  .ranking-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
+  .ranking-scroll::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.3); border-radius: 3px; }
+</style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full">
+  <div id="app" class="game-wrapper">
+   <!-- Stars background -->
+   <div id="stars-container" class="absolute inset-0 pointer-events-none"></div><!-- MENU SCREEN -->
+   <div id="menu-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20">
+    <div class="text-center mb-8">
+     <h1 id="menu-title" class="orbitron text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 mb-3 drop-shadow-lg">PRIME DEFENDER</h1>
+     <p id="menu-subtitle" class="text-cyan-300 text-xl md:text-2xl tracking-widest">소인수분해 대작전</p>
+    </div>
+    <div class="flex flex-col gap-4 w-64">
+     <button id="btn-start" class="orbitron px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/30"> 게임 시작 </button> <button id="btn-ranking" class="orbitron px-8 py-3 bg-white/10 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 랭킹 보기 </button>
+    </div>
+    <div class="mt-10 text-gray-500 text-sm text-center max-w-md px-4">
+     합성수 블록을 소수로 나누어 1로 만들어 제거하세요!<br>
+      블록을 클릭 → 소수 버튼으로 나누기
+    </div>
+   </div><!-- DIFFICULTY SELECT SCREEN -->
+   <div id="difficulty-screen" class="absolute inset-0 flex flex-col items-center justify-center z-25 hidden" style="background:rgba(0,0,0,0.9);">
+    <div class="text-center">
+     <h2 class="orbitron text-4xl text-cyan-300 font-black mb-8">난이도 선택</h2>
+     <div class="flex flex-col gap-4 w-64"><button id="btn-easy" class="orbitron px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white text-lg font-bold rounded-xl hover:from-green-400 hover:to-green-500 transition-all transform hover:scale-105 shadow-lg shadow-green-500/30"> 🟢 EASY<br><span class="text-xs text-green-200">천천히 시작</span> </button> <button id="btn-normal" class="orbitron px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-white text-lg font-bold rounded-xl hover:from-yellow-400 hover:to-orange-500 transition-all transform hover:scale-105 shadow-lg shadow-yellow-500/30"> 🟡 NORMAL<br><span class="text-xs text-yellow-200">보통 난이도</span> </button> <button id="btn-hard" class="orbitron px-8 py-4 bg-gradient-to-r from-red-500 to-red-700 text-white text-lg font-bold rounded-xl hover:from-red-400 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg shadow-red-500/30"> 🔴 HARD<br><span class="text-xs text-red-200">매우 어려움</span> </button> <button id="btn-difficulty-back" class="orbitron px-8 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 뒤로 가기 </button>
+     </div>
+    </div>
+   </div><!-- RANKING SCREEN -->
+   <div id="ranking-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20 hidden">
+    <div class="bg-gray-900/90 border border-cyan-500/30 rounded-2xl p-6 w-full max-w-md mx-4">
+     <h2 class="orbitron text-2xl text-cyan-400 text-center mb-4">🏆 RANKING</h2>
+     <div class="flex gap-2 mb-4 justify-center flex-wrap"><button id="btn-rank-all" class="orbitron px-4 py-2 bg-cyan-500/30 border border-cyan-500 text-cyan-300 rounded-lg text-sm font-bold hover:bg-cyan-500/50 transition-all">전체</button> <button id="btn-rank-easy" class="orbitron px-4 py-2 bg-white/10 border border-green-500/30 text-green-300 rounded-lg text-sm font-bold hover:bg-white/20 transition-all">EASY</button> <button id="btn-rank-normal" class="orbitron px-4 py-2 bg-white/10 border border-yellow-500/30 text-yellow-300 rounded-lg text-sm font-bold hover:bg-white/20 transition-all">NORMAL</button> <button id="btn-rank-hard" class="orbitron px-4 py-2 bg-white/10 border border-red-500/30 text-red-300 rounded-lg text-sm font-bold hover:bg-white/20 transition-all">HARD</button>
+     </div>
+     <div id="ranking-list" class="ranking-scroll max-h-64 overflow-y-auto space-y-2 mb-4">
+      <p class="text-gray-500 text-center">기록이 없습니다</p>
+     </div><button id="btn-ranking-back" class="w-full orbitron py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 돌아가기 </button>
+    </div>
+   </div><!-- GAME SCREEN -->
+   <div id="game-screen" class="absolute inset-0 flex flex-col z-10 hidden">
+    <!-- Status Bar -->
+    <div class="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-cyan-500/20 flex-shrink-0">
+     <div class="flex items-center gap-2">
+      <span class="orbitron text-xs text-gray-400">SCORE</span> <span id="score-display" class="orbitron text-xl text-cyan-300 font-bold">0</span>
+     </div>
+     <div class="flex items-center gap-2">
+      <span class="orbitron text-xs text-gray-400">LEVEL</span> <span id="level-display" class="orbitron text-lg text-purple-400 font-bold">1</span>
+     </div>
+     <div id="lives-display" class="flex gap-1"></div>
+     <div class="flex items-center gap-2"><span class="orbitron text-xs text-gray-400">PAUSE</span> <span id="pause-display" class="orbitron text-sm text-yellow-300 font-bold">2 / 2</span>
+     </div><button id="btn-pause" class="orbitron px-3 py-1 bg-white/10 border border-yellow-500/40 text-yellow-300 rounded-lg hover:bg-white/20 transition-all text-xs font-bold">일시정지</button>
+    </div><!-- Combo / Fever indicator -->
+    <div class="relative flex-shrink-0 h-6 bg-black/40 border-b border-purple-500/20">
+     <div id="combo-bar" class="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-300" style="width:0%"></div>
+     <div class="absolute inset-0 flex items-center justify-center">
+      <span id="combo-label" class="orbitron text-xs text-white/70">COMBO GAUGE</span>
+     </div>
+    </div><!-- Falling Zone -->
+    <div id="falling-zone" class="relative flex-1 overflow-hidden">
+     <!-- Warning line at bottom -->
+     <div class="warning-line absolute bottom-0 left-0 right-0 h-1 bg-red-500 z-10"></div>
+     <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-red-900/30 to-transparent pointer-events-none z-5"></div><!-- Floating texts container -->
+     <div id="float-container" class="absolute inset-0 pointer-events-none z-20"></div><!-- Combo popup -->
+     <div id="combo-popup" class="absolute top-1/3 left-1/2 -translate-x-1/2 z-30 hidden">
+      <span class="combo-text orbitron text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-400"></span>
+     </div><!-- Fever overlay -->
+     <div id="fever-overlay" class="absolute inset-0 pointer-events-none z-15 hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-pink-900/20"></div>
+      <div class="absolute top-4 left-1/2 -translate-x-1/2">
+       <span class="orbitron text-3xl font-black text-yellow-300 animate-pulse">⚡ FEVER TIME ⚡</span>
+      </div>
+     </div><!-- PAUSE OVERLAY -->
+     <div id="pause-overlay" class="absolute inset-0 bg-black/70 pointer-events-auto z-40 hidden flex flex-col items-center justify-center">
+      <div class="text-center">
+       <h2 class="orbitron text-4xl text-cyan-300 font-black mb-6">일시정지</h2>
+       <p class="text-gray-400 mb-8 text-lg">게임이 일시정지되었습니다</p><button id="btn-resume" class="orbitron px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all w-48 mb-4">계속하기</button> <button id="btn-menu-from-pause" class="orbitron px-8 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all w-48">메뉴로</button>
+      </div>
+     </div>
+    </div><!-- Control Panel -->
+    <div class="flex-shrink-0 bg-black/80 border-t border-cyan-500/20 p-3">
+     <div class="flex items-center justify-center mb-2">
+      <span id="selected-info" class="orbitron text-sm text-gray-500">블록을 선택하세요</span>
+     </div>
+     <div id="prime-pad" class="flex flex-wrap items-center justify-center gap-2"></div>
+    </div>
+   </div><!-- GAME OVER SCREEN -->
+   <div id="gameover-screen" class="absolute inset-0 flex flex-col items-center justify-center z-30 hidden" style="background:rgba(0,0,0,0.85);">
+    <div class="text-center">
+     <h2 class="orbitron text-4xl text-red-400 font-black mb-2">GAME OVER</h2>
+     <p class="text-gray-400 mb-2">최종 점수</p>
+     <p id="final-score" class="orbitron text-5xl text-cyan-300 font-black mb-1">0</p>
+     <p id="final-level" class="orbitron text-lg text-purple-400 mb-6">LEVEL 1</p>
+     <div id="name-input-area" class="mb-6">
+      <label class="text-gray-400 text-sm block mb-2">이름을 입력하세요</label> <input id="player-name" type="text" maxlength="12" placeholder="Player" class="orbitron bg-gray-800 border border-cyan-500/40 text-cyan-300 px-4 py-2 rounded-lg text-center w-48 focus:outline-none focus:border-cyan-400">
+      <div id="save-status" class="text-xs mt-2 h-4"></div>
+     </div>
+     <div class="flex flex-col gap-3 items-center">
+      <button id="btn-save-score" class="orbitron px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all w-48"> 점수 저장 </button> <button id="btn-retry" class="orbitron px-6 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all w-48"> 다시하기 </button> <button id="btn-menu" class="orbitron px-6 py-3 bg-white/10 border border-gray-500/30 text-gray-400 rounded-xl hover:bg-white/10 transition-all w-48"> 메뉴로 </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+// ===================== CONFIG & SDK =====================
+const defaultConfig = {
+  game_title: 'PRIME DEFENDER',
+  subtitle: '소인수분해 대작전',
+  background_color: '#070716',
+  surface_color: '#111133',
+  text_color: '#00f0ff',
+  primary_action_color: '#06b6d4',
+  secondary_action_color: '#a855f7',
+  font_family: 'Orbitron',
+  font_size: 16
+};
+
+function applyConfig(config) {
+  const c = { ...defaultConfig, ...config };
+  const app = document.getElementById('app');
+  app.style.background = c.background_color;
+
+  document.getElementById('menu-title').textContent = c.game_title;
+  document.getElementById('menu-subtitle').textContent = c.subtitle;
+
+  // Font
+  const fontStack = `${c.font_family}, Orbitron, Noto Sans KR, sans-serif`;
+  document.querySelectorAll('.orbitron').forEach(el => el.style.fontFamily = fontStack);
+
+  // Font size scaling
+  const base = c.font_size || 16;
+  const titles = document.querySelectorAll('#menu-title');
+  titles.forEach(t => t.style.fontSize = `${base * 3}px`);
+
+  // Colors
+  document.querySelectorAll('#btn-start, #btn-save-score').forEach(el => {
+    el.style.background = `linear-gradient(to right, ${c.primary_action_color}, ${c.secondary_action_color})`;
+  });
+}
+
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => applyConfig(config),
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.background_color || defaultConfig.background_color, set: v => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+      { get: () => config.surface_color || defaultConfig.surface_color, set: v => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+      { get: () => config.text_color || defaultConfig.text_color, set: v => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+      { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: v => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+      { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: v => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } }
+    ],
+    borderables: [],
+    fontEditable: {
+      get: () => config.font_family || defaultConfig.font_family,
+      set: v => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+    },
+    fontSizeable: {
+      get: () => config.font_size || defaultConfig.font_size,
+      set: v => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+    }
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ['game_title', config.game_title || defaultConfig.game_title],
+    ['subtitle', config.subtitle || defaultConfig.subtitle]
+  ])
+});
+
+// ===================== DATA SDK (Rankings) =====================
+let rankingData = [];
+let currentRankingFilter = 'all';
+
+const dataHandler = {
+  onDataChanged(data) {
+    rankingData = data.sort((a, b) => (b.score || 0) - (a.score || 0));
+    renderRanking();
+  }
+};
+
+(async () => {
+  const res = await window.dataSdk.init(dataHandler);
+  if (!res.isOk) console.error('Data SDK init failed');
+})();
+
+function renderRanking() {
+  const container = document.getElementById('ranking-list');
+  
+  let filteredData = rankingData;
+  if (currentRankingFilter !== 'all') {
+    filteredData = rankingData.filter(r => (r.difficulty || 'normal') === currentRankingFilter);
+  }
+  
+  if (filteredData.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-4">기록이 없습니다</p>';
+    return;
+  }
+  
+  const medals = ['🥇','🥈','🥉'];
+  container.innerHTML = filteredData.slice(0, 20).map((r, i) => `
+    <div class="flex items-center justify-between px-4 py-2 rounded-lg ${i < 3 ? 'bg-cyan-500/10 border border-cyan-500/20' : 'bg-white/5'}" style="animation: slide-down 0.3s ease ${i * 0.05}s both">
+      <div class="flex items-center gap-3 flex-1">
+        <span class="orbitron text-sm ${i < 3 ? 'text-cyan-300' : 'text-gray-500'} w-8">${i < 3 ? medals[i] : '#' + (i+1)}</span>
+        <div class="flex-1">
+          <span class="text-white font-bold">${r.player_name || 'Unknown'}</span>
+          <span class="orbitron text-xs text-gray-500 ml-2">${r.difficulty === 'easy' ? '🟢 EASY' : r.difficulty === 'hard' ? '🔴 HARD' : '🟡 NORMAL'}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="orbitron text-xs text-purple-400">LV${r.level || 1}</span>
+        <span class="orbitron text-cyan-300 font-bold">${(r.score || 0).toLocaleString()}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===================== STARS BACKGROUND =====================
+function createStars() {
+  const container = document.getElementById('stars-container');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${1.5+Math.random()*3}s;--delay:${Math.random()*3}s;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;`;
+    container.appendChild(star);
+  }
+}
+createStars();
+
+// ===================== AUDIO (Web Audio API) =====================
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', vol = 0.15) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function sfxDivide() { playTone(600, 0.12, 'square', 0.1); setTimeout(() => playTone(800, 0.1, 'square', 0.08), 60); }
+function sfxExplode() { playTone(200, 0.3, 'sawtooth', 0.12); playTone(400, 0.2, 'sine', 0.08); }
+function sfxError() { playTone(150, 0.2, 'sawtooth', 0.1); }
+function sfxCombo() { playTone(800, 0.15, 'sine', 0.1); setTimeout(() => playTone(1000, 0.15, 'sine', 0.1), 80); setTimeout(() => playTone(1200, 0.2, 'sine', 0.1), 160); }
+function sfxFever() { [600,800,1000,1200].forEach((f,i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.12), i * 100)); }
+function sfxLifeLost() { playTone(200, 0.4, 'sawtooth', 0.15); setTimeout(() => playTone(100, 0.5, 'sawtooth', 0.12), 200); }
+
+// ===================== GAME STATE =====================
+const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
+const NEON_CLASSES = ['neon-cyan','neon-pink','neon-green','neon-yellow','neon-purple','neon-orange'];
+
+let gameState = {
+  running: false,
+  paused: false,
+  pauseChances: 2,
+  score: 0,
+  lives: 5,
+  level: 1,
+  difficulty: 'normal', // 'easy', 'normal', 'hard'
+  blocks: [],
+  selectedBlockId: null,
+  combo: 0,
+  comboGauge: 0,
+  fever: false,
+  feverTimer: null,
+  spawnInterval: null,
+  gameLoop: null,
+  blockIdCounter: 0,
+  lastSpawnTime: 0,
+  blocksDestroyed: 0,
+  pauseTimer: null
+};
+
+// ===================== MATH HELPERS =====================
+function generateComposite(level) {
+  // Level determines complexity
+  const maxPrimeIdx = Math.min(2 + Math.floor(level / 2), PRIMES.length - 1);
+  const numFactors = 2 + Math.floor(Math.random() * Math.min(level, 4));
+  let n = 1;
+  for (let i = 0; i < numFactors; i++) {
+    const pIdx = Math.floor(Math.random() * (maxPrimeIdx + 1));
+    n *= PRIMES[pIdx];
+    if (n > 1000) break;
+  }
+  if (n <= 1 || n > 1000) n = PRIMES[0] * PRIMES[Math.floor(Math.random() * 3)];
+  // Make sure it's composite
+  if (isPrime(n)) n *= PRIMES[0];
+  if (n > 1000) n = 12;
+  return n;
+}
+
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) { if (n % i === 0) return false; }
+  return true;
+}
+
+// ===================== UI HELPERS =====================
+function showScreen(id) {
+  ['menu-screen','difficulty-screen','ranking-screen','game-screen','gameover-screen'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+function updateLives() {
+  const container = document.getElementById('lives-display');
+  container.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const heart = document.createElement('span');
+    heart.textContent = i < gameState.lives ? '❤️' : '🖤';
+    heart.className = 'text-lg';
+    container.appendChild(heart);
+  }
+}
+
+function updatePauseDisplay() {
+  document.getElementById('pause-display').textContent = `${gameState.pauseChances} / 2`;
+}
+
+function updateScore() {
+  document.getElementById('score-display').textContent = gameState.score.toLocaleString();
+}
+
+function updateLevel() {
+  document.getElementById('level-display').textContent = gameState.level;
+}
+
+function updateComboBar() {
+  const pct = Math.min(gameState.comboGauge / 10 * 100, 100);
+  document.getElementById('combo-bar').style.width = pct + '%';
+  const label = document.getElementById('combo-label');
+  if (gameState.fever) {
+    label.textContent = '⚡ FEVER TIME ⚡';
+    label.className = 'orbitron text-xs text-yellow-300 font-bold';
+  } else if (gameState.combo > 1) {
+    label.textContent = `COMBO x${gameState.combo}`;
+    label.className = 'orbitron text-xs text-pink-300 font-bold';
+  } else {
+    label.textContent = 'COMBO GAUGE';
+    label.className = 'orbitron text-xs text-white/70';
+  }
+}
+
+function showFloatingText(x, y, text, color = '#00f0ff') {
+  const container = document.getElementById('float-container');
+  const el = document.createElement('div');
+  el.className = 'score-float orbitron absolute pointer-events-none font-bold';
+  el.style.cssText = `left:${x}px;top:${y}px;color:${color};font-size:18px;z-index:50;text-shadow:0 0 10px ${color};`;
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+function showComboPopup(combo) {
+  const popup = document.getElementById('combo-popup');
+  popup.classList.remove('hidden');
+  popup.querySelector('span').textContent = `COMBO x${combo}!`;
+  popup.querySelector('span').className = 'combo-text orbitron text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-400';
+  setTimeout(() => popup.classList.add('hidden'), 1200);
+}
+
+function updateSelectedInfo() {
+  const info = document.getElementById('selected-info');
+  const block = gameState.blocks.find(b => b.id === gameState.selectedBlockId);
+  if (block) {
+    info.textContent = `선택: ${block.value}`;
+    info.className = 'orbitron text-sm text-cyan-300 font-bold';
+  } else {
+    info.textContent = '블록을 선택하세요';
+    info.className = 'orbitron text-sm text-gray-500';
+  }
+}
+
+// ===================== PRIME PAD =====================
+function buildPrimePad() {
+  const pad = document.getElementById('prime-pad');
+  pad.innerHTML = '';
+  PRIMES.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = `prime-btn ${NEON_CLASSES[i % NEON_CLASSES.length]} px-6 py-3 rounded-xl text-white font-bold text-lg border border-white/20 bg-white/5 backdrop-blur-sm`;
+    btn.style.cssText = `animation: pulse-neon 2s ease-in-out infinite; animation-delay: ${i * 0.1}s; font-family: 'JetBrains Mono', monospace;`;
+    btn.textContent = p;
+    btn.addEventListener('click', () => onPrimeClick(p));
+    pad.appendChild(btn);
+  });
+}
+
+// ===================== BLOCK RENDERING =====================
+function getBlockColor(value) {
+  if (value <= 10) return { bg: 'from-cyan-500 to-cyan-700', border: 'border-cyan-400' };
+  if (value <= 50) return { bg: 'from-blue-500 to-indigo-700', border: 'border-blue-400' };
+  if (value <= 100) return { bg: 'from-purple-500 to-purple-800', border: 'border-purple-400' };
+  if (value <= 500) return { bg: 'from-pink-500 to-red-700', border: 'border-pink-400' };
+  return { bg: 'from-red-500 to-red-900', border: 'border-red-400' };
+}
+
+function getBlockSize(value) {
+  if (value <= 10) return 52;
+  if (value <= 50) return 60;
+  if (value <= 100) return 68;
+  if (value <= 500) return 76;
+  return 84;
+}
+
+function createBlockElement(block) {
+  const zone = document.getElementById('falling-zone');
+  const colors = getBlockColor(block.value);
+  const size = getBlockSize(block.value);
+
+  const el = document.createElement('div');
+  el.id = 'block-' + block.id;
+  el.className = `absolute cursor-pointer flex items-center justify-center rounded-xl bg-gradient-to-br ${colors.bg} border-2 ${colors.border} shadow-lg transition-colors duration-200`;
+  el.style.cssText = `width:${size}px;height:${size}px;left:${block.x}px;top:${block.y}px;z-index:10;`;
+
+  const numSpan = document.createElement('span');
+  numSpan.className = 'orbitron font-black text-white drop-shadow-lg';
+  numSpan.style.cssText = `font-family: 'JetBrains Mono', monospace; ${block.value >= 100 ? 'font-size: 20px' : block.value >= 10 ? 'font-size: 26px' : 'font-size: 32px'};`;
+  numSpan.textContent = block.value;
+  el.appendChild(numSpan);
+
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectBlock(block.id);
+  });
+
+  zone.appendChild(el);
+  return el;
+}
+
+function updateBlockElement(block) {
+  const el = document.getElementById('block-' + block.id);
+  if (!el) return;
+
+  el.style.top = block.y + 'px';
+  const colors = getBlockColor(block.value);
+  const size = getBlockSize(block.value);
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.className = `absolute cursor-pointer flex items-center justify-center rounded-xl bg-gradient-to-br ${colors.bg} border-2 ${colors.border} shadow-lg transition-colors duration-200 ${block.id === gameState.selectedBlockId ? 'block-selected' : ''}`;
+
+  const numSpan = el.querySelector('span');
+  if (numSpan) {
+    numSpan.textContent = block.value;
+    numSpan.style.cssText = `font-family: 'JetBrains Mono', monospace; ${block.value >= 100 ? 'font-size: 20px' : block.value >= 10 ? 'font-size: 26px' : 'font-size: 32px'};`;
+  }
+}
+
+function removeBlockElement(blockId, explode = false) {
+  const el = document.getElementById('block-' + blockId);
+  if (!el) return;
+  if (explode) {
+    el.classList.add('block-explode');
+    setTimeout(() => el.remove(), 400);
+  } else {
+    el.remove();
+  }
+}
+
+// ===================== GAME LOGIC =====================
+function selectBlock(blockId) {
+  gameState.selectedBlockId = blockId;
+  // Update visual selection
+  gameState.blocks.forEach(b => {
+    const el = document.getElementById('block-' + b.id);
+    if (el) el.classList.toggle('block-selected', b.id === blockId);
+  });
+  updateSelectedInfo();
+}
+
+function onPrimeClick(prime) {
+  if (!gameState.running) return;
+  const block = gameState.blocks.find(b => b.id === gameState.selectedBlockId);
+  if (!block) return;
+
+  if (block.value % prime === 0) {
+    // Success!
+    sfxDivide();
+    block.value = block.value / prime;
+
+    const el = document.getElementById('block-' + block.id);
+    const rect = el ? el.getBoundingClientRect() : null;
+    const zoneRect = document.getElementById('falling-zone').getBoundingClientRect();
+
+    if (block.value === 1) {
+      // Block destroyed!
+      sfxExplode();
+      gameState.blocksDestroyed++;
+
+      // Score calculation
+      const baseScore = 100;
+      const comboMultiplier = 1 + gameState.combo * 0.5;
+      const feverMultiplier = gameState.fever ? 2 : 1;
+      const points = Math.floor(baseScore * comboMultiplier * feverMultiplier);
+      gameState.score += points;
+
+      // Combo
+      gameState.combo++;
+      gameState.comboGauge = Math.min(gameState.comboGauge + 1, 10);
+
+      if (gameState.combo >= 3) {
+        sfxCombo();
+        showComboPopup(gameState.combo);
+      }
+
+      // Fever check
+      if (gameState.comboGauge >= 10 && !gameState.fever) {
+        activateFever();
+      }
+
+      // Float score
+      if (rect) {
+        showFloatingText(rect.left - zoneRect.left + 10, rect.top - zoneRect.top, `+${points}`, gameState.fever ? '#ffee00' : '#00f0ff');
+      }
+
+      removeBlockElement(block.id, true);
+      gameState.blocks = gameState.blocks.filter(b => b.id !== block.id);
+      gameState.selectedBlockId = null;
+
+      // Level up every 5 blocks
+      const newLevel = 1 + Math.floor(gameState.blocksDestroyed / 5);
+      if (newLevel > gameState.level) {
+        gameState.level = newLevel;
+        updateLevel();
+        if (rect) showFloatingText(rect.left - zoneRect.left, rect.top - zoneRect.top - 30, `LEVEL ${newLevel}!`, '#a855f7');
+      }
+
+      updateScore();
+      updateSelectedInfo();
+      updateComboBar();
+    } else {
+      // Value reduced
+      updateBlockElement(block);
+      updateSelectedInfo();
+      if (rect) {
+        showFloatingText(rect.left - zoneRect.left + 10, rect.top - zoneRect.top - 10, `÷${prime}`, '#00ff88');
+      }
+    }
+  } else {
+    // Wrong prime
+    sfxError();
+    gameState.combo = 0;
+    gameState.comboGauge = Math.max(gameState.comboGauge - 0.5, 0);
+    updateComboBar();
+
+    const el = document.getElementById('block-' + block.id);
+    if (el) {
+      el.classList.add('block-shake');
+      el.style.borderColor = '#ff4444';
+      el.style.boxShadow = '0 0 20px rgba(255,0,0,0.5)';
+      setTimeout(() => {
+        el.classList.remove('block-shake');
+        el.style.borderColor = '';
+        el.style.boxShadow = '';
+      }, 400);
+    }
+  }
+}
+
+function activateFever() {
+  gameState.fever = true;
+  gameState.comboGauge = 10;
+  sfxFever();
+
+  document.getElementById('fever-overlay').classList.remove('hidden');
+  document.getElementById('falling-zone').classList.add('fever-active');
+
+  updateComboBar();
+
+  gameState.feverTimer = setTimeout(() => {
+    gameState.fever = false;
+    gameState.comboGauge = 0;
+    document.getElementById('fever-overlay').classList.add('hidden');
+    document.getElementById('falling-zone').classList.remove('fever-active');
+    updateComboBar();
+  }, 5000);
+}
+
+function spawnBlock() {
+  const zone = document.getElementById('falling-zone');
+  const zoneWidth = zone.clientWidth;
+  const value = generateComposite(gameState.level);
+  const size = getBlockSize(value);
+  const x = Math.random() * (zoneWidth - size - 20) + 10;
+
+  const block = {
+    id: ++gameState.blockIdCounter,
+    value,
+    originalValue: value,
+    x,
+    y: -size,
+    speed: getBlockSpeed()
+  };
+
+  gameState.blocks.push(block);
+  createBlockElement(block);
+}
+
+function getBlockSpeed() {
+  const baseSpeed = gameState.difficulty === 'easy' ? 0.25 : gameState.difficulty === 'hard' ? 0.65 : 0.4;
+  const levelBonus = gameState.level * (gameState.difficulty === 'easy' ? 0.05 : gameState.difficulty === 'hard' ? 0.12 : 0.08);
+  return baseSpeed + levelBonus + Math.random() * 0.2;
+}
+
+function blockHitBottom(block) {
+  sfxLifeLost();
+  gameState.lives--;
+  gameState.combo = 0;
+  gameState.comboGauge = Math.max(gameState.comboGauge - 2, 0);
+  updateLives();
+  updateComboBar();
+
+  if (block.id === gameState.selectedBlockId) {
+    gameState.selectedBlockId = null;
+    updateSelectedInfo();
+  }
+
+  // Flash red at bottom
+  const zone = document.getElementById('falling-zone');
+  zone.style.boxShadow = 'inset 0 -40px 40px rgba(255,0,0,0.3)';
+  setTimeout(() => zone.style.boxShadow = '', 300);
+
+  removeBlockElement(block.id);
+  gameState.blocks = gameState.blocks.filter(b => b.id !== block.id);
+
+  if (gameState.lives <= 0) {
+    endGame();
+  }
+}
+
+// ===================== GAME LOOP =====================
+let lastTimestamp = 0;
+let spawnAccum = 0;
+
+function gameLoop(timestamp) {
+  if (!gameState.running) return;
+
+  const dt = lastTimestamp ? (timestamp - lastTimestamp) : 16;
+  lastTimestamp = timestamp;
+
+  // Spawn timing
+  const spawnRateBase = gameState.difficulty === 'easy' ? 3000 : gameState.difficulty === 'hard' ? 1200 : 2000;
+  const spawnRate = Math.max(spawnRateBase - gameState.level * 150, gameState.difficulty === 'easy' ? 1500 : gameState.difficulty === 'hard' ? 400 : 600);
+  spawnAccum += dt;
+  if (spawnAccum >= spawnRate) {
+    spawnAccum = 0;
+    const maxBlocksBase = gameState.difficulty === 'easy' ? 3 : gameState.difficulty === 'hard' ? 8 : 5;
+    const maxBlocks = Math.min(maxBlocksBase + Math.floor(gameState.level / 3), gameState.difficulty === 'easy' ? 8 : gameState.difficulty === 'hard' ? 20 : 15);
+    if (gameState.blocks.length < maxBlocks) {
+      spawnBlock();
+      // Auto-select first block spawned
+      if (gameState.blocks.length === 1 && !gameState.selectedBlockId) {
+        selectBlock(gameState.blocks[0].id);
+      }
+    }
+  }
+
+  // Move blocks
+  const zone = document.getElementById('falling-zone');
+  const zoneHeight = zone.clientHeight;
+  const warningLineHeight = 4; // warning line thickness
+
+  const speedMult = gameState.fever ? 0.15 : 1;
+
+  for (let i = gameState.blocks.length - 1; i >= 0; i--) {
+    const block = gameState.blocks[i];
+    block.y += block.speed * speedMult * (dt / 16);
+    updateBlockElement(block);
+
+    const size = getBlockSize(block.value);
+    // Check if block hits bottom (accounting for warning line)
+    if (block.y + size >= zoneHeight - warningLineHeight) {
+      blockHitBottom(block);
+    }
+  }
+
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+// ===================== PAUSE SYSTEM =====================
+function togglePause() {
+  if (!gameState.running || gameState.paused) {
+    resumeGame();
+  } else {
+    pauseGame();
+  }
+}
+
+function pauseGame() {
+  if (gameState.pauseChances <= 0) {
+    return;
+  }
+  
+  gameState.paused = true;
+  gameState.pauseChances--;
+  updatePauseDisplay();
+  
+  document.getElementById('pause-overlay').classList.remove('hidden');
+  if (gameState.gameLoop) {
+    cancelAnimationFrame(gameState.gameLoop);
+    gameState.gameLoop = null;
+  }
+  
+  // 일시정지는 5초 후 자동 해제
+  gameState.pauseTimer = setTimeout(() => {
+    if (gameState.paused) {
+      resumeGame();
+    }
+  }, 5000);
+}
+
+function resumeGame() {
+  if (!gameState.paused) return;
+  
+  gameState.paused = false;
+  document.getElementById('pause-overlay').classList.add('hidden');
+  
+  if (gameState.pauseTimer) {
+    clearTimeout(gameState.pauseTimer);
+    gameState.pauseTimer = null;
+  }
+  
+  lastTimestamp = 0;
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+// ===================== START / END =====================
+function startGame(difficulty = 'normal') {
+  gameState = {
+    running: true,
+    paused: false,
+    pauseChances: 2,
+    score: 0,
+    lives: 5,
+    level: 1,
+    difficulty: difficulty,
+    blocks: [],
+    selectedBlockId: null,
+    combo: 0,
+    comboGauge: 0,
+    fever: false,
+    feverTimer: null,
+    spawnInterval: null,
+    gameLoop: null,
+    blockIdCounter: 0,
+    lastSpawnTime: 0,
+    blocksDestroyed: 0,
+    pauseTimer: null
+  };
+
+  // Clear any existing blocks
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+
+  updateScore();
+  updateLives();
+  updateLevel();
+  updatePauseDisplay();
+  updateComboBar();
+  updateSelectedInfo();
+  document.getElementById('fever-overlay').classList.add('hidden');
+  document.getElementById('falling-zone').classList.remove('fever-active');
+  document.getElementById('pause-overlay').classList.add('hidden');
+
+  showScreen('game-screen');
+  buildPrimePad();
+
+  lastTimestamp = 0;
+  spawnAccum = 0;
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameState.running = false;
+  if (gameState.gameLoop) cancelAnimationFrame(gameState.gameLoop);
+  if (gameState.feverTimer) clearTimeout(gameState.feverTimer);
+  if (gameState.pauseTimer) clearTimeout(gameState.pauseTimer);
+
+  document.getElementById('final-score').textContent = gameState.score.toLocaleString();
+  document.getElementById('final-level').textContent = `LEVEL ${gameState.level}`;
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('player-name').value = '';
+  document.getElementById('btn-save-score').disabled = false;
+  document.getElementById('btn-save-score').textContent = '점수 저장';
+  showScreen('gameover-screen');
+}
+
+// ===================== EVENT LISTENERS =====================
+document.getElementById('btn-start').addEventListener('click', () => {
+  showScreen('difficulty-screen');
+});
+
+document.getElementById('btn-easy').addEventListener('click', () => startGame('easy'));
+document.getElementById('btn-normal').addEventListener('click', () => startGame('normal'));
+document.getElementById('btn-hard').addEventListener('click', () => startGame('hard'));
+document.getElementById('btn-difficulty-back').addEventListener('click', () => showScreen('menu-screen'));
+
+document.getElementById('btn-pause').addEventListener('click', togglePause);
+document.getElementById('btn-resume').addEventListener('click', resumeGame);
+
+document.getElementById('btn-ranking').addEventListener('click', () => {
+  currentRankingFilter = 'all';
+  document.getElementById('btn-rank-all').style.background = 'rgba(34, 197, 94, 0.3)';
+  document.getElementById('btn-rank-easy').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-normal').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-hard').style.background = 'rgba(255, 255, 255, 0.1)';
+  renderRanking();
+  showScreen('ranking-screen');
+});
+
+document.getElementById('btn-rank-all').addEventListener('click', () => {
+  currentRankingFilter = 'all';
+  document.getElementById('btn-rank-all').style.background = 'rgba(34, 197, 94, 0.3)';
+  document.getElementById('btn-rank-easy').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-normal').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-hard').style.background = 'rgba(255, 255, 255, 0.1)';
+  renderRanking();
+});
+
+document.getElementById('btn-rank-easy').addEventListener('click', () => {
+  currentRankingFilter = 'easy';
+  document.getElementById('btn-rank-all').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-easy').style.background = 'rgba(34, 197, 94, 0.3)';
+  document.getElementById('btn-rank-normal').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-hard').style.background = 'rgba(255, 255, 255, 0.1)';
+  renderRanking();
+});
+
+document.getElementById('btn-rank-normal').addEventListener('click', () => {
+  currentRankingFilter = 'normal';
+  document.getElementById('btn-rank-all').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-easy').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-normal').style.background = 'rgba(34, 197, 94, 0.3)';
+  document.getElementById('btn-rank-hard').style.background = 'rgba(255, 255, 255, 0.1)';
+  renderRanking();
+});
+
+document.getElementById('btn-rank-hard').addEventListener('click', () => {
+  currentRankingFilter = 'hard';
+  document.getElementById('btn-rank-all').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-easy').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-normal').style.background = 'rgba(255, 255, 255, 0.1)';
+  document.getElementById('btn-rank-hard').style.background = 'rgba(34, 197, 94, 0.3)';
+  renderRanking();
+});
+
+document.getElementById('btn-ranking-back').addEventListener('click', () => showScreen('menu-screen'));
+
+document.getElementById('btn-retry').addEventListener('click', () => {
+  showScreen('difficulty-screen');
+});
+
+document.getElementById('btn-menu').addEventListener('click', () => {
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  showScreen('menu-screen');
+});
+
+document.getElementById('btn-menu-from-pause').addEventListener('click', () => {
+  gameState.running = false;
+  if (gameState.pauseTimer) clearTimeout(gameState.pauseTimer);
+  document.getElementById('pause-overlay').classList.add('hidden');
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  showScreen('menu-screen');
+});
+
+document.getElementById('btn-save-score').addEventListener('click', async () => {
+  const name = document.getElementById('player-name').value.trim() || 'Player';
+  const btn = document.getElementById('btn-save-score');
+  const status = document.getElementById('save-status');
+
+  if (rankingData.length >= 999) {
+    status.textContent = '랭킹이 가득 찼습니다!';
+    status.className = 'text-xs mt-2 h-4 text-red-400';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+
+  const result = await window.dataSdk.create({
+    player_name: name,
+    score: gameState.score,
+    level: gameState.level,
+    difficulty: gameState.difficulty,
+    created_at: new Date().toISOString()
+  });
+
+  if (result.isOk) {
+    status.textContent = '✅ 저장되었습니다!';
+    status.className = 'text-xs mt-2 h-4 text-green-400';
+    btn.textContent = '저장 완료';
+  } else {
+    status.textContent = '❌ 저장 실패. 다시 시도해주세요.';
+    status.className = 'text-xs mt-2 h-4 text-red-400';
+    btn.disabled = false;
+    btn.textContent = '점수 저장';
+  }
+});
+
+// Click on falling zone to deselect
+document.getElementById('falling-zone').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget || e.target.id === 'falling-zone') {
+    gameState.selectedBlockId = null;
+    gameState.blocks.forEach(b => {
+      const el = document.getElementById('block-' + b.id);
+      if (el) el.classList.remove('block-selected');
+    });
+    updateSelectedInfo();
+  }
+});
+
+// Initialize Lucide icons
+lucide.createIcons();
+</script>
+  <div id="app" class="game-wrapper">
+   <!-- Stars background -->
+   <div id="stars-container" class="absolute inset-0 pointer-events-none"></div><!-- MENU SCREEN -->
+   <div id="menu-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20">
+    <div class="text-center mb-8">
+     <h1 id="menu-title" class="orbitron text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 mb-3 drop-shadow-lg">PRIME DEFENDER</h1>
+     <p id="menu-subtitle" class="text-cyan-300 text-xl md:text-2xl tracking-widest">소인수분해 대작전</p>
+    </div>
+    <div class="flex flex-col gap-4 w-64">
+     <button id="btn-start" class="orbitron px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-lg font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/30"> 게임 시작 </button> <button id="btn-ranking" class="orbitron px-8 py-3 bg-white/10 border border-cyan-500/40 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 랭킹 보기 </button>
+    </div>
+    <div class="mt-10 text-gray-500 text-sm text-center max-w-md px-4">
+     합성수 블록을 소수로 나누어 1로 만들어 제거하세요!<br>
+      블록을 클릭 → 소수 버튼으로 나누기
+    </div>
+   </div><!-- DIFFICULTY SELECT SCREEN -->
+   <div id="difficulty-screen" class="absolute inset-0 flex flex-col items-center justify-center z-25 hidden" style="background:rgba(0,0,0,0.9);">
+    <div class="text-center">
+     <h2 class="orbitron text-4xl text-cyan-300 font-black mb-8">난이도 선택</h2>
+     <div class="flex flex-col gap-4 w-64"><button id="btn-easy" class="orbitron px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white text-lg font-bold rounded-xl hover:from-green-400 hover:to-green-500 transition-all transform hover:scale-105 shadow-lg shadow-green-500/30"> 🟢 EASY<br><span class="text-xs text-green-200">천천히 시작</span> </button> <button id="btn-normal" class="orbitron px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-white text-lg font-bold rounded-xl hover:from-yellow-400 hover:to-orange-500 transition-all transform hover:scale-105 shadow-lg shadow-yellow-500/30"> 🟡 NORMAL<br><span class="text-xs text-yellow-200">보통 난이도</span> </button> <button id="btn-hard" class="orbitron px-8 py-4 bg-gradient-to-r from-red-500 to-red-700 text-white text-lg font-bold rounded-xl hover:from-red-400 hover:to-red-600 transition-all transform hover:scale-105 shadow-lg shadow-red-500/30"> 🔴 HARD<br><span class="text-xs text-red-200">매우 어려움</span> </button> <button id="btn-difficulty-back" class="orbitron px-8 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 뒤로 가기 </button>
+     </div>
+    </div>
+   </div><!-- RANKING SCREEN -->
+   <div id="ranking-screen" class="absolute inset-0 flex flex-col items-center justify-center z-20 hidden">
+    <div class="bg-gray-900/90 border border-cyan-500/30 rounded-2xl p-6 w-full max-w-md mx-4">
+     <h2 class="orbitron text-2xl text-cyan-400 text-center mb-4">🏆 RANKING</h2>
+     <div id="ranking-list" class="ranking-scroll max-h-64 overflow-y-auto space-y-2 mb-4">
+      <p class="text-gray-500 text-center">기록이 없습니다</p>
+     </div><button id="btn-ranking-back" class="w-full orbitron py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all"> 돌아가기 </button>
+    </div>
+   </div><!-- GAME SCREEN -->
+   <div id="game-screen" class="absolute inset-0 flex flex-col z-10 hidden">
+    <!-- Status Bar -->
+    <div class="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-cyan-500/20 flex-shrink-0">
+     <div class="flex items-center gap-2">
+      <span class="orbitron text-xs text-gray-400">SCORE</span> <span id="score-display" class="orbitron text-xl text-cyan-300 font-bold">0</span>
+     </div>
+     <div class="flex items-center gap-2">
+      <span class="orbitron text-xs text-gray-400">LEVEL</span> <span id="level-display" class="orbitron text-lg text-purple-400 font-bold">1</span>
+     </div>
+     <div id="lives-display" class="flex gap-1"></div>
+     <div class="flex items-center gap-2"><span class="orbitron text-xs text-gray-400">PAUSE</span> <span id="pause-display" class="orbitron text-sm text-yellow-300 font-bold">2 / 2</span>
+     </div><button id="btn-pause" class="orbitron px-3 py-1 bg-white/10 border border-yellow-500/40 text-yellow-300 rounded-lg hover:bg-white/20 transition-all text-xs font-bold">일시정지</button>
+    </div><!-- Combo / Fever indicator -->
+    <div class="relative flex-shrink-0 h-6 bg-black/40 border-b border-purple-500/20">
+     <div id="combo-bar" class="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-300" style="width:0%"></div>
+     <div class="absolute inset-0 flex items-center justify-center">
+      <span id="combo-label" class="orbitron text-xs text-white/70">COMBO GAUGE</span>
+     </div>
+    </div><!-- Falling Zone -->
+    <div id="falling-zone" class="relative flex-1 overflow-hidden">
+     <!-- Warning line at bottom -->
+     <div class="warning-line absolute bottom-0 left-0 right-0 h-1 bg-red-500 z-10"></div>
+     <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-red-900/30 to-transparent pointer-events-none z-5"></div><!-- Floating texts container -->
+     <div id="float-container" class="absolute inset-0 pointer-events-none z-20"></div><!-- Combo popup -->
+     <div id="combo-popup" class="absolute top-1/3 left-1/2 -translate-x-1/2 z-30 hidden">
+      <span class="combo-text orbitron text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-400"></span>
+     </div><!-- Fever overlay -->
+     <div id="fever-overlay" class="absolute inset-0 pointer-events-none z-15 hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-purple-900/20 to-pink-900/20"></div>
+      <div class="absolute top-4 left-1/2 -translate-x-1/2">
+       <span class="orbitron text-3xl font-black text-yellow-300 animate-pulse">⚡ FEVER TIME ⚡</span>
+      </div>
+     </div><!-- PAUSE OVERLAY -->
+     <div id="pause-overlay" class="absolute inset-0 bg-black/70 pointer-events-auto z-40 hidden flex flex-col items-center justify-center">
+      <div class="text-center">
+       <h2 class="orbitron text-4xl text-cyan-300 font-black mb-6">일시정지</h2>
+       <p class="text-gray-400 mb-8 text-lg">게임이 일시정지되었습니다</p><button id="btn-resume" class="orbitron px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all w-48 mb-4">계속하기</button> <button id="btn-menu-from-pause" class="orbitron px-8 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all w-48">메뉴로</button>
+      </div>
+     </div>
+    </div><!-- Control Panel -->
+    <div class="flex-shrink-0 bg-black/80 border-t border-cyan-500/20 p-3">
+     <div class="flex items-center justify-center mb-2">
+      <span id="selected-info" class="orbitron text-sm text-gray-500">블록을 선택하세요</span>
+     </div>
+     <div id="prime-pad" class="flex flex-wrap items-center justify-center gap-2"></div>
+    </div>
+   </div><!-- GAME OVER SCREEN -->
+   <div id="gameover-screen" class="absolute inset-0 flex flex-col items-center justify-center z-30 hidden" style="background:rgba(0,0,0,0.85);">
+    <div class="text-center">
+     <h2 class="orbitron text-4xl text-red-400 font-black mb-2">GAME OVER</h2>
+     <p class="text-gray-400 mb-2">최종 점수</p>
+     <p id="final-score" class="orbitron text-5xl text-cyan-300 font-black mb-1">0</p>
+     <p id="final-level" class="orbitron text-lg text-purple-400 mb-6">LEVEL 1</p>
+     <div id="name-input-area" class="mb-6">
+      <label class="text-gray-400 text-sm block mb-2">이름을 입력하세요</label> <input id="player-name" type="text" maxlength="12" placeholder="Player" class="orbitron bg-gray-800 border border-cyan-500/40 text-cyan-300 px-4 py-2 rounded-lg text-center w-48 focus:outline-none focus:border-cyan-400">
+      <div id="save-status" class="text-xs mt-2 h-4"></div>
+     </div>
+     <div class="flex flex-col gap-3 items-center">
+      <button id="btn-save-score" class="orbitron px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all w-48"> 점수 저장 </button> <button id="btn-retry" class="orbitron px-6 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all w-48"> 다시하기 </button> <button id="btn-menu" class="orbitron px-6 py-3 bg-white/10 border border-gray-500/30 text-gray-400 rounded-xl hover:bg-white/10 transition-all w-48"> 메뉴로 </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+// ===================== CONFIG & SDK =====================
+const defaultConfig = {
+  game_title: 'PRIME DEFENDER',
+  subtitle: '소인수분해 대작전',
+  background_color: '#070716',
+  surface_color: '#111133',
+  text_color: '#00f0ff',
+  primary_action_color: '#06b6d4',
+  secondary_action_color: '#a855f7',
+  font_family: 'Orbitron',
+  font_size: 16
+};
+
+function applyConfig(config) {
+  const c = { ...defaultConfig, ...config };
+  const app = document.getElementById('app');
+  app.style.background = c.background_color;
+
+  document.getElementById('menu-title').textContent = c.game_title;
+  document.getElementById('menu-subtitle').textContent = c.subtitle;
+
+  // Font
+  const fontStack = `${c.font_family}, Orbitron, Noto Sans KR, sans-serif`;
+  document.querySelectorAll('.orbitron').forEach(el => el.style.fontFamily = fontStack);
+
+  // Font size scaling
+  const base = c.font_size || 16;
+  const titles = document.querySelectorAll('#menu-title');
+  titles.forEach(t => t.style.fontSize = `${base * 3}px`);
+
+  // Colors
+  document.querySelectorAll('#btn-start, #btn-save-score').forEach(el => {
+    el.style.background = `linear-gradient(to right, ${c.primary_action_color}, ${c.secondary_action_color})`;
+  });
+}
+
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => applyConfig(config),
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.background_color || defaultConfig.background_color, set: v => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+      { get: () => config.surface_color || defaultConfig.surface_color, set: v => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+      { get: () => config.text_color || defaultConfig.text_color, set: v => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+      { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: v => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+      { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: v => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } }
+    ],
+    borderables: [],
+    fontEditable: {
+      get: () => config.font_family || defaultConfig.font_family,
+      set: v => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+    },
+    fontSizeable: {
+      get: () => config.font_size || defaultConfig.font_size,
+      set: v => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+    }
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ['game_title', config.game_title || defaultConfig.game_title],
+    ['subtitle', config.subtitle || defaultConfig.subtitle]
+  ])
+});
+
+// ===================== DATA SDK (Rankings) =====================
+let rankingData = [];
+
+const dataHandler = {
+  onDataChanged(data) {
+    rankingData = data.sort((a, b) => (b.score || 0) - (a.score || 0));
+    renderRanking();
+  }
+};
+
+(async () => {
+  const res = await window.dataSdk.init(dataHandler);
+  if (!res.isOk) console.error('Data SDK init failed');
+})();
+
+function renderRanking() {
+  const container = document.getElementById('ranking-list');
+  if (rankingData.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-4">기록이 없습니다</p>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  container.innerHTML = rankingData.slice(0, 20).map((r, i) => `
+    <div class="flex items-center justify-between px-4 py-2 rounded-lg ${i < 3 ? 'bg-cyan-500/10 border border-cyan-500/20' : 'bg-white/5'}" style="animation: slide-down 0.3s ease ${i * 0.05}s both">
+      <div class="flex items-center gap-3">
+        <span class="orbitron text-sm ${i < 3 ? 'text-cyan-300' : 'text-gray-500'} w-8">${i < 3 ? medals[i] : '#' + (i+1)}</span>
+        <span class="text-white font-bold">${r.player_name || 'Unknown'}</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="orbitron text-xs text-purple-400">LV${r.level || 1}</span>
+        <span class="orbitron text-cyan-300 font-bold">${(r.score || 0).toLocaleString()}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===================== STARS BACKGROUND =====================
+function createStars() {
+  const container = document.getElementById('stars-container');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${1.5+Math.random()*3}s;--delay:${Math.random()*3}s;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;`;
+    container.appendChild(star);
+  }
+}
+createStars();
+
+// ===================== AUDIO (Web Audio API) =====================
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', vol = 0.15) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function sfxDivide() { playTone(600, 0.12, 'square', 0.1); setTimeout(() => playTone(800, 0.1, 'square', 0.08), 60); }
+function sfxExplode() { playTone(200, 0.3, 'sawtooth', 0.12); playTone(400, 0.2, 'sine', 0.08); }
+function sfxError() { playTone(150, 0.2, 'sawtooth', 0.1); }
+function sfxCombo() { playTone(800, 0.15, 'sine', 0.1); setTimeout(() => playTone(1000, 0.15, 'sine', 0.1), 80); setTimeout(() => playTone(1200, 0.2, 'sine', 0.1), 160); }
+function sfxFever() { [600,800,1000,1200].forEach((f,i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.12), i * 100)); }
+function sfxLifeLost() { playTone(200, 0.4, 'sawtooth', 0.15); setTimeout(() => playTone(100, 0.5, 'sawtooth', 0.12), 200); }
+
+// ===================== GAME STATE =====================
+const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];
+const NEON_CLASSES = ['neon-cyan','neon-pink','neon-green','neon-yellow','neon-purple','neon-orange'];
+
+let gameState = {
+  running: false,
+  paused: false,
+  pauseChances: 2,
+  score: 0,
+  lives: 5,
+  level: 1,
+  difficulty: 'normal', // 'easy', 'normal', 'hard'
+  blocks: [],
+  selectedBlockId: null,
+  combo: 0,
+  comboGauge: 0,
+  fever: false,
+  feverTimer: null,
+  spawnInterval: null,
+  gameLoop: null,
+  blockIdCounter: 0,
+  lastSpawnTime: 0,
+  blocksDestroyed: 0,
+  pauseTimer: null
+};
+
+// ===================== MATH HELPERS =====================
+function generateComposite(level) {
+  // Level determines complexity
+  const maxPrimeIdx = Math.min(2 + Math.floor(level / 2), PRIMES.length - 1);
+  const numFactors = 2 + Math.floor(Math.random() * Math.min(level, 4));
+  let n = 1;
+  for (let i = 0; i < numFactors; i++) {
+    const pIdx = Math.floor(Math.random() * (maxPrimeIdx + 1));
+    n *= PRIMES[pIdx];
+    if (n > 1000) break;
+  }
+  if (n <= 1 || n > 1000) n = PRIMES[0] * PRIMES[Math.floor(Math.random() * 3)];
+  // Make sure it's composite
+  if (isPrime(n)) n *= PRIMES[0];
+  if (n > 1000) n = 12;
+  return n;
+}
+
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) { if (n % i === 0) return false; }
+  return true;
+}
+
+// ===================== UI HELPERS =====================
+function showScreen(id) {
+  ['menu-screen','difficulty-screen','ranking-screen','game-screen','gameover-screen'].forEach(s => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+}
+
+function updateLives() {
+  const container = document.getElementById('lives-display');
+  container.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const heart = document.createElement('span');
+    heart.textContent = i < gameState.lives ? '❤️' : '🖤';
+    heart.className = 'text-lg';
+    container.appendChild(heart);
+  }
+}
+
+function updatePauseDisplay() {
+  document.getElementById('pause-display').textContent = `${gameState.pauseChances} / 2`;
+}
+
+function updateScore() {
+  document.getElementById('score-display').textContent = gameState.score.toLocaleString();
+}
+
+function updateLevel() {
+  document.getElementById('level-display').textContent = gameState.level;
+}
+
+function updateComboBar() {
+  const pct = Math.min(gameState.comboGauge / 10 * 100, 100);
+  document.getElementById('combo-bar').style.width = pct + '%';
+  const label = document.getElementById('combo-label');
+  if (gameState.fever) {
+    label.textContent = '⚡ FEVER TIME ⚡';
+    label.className = 'orbitron text-xs text-yellow-300 font-bold';
+  } else if (gameState.combo > 1) {
+    label.textContent = `COMBO x${gameState.combo}`;
+    label.className = 'orbitron text-xs text-pink-300 font-bold';
+  } else {
+    label.textContent = 'COMBO GAUGE';
+    label.className = 'orbitron text-xs text-white/70';
+  }
+}
+
+function showFloatingText(x, y, text, color = '#00f0ff') {
+  const container = document.getElementById('float-container');
+  const el = document.createElement('div');
+  el.className = 'score-float orbitron absolute pointer-events-none font-bold';
+  el.style.cssText = `left:${x}px;top:${y}px;color:${color};font-size:18px;z-index:50;text-shadow:0 0 10px ${color};`;
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+function showComboPopup(combo) {
+  const popup = document.getElementById('combo-popup');
+  popup.classList.remove('hidden');
+  popup.querySelector('span').textContent = `COMBO x${combo}!`;
+  popup.querySelector('span').className = 'combo-text orbitron text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-pink-400';
+  setTimeout(() => popup.classList.add('hidden'), 1200);
+}
+
+function updateSelectedInfo() {
+  const info = document.getElementById('selected-info');
+  const block = gameState.blocks.find(b => b.id === gameState.selectedBlockId);
+  if (block) {
+    info.textContent = `선택: ${block.value}`;
+    info.className = 'orbitron text-sm text-cyan-300 font-bold';
+  } else {
+    info.textContent = '블록을 선택하세요';
+    info.className = 'orbitron text-sm text-gray-500';
+  }
+}
+
+// ===================== PRIME PAD =====================
+function buildPrimePad() {
+  const pad = document.getElementById('prime-pad');
+  pad.innerHTML = '';
+  PRIMES.forEach((p, i) => {
+    const btn = document.createElement('button');
+    btn.className = `prime-btn ${NEON_CLASSES[i % NEON_CLASSES.length]} px-6 py-3 rounded-xl text-white font-bold text-lg border border-white/20 bg-white/5 backdrop-blur-sm`;
+    btn.style.cssText = `animation: pulse-neon 2s ease-in-out infinite; animation-delay: ${i * 0.1}s; font-family: 'JetBrains Mono', monospace;`;
+    btn.textContent = p;
+    btn.addEventListener('click', () => onPrimeClick(p));
+    pad.appendChild(btn);
+  });
+}
+
+// ===================== BLOCK RENDERING =====================
+function getBlockColor(value) {
+  if (value <= 10) return { bg: 'from-cyan-500 to-cyan-700', border: 'border-cyan-400' };
+  if (value <= 50) return { bg: 'from-blue-500 to-indigo-700', border: 'border-blue-400' };
+  if (value <= 100) return { bg: 'from-purple-500 to-purple-800', border: 'border-purple-400' };
+  if (value <= 500) return { bg: 'from-pink-500 to-red-700', border: 'border-pink-400' };
+  return { bg: 'from-red-500 to-red-900', border: 'border-red-400' };
+}
+
+function getBlockSize(value) {
+  if (value <= 10) return 52;
+  if (value <= 50) return 60;
+  if (value <= 100) return 68;
+  if (value <= 500) return 76;
+  return 84;
+}
+
+function createBlockElement(block) {
+  const zone = document.getElementById('falling-zone');
+  const colors = getBlockColor(block.value);
+  const size = getBlockSize(block.value);
+
+  const el = document.createElement('div');
+  el.id = 'block-' + block.id;
+  el.className = `absolute cursor-pointer flex items-center justify-center rounded-xl bg-gradient-to-br ${colors.bg} border-2 ${colors.border} shadow-lg transition-colors duration-200`;
+  el.style.cssText = `width:${size}px;height:${size}px;left:${block.x}px;top:${block.y}px;z-index:10;`;
+
+  const numSpan = document.createElement('span');
+  numSpan.className = 'orbitron font-black text-white drop-shadow-lg';
+  numSpan.style.cssText = `font-family: 'JetBrains Mono', monospace; ${block.value >= 100 ? 'font-size: 20px' : block.value >= 10 ? 'font-size: 26px' : 'font-size: 32px'};`;
+  numSpan.textContent = block.value;
+  el.appendChild(numSpan);
+
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectBlock(block.id);
+  });
+
+  zone.appendChild(el);
+  return el;
+}
+
+function updateBlockElement(block) {
+  const el = document.getElementById('block-' + block.id);
+  if (!el) return;
+
+  el.style.top = block.y + 'px';
+  const colors = getBlockColor(block.value);
+  const size = getBlockSize(block.value);
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.className = `absolute cursor-pointer flex items-center justify-center rounded-xl bg-gradient-to-br ${colors.bg} border-2 ${colors.border} shadow-lg transition-colors duration-200 ${block.id === gameState.selectedBlockId ? 'block-selected' : ''}`;
+
+  const numSpan = el.querySelector('span');
+  if (numSpan) {
+    numSpan.textContent = block.value;
+    numSpan.style.cssText = `font-family: 'JetBrains Mono', monospace; ${block.value >= 100 ? 'font-size: 20px' : block.value >= 10 ? 'font-size: 26px' : 'font-size: 32px'};`;
+  }
+}
+
+function removeBlockElement(blockId, explode = false) {
+  const el = document.getElementById('block-' + blockId);
+  if (!el) return;
+  if (explode) {
+    el.classList.add('block-explode');
+    setTimeout(() => el.remove(), 400);
+  } else {
+    el.remove();
+  }
+}
+
+// ===================== GAME LOGIC =====================
+function selectBlock(blockId) {
+  gameState.selectedBlockId = blockId;
+  // Update visual selection
+  gameState.blocks.forEach(b => {
+    const el = document.getElementById('block-' + b.id);
+    if (el) el.classList.toggle('block-selected', b.id === blockId);
+  });
+  updateSelectedInfo();
+}
+
+function onPrimeClick(prime) {
+  if (!gameState.running) return;
+  const block = gameState.blocks.find(b => b.id === gameState.selectedBlockId);
+  if (!block) return;
+
+  if (block.value % prime === 0) {
+    // Success!
+    sfxDivide();
+    block.value = block.value / prime;
+
+    const el = document.getElementById('block-' + block.id);
+    const rect = el ? el.getBoundingClientRect() : null;
+    const zoneRect = document.getElementById('falling-zone').getBoundingClientRect();
+
+    if (block.value === 1) {
+      // Block destroyed!
+      sfxExplode();
+      gameState.blocksDestroyed++;
+
+      // Score calculation
+      const baseScore = 100;
+      const comboMultiplier = 1 + gameState.combo * 0.5;
+      const feverMultiplier = gameState.fever ? 2 : 1;
+      const points = Math.floor(baseScore * comboMultiplier * feverMultiplier);
+      gameState.score += points;
+
+      // Combo
+      gameState.combo++;
+      gameState.comboGauge = Math.min(gameState.comboGauge + 1, 10);
+
+      if (gameState.combo >= 3) {
+        sfxCombo();
+        showComboPopup(gameState.combo);
+      }
+
+      // Fever check
+      if (gameState.comboGauge >= 10 && !gameState.fever) {
+        activateFever();
+      }
+
+      // Float score
+      if (rect) {
+        showFloatingText(rect.left - zoneRect.left + 10, rect.top - zoneRect.top, `+${points}`, gameState.fever ? '#ffee00' : '#00f0ff');
+      }
+
+      removeBlockElement(block.id, true);
+      gameState.blocks = gameState.blocks.filter(b => b.id !== block.id);
+      gameState.selectedBlockId = null;
+
+      // Level up every 5 blocks
+      const newLevel = 1 + Math.floor(gameState.blocksDestroyed / 5);
+      if (newLevel > gameState.level) {
+        gameState.level = newLevel;
+        updateLevel();
+        if (rect) showFloatingText(rect.left - zoneRect.left, rect.top - zoneRect.top - 30, `LEVEL ${newLevel}!`, '#a855f7');
+      }
+
+      updateScore();
+      updateSelectedInfo();
+      updateComboBar();
+    } else {
+      // Value reduced
+      updateBlockElement(block);
+      updateSelectedInfo();
+      if (rect) {
+        showFloatingText(rect.left - zoneRect.left + 10, rect.top - zoneRect.top - 10, `÷${prime}`, '#00ff88');
+      }
+    }
+  } else {
+    // Wrong prime
+    sfxError();
+    gameState.combo = 0;
+    gameState.comboGauge = Math.max(gameState.comboGauge - 0.5, 0);
+    updateComboBar();
+
+    const el = document.getElementById('block-' + block.id);
+    if (el) {
+      el.classList.add('block-shake');
+      el.style.borderColor = '#ff4444';
+      el.style.boxShadow = '0 0 20px rgba(255,0,0,0.5)';
+      setTimeout(() => {
+        el.classList.remove('block-shake');
+        el.style.borderColor = '';
+        el.style.boxShadow = '';
+      }, 400);
+    }
+  }
+}
+
+function activateFever() {
+  gameState.fever = true;
+  gameState.comboGauge = 10;
+  sfxFever();
+
+  document.getElementById('fever-overlay').classList.remove('hidden');
+  document.getElementById('falling-zone').classList.add('fever-active');
+
+  updateComboBar();
+
+  gameState.feverTimer = setTimeout(() => {
+    gameState.fever = false;
+    gameState.comboGauge = 0;
+    document.getElementById('fever-overlay').classList.add('hidden');
+    document.getElementById('falling-zone').classList.remove('fever-active');
+    updateComboBar();
+  }, 5000);
+}
+
+function spawnBlock() {
+  const zone = document.getElementById('falling-zone');
+  const zoneWidth = zone.clientWidth;
+  const value = generateComposite(gameState.level);
+  const size = getBlockSize(value);
+  const x = Math.random() * (zoneWidth - size - 20) + 10;
+
+  const block = {
+    id: ++gameState.blockIdCounter,
+    value,
+    originalValue: value,
+    x,
+    y: -size,
+    speed: getBlockSpeed()
+  };
+
+  gameState.blocks.push(block);
+  createBlockElement(block);
+}
+
+function getBlockSpeed() {
+  const baseSpeed = gameState.difficulty === 'easy' ? 0.25 : gameState.difficulty === 'hard' ? 0.65 : 0.4;
+  const levelBonus = gameState.level * (gameState.difficulty === 'easy' ? 0.05 : gameState.difficulty === 'hard' ? 0.12 : 0.08);
+  return baseSpeed + levelBonus + Math.random() * 0.2;
+}
+
+function blockHitBottom(block) {
+  sfxLifeLost();
+  gameState.lives--;
+  gameState.combo = 0;
+  gameState.comboGauge = Math.max(gameState.comboGauge - 2, 0);
+  updateLives();
+  updateComboBar();
+
+  if (block.id === gameState.selectedBlockId) {
+    gameState.selectedBlockId = null;
+    updateSelectedInfo();
+  }
+
+  // Flash red at bottom
+  const zone = document.getElementById('falling-zone');
+  zone.style.boxShadow = 'inset 0 -40px 40px rgba(255,0,0,0.3)';
+  setTimeout(() => zone.style.boxShadow = '', 300);
+
+  removeBlockElement(block.id);
+  gameState.blocks = gameState.blocks.filter(b => b.id !== block.id);
+
+  if (gameState.lives <= 0) {
+    endGame();
+  }
+}
+
+// ===================== GAME LOOP =====================
+let lastTimestamp = 0;
+let spawnAccum = 0;
+
+function gameLoop(timestamp) {
+  if (!gameState.running) return;
+
+  const dt = lastTimestamp ? (timestamp - lastTimestamp) : 16;
+  lastTimestamp = timestamp;
+
+  // Spawn timing
+  const spawnRateBase = gameState.difficulty === 'easy' ? 3000 : gameState.difficulty === 'hard' ? 1200 : 2000;
+  const spawnRate = Math.max(spawnRateBase - gameState.level * 150, gameState.difficulty === 'easy' ? 1500 : gameState.difficulty === 'hard' ? 400 : 600);
+  spawnAccum += dt;
+  if (spawnAccum >= spawnRate) {
+    spawnAccum = 0;
+    const maxBlocksBase = gameState.difficulty === 'easy' ? 3 : gameState.difficulty === 'hard' ? 8 : 5;
+    const maxBlocks = Math.min(maxBlocksBase + Math.floor(gameState.level / 3), gameState.difficulty === 'easy' ? 8 : gameState.difficulty === 'hard' ? 20 : 15);
+    if (gameState.blocks.length < maxBlocks) {
+      spawnBlock();
+      // Auto-select first block spawned
+      if (gameState.blocks.length === 1 && !gameState.selectedBlockId) {
+        selectBlock(gameState.blocks[0].id);
+      }
+    }
+  }
+
+  // Move blocks
+  const zone = document.getElementById('falling-zone');
+  const zoneHeight = zone.clientHeight;
+  const warningLineHeight = 4; // warning line thickness
+
+  const speedMult = gameState.fever ? 0.15 : 1;
+
+  for (let i = gameState.blocks.length - 1; i >= 0; i--) {
+    const block = gameState.blocks[i];
+    block.y += block.speed * speedMult * (dt / 16);
+    updateBlockElement(block);
+
+    const size = getBlockSize(block.value);
+    // Check if block hits bottom (accounting for warning line)
+    if (block.y + size >= zoneHeight - warningLineHeight) {
+      blockHitBottom(block);
+    }
+  }
+
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+// ===================== PAUSE SYSTEM =====================
+function togglePause() {
+  if (!gameState.running || gameState.paused) {
+    resumeGame();
+  } else {
+    pauseGame();
+  }
+}
+
+function pauseGame() {
+  if (gameState.pauseChances <= 0) {
+    return;
+  }
+  
+  gameState.paused = true;
+  gameState.pauseChances--;
+  updatePauseDisplay();
+  
+  document.getElementById('pause-overlay').classList.remove('hidden');
+  if (gameState.gameLoop) {
+    cancelAnimationFrame(gameState.gameLoop);
+    gameState.gameLoop = null;
+  }
+  
+  // 일시정지는 5초 후 자동 해제
+  gameState.pauseTimer = setTimeout(() => {
+    if (gameState.paused) {
+      resumeGame();
+    }
+  }, 5000);
+}
+
+function resumeGame() {
+  if (!gameState.paused) return;
+  
+  gameState.paused = false;
+  document.getElementById('pause-overlay').classList.add('hidden');
+  
+  if (gameState.pauseTimer) {
+    clearTimeout(gameState.pauseTimer);
+    gameState.pauseTimer = null;
+  }
+  
+  lastTimestamp = 0;
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+// ===================== START / END =====================
+function startGame(difficulty = 'normal') {
+  gameState = {
+    running: true,
+    paused: false,
+    pauseChances: 2,
+    score: 0,
+    lives: 5,
+    level: 1,
+    difficulty: difficulty,
+    blocks: [],
+    selectedBlockId: null,
+    combo: 0,
+    comboGauge: 0,
+    fever: false,
+    feverTimer: null,
+    spawnInterval: null,
+    gameLoop: null,
+    blockIdCounter: 0,
+    lastSpawnTime: 0,
+    blocksDestroyed: 0,
+    pauseTimer: null
+  };
+
+  // Clear any existing blocks
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+
+  updateScore();
+  updateLives();
+  updateLevel();
+  updatePauseDisplay();
+  updateComboBar();
+  updateSelectedInfo();
+  document.getElementById('fever-overlay').classList.add('hidden');
+  document.getElementById('falling-zone').classList.remove('fever-active');
+  document.getElementById('pause-overlay').classList.add('hidden');
+
+  showScreen('game-screen');
+  buildPrimePad();
+
+  lastTimestamp = 0;
+  spawnAccum = 0;
+  gameState.gameLoop = requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameState.running = false;
+  if (gameState.gameLoop) cancelAnimationFrame(gameState.gameLoop);
+  if (gameState.feverTimer) clearTimeout(gameState.feverTimer);
+  if (gameState.pauseTimer) clearTimeout(gameState.pauseTimer);
+
+  document.getElementById('final-score').textContent = gameState.score.toLocaleString();
+  document.getElementById('final-level').textContent = `LEVEL ${gameState.level}`;
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('player-name').value = '';
+  document.getElementById('btn-save-score').disabled = false;
+  document.getElementById('btn-save-score').textContent = '점수 저장';
+  showScreen('gameover-screen');
+}
+
+// ===================== EVENT LISTENERS =====================
+document.getElementById('btn-start').addEventListener('click', () => {
+  showScreen('difficulty-screen');
+});
+
+document.getElementById('btn-easy').addEventListener('click', () => startGame('easy'));
+document.getElementById('btn-normal').addEventListener('click', () => startGame('normal'));
+document.getElementById('btn-hard').addEventListener('click', () => startGame('hard'));
+document.getElementById('btn-difficulty-back').addEventListener('click', () => showScreen('menu-screen'));
+
+document.getElementById('btn-pause').addEventListener('click', togglePause);
+document.getElementById('btn-resume').addEventListener('click', resumeGame);
+
+document.getElementById('btn-ranking').addEventListener('click', () => {
+  renderRanking();
+  showScreen('ranking-screen');
+});
+
+document.getElementById('btn-ranking-back').addEventListener('click', () => showScreen('menu-screen'));
+
+document.getElementById('btn-retry').addEventListener('click', () => {
+  showScreen('difficulty-screen');
+});
+
+document.getElementById('btn-menu').addEventListener('click', () => {
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  showScreen('menu-screen');
+});
+
+document.getElementById('btn-menu-from-pause').addEventListener('click', () => {
+  gameState.running = false;
+  if (gameState.pauseTimer) clearTimeout(gameState.pauseTimer);
+  document.getElementById('pause-overlay').classList.add('hidden');
+  document.querySelectorAll('[id^="block-"]').forEach(el => el.remove());
+  showScreen('menu-screen');
+});
+
+document.getElementById('btn-save-score').addEventListener('click', async () => {
+  const name = document.getElementById('player-name').value.trim() || 'Player';
+  const btn = document.getElementById('btn-save-score');
+  const status = document.getElementById('save-status');
+
+  if (rankingData.length >= 999) {
+    status.textContent = '랭킹이 가득 찼습니다!';
+    status.className = 'text-xs mt-2 h-4 text-red-400';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+
+  const result = await window.dataSdk.create({
+    player_name: name,
+    score: gameState.score,
+    level: gameState.level,
+    difficulty: difficulty,
+    created_at: new Date().toISOString()
+  });
+
+  if (result.isOk) {
+    status.textContent = '✅ 저장되었습니다!';
+    status.className = 'text-xs mt-2 h-4 text-green-400';
+    btn.textContent = '저장 완료';
+  } else {
+    status.textContent = '❌ 저장 실패. 다시 시도해주세요.';
+    status.className = 'text-xs mt-2 h-4 text-red-400';
+    btn.disabled = false;
+    btn.textContent = '점수 저장';
+  }
+});
+
+// Click on falling zone to deselect
+document.getElementById('falling-zone').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget || e.target.id === 'falling-zone') {
+    gameState.selectedBlockId = null;
+    gameState.blocks.forEach(b => {
+      const el = document.getElementById('block-' + b.id);
+      if (el) el.classList.remove('block-selected');
+    });
+    updateSelectedInfo();
+  }
+});
+
+// Initialize Lucide icons
+lucide.createIcons();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ea6960d5687723a',t:'MTc3NTg3NDgwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 도구 - 유정쌤의 실험실</title>
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #fdfbf7; font-family: 'Noto Sans KR', sans-serif; }
+        .admin-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        }
+        .switch {
+            position: relative; display: inline-block; width: 60px; height: 34px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #ffd6e0; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        input:checked + .slider { border: 2px solid #fbcfe8; }
+        
+        .login-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-screen" class="login-container">
+        <div class="admin-glass p-10 rounded-[40px] w-full max-w-md text-center">
+            <div class="text-4xl mb-4">🔑</div>
+            <h1 class="font-bold text-2xl mb-6 text-gray-700">관리자 확인</h1>
+            <input type="password" id="admin-pass" placeholder="비밀번호를 입력하세요" 
+                class="w-full p-4 rounded-2xl border-2 border-gray-100 bg-white shadow-inner mb-4 focus:outline-none focus:border-ghibli-pink text-center">
+            <button onclick="checkPass()" class="w-full bg-[#ffd6e0] text-[#c026d3] font-bold py-4 rounded-2xl shadow-[0_5px_0_#fbcfe8] hover:translate-y-[2px] hover:shadow-[0_3px_0_#fbcfe8] transition-all">
+                확인
+            </button>
+            <p id="login-error" class="text-red-400 mt-4 text-sm hidden">비밀번호가 올바르지 않습니다.</p>
+        </div>
+    </div>
+
+    <div id="admin-dashboard" class="hidden p-8 pt-20 max-w-4xl mx-auto">
+        <nav class="flex items-center justify-between mb-12">
+            <button onclick="location.href='index.html'" class="text-gray-400 hover:text-gray-700 font-bold flex items-center gap-2">
+                <span>&larr;</span> 연구실로 돌아가기
+            </button>
+            <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Black Han Sans';">프로그램 활성화 관리</h1>
+            <div class="w-24"></div>
+        </nav>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="program-list">
+            <!-- Program items will be loaded here -->
+            <div class="admin-glass p-8 rounded-[30px] flex items-center justify-between animate-pulse">
+                <div class="h-6 w-32 bg-gray-200 rounded"></div>
+                <div class="h-8 w-14 bg-gray-200 rounded-full"></div>
+            </div>
+            <div class="admin-glass p-8 rounded-[30px] flex items-center justify-between animate-pulse">
+                <div class="h-6 w-32 bg-gray-200 rounded"></div>
+                <div class="h-8 w-14 bg-gray-200 rounded-full"></div>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center text-gray-400 text-sm">
+            <p>프로그램을 끄면 학생들의 화면에서 즉시 잠김 화면이 표시됩니다. 🌱</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ivpxdmmsdulidcjrkcjh.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_AIrRcoIfhXmB5OgKY2FZFg_AQ9WuZGC';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const ADMIN_PASS = 'teacher123';
+
+        function checkPass() {
+            const input = document.getElementById('admin-pass').value;
+            if (input === ADMIN_PASS) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                loadPrograms();
+            } else {
+                const err = document.getElementById('login-error');
+                err.classList.remove('hidden');
+                err.classList.add('animate-bounce');
+            }
+        }
+
+        async function loadPrograms() {
+            const { data, error } = await sb
+                .from('program_config')
+                .select('*')
+                .order('id');
+            
+            if (error) {
+                console.error('Error fetching programs:', error);
+                // Fallback to initial row creation if table is empty or doesn't exist?
+                // For now just alert
+                alert('Supabase 테이블 "program_config"가 필요합니다.');
+                return;
+            }
+
+            renderDashboard(data);
+
+            // Subscribe to real-time changes manually (to keep UI in sync if opened in multiple tabs)
+            sb.channel('public:program_config').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'program_config' }, (payload) => {
+                const row = document.querySelector(`[data-id="${payload.new.id}"]`);
+                if (row) {
+                    const checkbox = row.querySelector('input');
+                    checkbox.checked = payload.new.is_active;
+                }
+            }).subscribe();
+        }
+
+        function renderDashboard(programs) {
+            const list = document.getElementById('program-list');
+            list.innerHTML = '';
+
+            // Detect if 'transformer' is missing
+            const hasTransformer = programs.some(p => p.id === 'transformer');
+            if (!hasTransformer) {
+                const initBanner = document.createElement('div');
+                initBanner.className = 'col-span-full admin-glass p-6 rounded-[30px] border-dashed border-2 border-ghibli-pink text-center mb-6';
+                initBanner.innerHTML = `
+                    <p class="text-gray-600 mb-4 font-semibold">✨ 새로운 프로그램 '수학 변환 기계'가 감지되었습니다!</p>
+                    <button onclick="registerProgram('transformer', '수학 변환 기계')" class="bg-[#ffd6e0] text-[#c026d3] font-bold px-8 py-3 rounded-2xl shadow-[0_4px_0_#fbcfe8] hover:translate-y-[2px] hover:shadow-[0_2px_0_#fbcfe8] transition-all">
+                        지금 등록하기
+                    </button>
+                `;
+                list.appendChild(initBanner);
+            }
+
+            programs.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'admin-glass p-8 rounded-[30px] flex items-center justify-between transition-all hover:scale-[1.02]';
+                card.dataset.id = p.id;
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="text-3xl">${getIcon(p.id)}</span>
+                        <div>
+                            <h3 class="font-bold text-gray-700 text-lg">${p.display_name}</h3>
+                            <p class="text-sm text-gray-400">${p.id}.html</p>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" ${p.is_active ? 'checked' : ''} onchange="toggleProgram('${p.id}', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        async function registerProgram(id, displayName) {
+            const { error } = await sb
+                .from('program_config')
+                .insert([{ id: id, display_name: displayName, is_active: false }]);
+
+            if (error) {
+                console.error('Registration failed:', error);
+                alert('등록에 실패했습니다: ' + error.message);
+            } else {
+                alert('성공적으로 등록되었습니다!');
+                location.reload();
+            }
+        }
+
+        async function toggleProgram(id, is_active) {
+            const { error } = await sb
+                .from('program_config')
+                .update({ is_active })
+                .eq('id', id);
+
+            if (error) {
+                console.error('Update failed:', error);
+                alert('변경 사항 저장에 실패했습니다.');
+            }
+        }
+
+        function getIcon(id) {
+            const icons = {
+                'sieve': '🌿',
+                'game': '🛡️',
+                'math_dice': '🎲',
+                'omok': '🎯',
+                'transformer': '⚙️'
+            };
+            return icons[id] || '⭐';
+        }
+    </script>
+</body>
+</html>
