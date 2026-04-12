@@ -128,20 +128,6 @@
             const list = document.getElementById('program-list');
             list.innerHTML = '';
 
-            // Detect if 'transformer' is missing
-            const hasTransformer = programs.some(p => p.id === 'transformer');
-            if (!hasTransformer) {
-                const initBanner = document.createElement('div');
-                initBanner.className = 'col-span-full admin-glass p-6 rounded-[30px] border-dashed border-2 border-ghibli-pink text-center mb-6';
-                initBanner.innerHTML = `
-                    <p class="text-gray-600 mb-4 font-semibold">✨ 새로운 프로그램 '수학 변환 기계'가 감지되었습니다!</p>
-                    <button onclick="registerProgram('transformer', '수학 변환 기계')" class="bg-[#ffd6e0] text-[#c026d3] font-bold px-8 py-3 rounded-2xl shadow-[0_4px_0_#fbcfe8] hover:translate-y-[2px] hover:shadow-[0_2px_0_#fbcfe8] transition-all">
-                        지금 등록하기
-                    </button>
-                `;
-                list.appendChild(initBanner);
-            }
-
             programs.forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'admin-glass p-8 rounded-[30px] flex items-center justify-between transition-all hover:scale-[1.02]';
@@ -161,20 +147,6 @@
                 `;
                 list.appendChild(card);
             });
-        }
-
-        async function registerProgram(id, displayName) {
-            const { error } = await sb
-                .from('program_config')
-                .insert([{ id: id, display_name: displayName, is_active: false }]);
-
-            if (error) {
-                console.error('Registration failed:', error);
-                alert('등록에 실패했습니다: ' + error.message);
-            } else {
-                alert('성공적으로 등록되었습니다!');
-                location.reload();
-            }
         }
 
         async function toggleProgram(id, is_active) {
