@@ -287,23 +287,25 @@
             if (level === 1) {
                 // x ± k
                 const k = Math.floor(Math.random() * 15) + 1;
-                currentRule = { level, op, k, desc: `입력수에 ${k}을(를) ${op === '+' ? '더합니다' : '뺍니다'}.` };
+                currentRule = { level, op, k, m: 1, b: 0, n: 1, desc: `입력수에 ${k}을(를) ${op === '+' ? '더합니다' : '뺍니다'}.` };
             } else if (level === 2) {
                 // m*x ± b
                 const m = Math.floor(Math.random() * 4) + 2; // 2..5
                 const b = Math.floor(Math.random() * 10) + 1;
-                currentRule = { level, op, m, b, desc: `입력수에 ${m}을(를) 곱하고 ${b}을(를) ${op === '+' ? '더합니다' : '뺍니다'}.` };
+                currentRule = { level, op, m, b, k: 0, n: 1, desc: `입력수에 ${m}을(를) 곱하고 ${b}을(를) ${op === '+' ? '더합니다' : '뺍니다'}.` };
             } else if (level === 3) {
                 // x^n ± k
                 const n = Math.floor(Math.random() * 3) + 2; // 2..4
                 const k = Math.floor(Math.random() * 10) + 1;
                 const nText = n === 2 ? '제곱' : n === 3 ? '세제곱' : '네제곱';
-                currentRule = { level, op, n, k, desc: `입력수를 ${nText}하고 ${k}을(를) ${op === '+' ? '더합니다' : '뺍니다'}.` };
+                currentRule = { level, op, n, k, m: 1, b: 0, desc: `입력수를 ${nText}하고 ${k}을(를) ${op === '+' ? '더합니다' : '뺍니다'}.` };
             }
 
             // Reset UI
             history = [];
-            document.getElementById('inputX').value = '';
+            const inputEl = document.getElementById('inputX');
+            inputEl.value = '';
+            inputEl.focus();
             document.getElementById('outputY').textContent = '－';
             document.getElementById('ruleReveal').classList.remove('open');
             document.getElementById('btnRule').innerHTML = '<i data-lucide="eye" class="w-5 h-5"></i> 규칙 확인하기';
@@ -322,41 +324,67 @@
 
         async function transform() {
             if (isProcessing) return;
-            const inputVal = document.getElementById('inputX').value;
+            const inputEl = document.getElementById('inputX');
+            const inputVal = inputEl.value.trim();
+            
             if (inputVal === '') {
                 showToast('먼저 숫자를 입력해 주세요!');
+                inputEl.focus();
                 return;
             }
 
             const x = parseFloat(inputVal);
-            if (!Number.isInteger(x)) {
+            if (isNaN(x) || !Number.isInteger(x)) {
                 showToast('정수만 입력 가능합니다.');
+                inputEl.focus();
                 return;
             }
 
-            isProcessing = true;
-            document.getElementById('btnTransform').disabled = true;
-            document.getElementById('chamber').classList.add('chamber-active');
-            document.getElementById('outputY').textContent = '...';
+            try {
+                isProcessing = true;
+                const btn = document.getElementById('btnTransform');
+                const chamber = document.getElementById('chamber');
+                const output = document.getElementById('outputY');
 
-            // Wait for animation
-            await new Promise(r => setTimeout(r, 1500));
+                btn.disabled = true;
+                chamber.classList.add('chamber-active');
+                output.textContent = '...';
 
-            const y = calculate(x);
-            document.getElementById('outputY').textContent = y;
-            document.getElementById('chamber').classList.remove('chamber-active');
-            document.getElementById('btnTransform').disabled = false;
-            isProcessing = false;
+                // Wait for animation
+                await new Promise(r => setTimeout(r, 1200));
 
-            // Add to history
-            history.unshift({ x, y });
-            updateHistory();
+                const y = calculate(x);
+                
+                // Final update
+                output.textContent = y;
+                chamber.classList.remove('chamber-active');
+                btn.disabled = false;
+                isProcessing = false;
+
+                // Add to history (limit to 50 items)
+                history.unshift({ x, y, id: Date.now() });
+                if (history.length > 50) history.pop();
+                
+                updateHistory();
+                
+                // Clear and focus for next input
+                inputEl.value = '';
+                inputEl.focus();
+
+            } catch (err) {
+                console.error(err);
+                showToast('장치에 오류가 발생했습니다. 다시 시도해 주세요.');
+                isProcessing = false;
+                document.getElementById('btnTransform').disabled = false;
+                document.getElementById('chamber').classList.remove('chamber-active');
+            }
         }
 
         function adjustValue(delta) {
             const el = document.getElementById('inputX');
             let val = parseInt(el.value || 0);
             el.value = val + delta;
+            el.focus();
         }
 
         function toggleRule() {
@@ -384,7 +412,7 @@
             }
 
             grid.innerHTML = history.map(item => `
-                <div class="history-item flex flex-col items-center justify-center">
+                <div class="history-item flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
                     <div class="text-[var(--energy)] text-lg font-bold">${item.x}</div>
                     <div class="text-[var(--brass-light)] text-xs my-1">↓</div>
                     <div class="text-[#facc15] text-xl font-bold">${item.y}</div>
