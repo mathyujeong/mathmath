@@ -221,9 +221,18 @@
      <p class="text-gray-400 mb-2">최종 점수</p>
      <p id="final-score" class="orbitron text-5xl text-cyan-300 font-black mb-1">0</p>
      <p id="final-level" class="orbitron text-lg text-purple-400 mb-6">LEVEL 1</p>
-     <div id="name-input-area" class="mb-6">
-      <label class="text-gray-400 text-sm block mb-2">이름을 입력하세요</label> <input id="player-name" type="text" maxlength="12" placeholder="Player" class="orbitron bg-gray-800 border border-cyan-500/40 text-cyan-300 px-4 py-2 rounded-lg text-center w-48 focus:outline-none focus:border-cyan-400">
-      <div id="save-status" class="text-xs mt-2 h-4"></div>
+     <div id="name-input-area" class="mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
+      <p class="text-cyan-200 text-sm font-bold mb-3">✨ 멋진 기록이에요! 실험 결과에 이름을 남겨볼까요?</p>
+      <label class="text-gray-400 text-xs block mb-2 leading-relaxed">
+        <span class="text-cyan-400 font-bold">'학번 이름'</span> 형식으로 작성해 주세요!<br>
+        <span class="text-[11px] opacity-80">(예: 1601 유정쌤)</span>
+      </label>
+      <input id="player-name" type="text" maxlength="12" placeholder="1601 유정쌤" class="orbitron bg-gray-900 border border-cyan-500/40 text-cyan-300 px-4 py-2 rounded-lg text-center w-56 focus:outline-none focus:border-cyan-400 mb-2">
+      <p class="text-gray-500 text-[10px] leading-tight">
+        이미 기록이 있다면 이름 뒤에 숫자를 붙여보세요!<br>
+        <span class="opacity-70">(예: 1601 유정쌤2, 1601 유정쌤3...)</span>
+      </p>
+      <div id="save-status" class="text-xs mt-3 h-4"></div>
      </div>
      <div class="flex flex-col gap-3 items-center">
       <button id="btn-save-score" class="orbitron px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-400 hover:to-blue-500 transition-all w-48"> 점수 저장 </button> <button id="btn-retry" class="orbitron px-6 py-3 bg-white/10 border border-cyan-500/30 text-cyan-300 rounded-xl hover:bg-white/20 transition-all w-48"> 다시하기 </button> <button id="btn-menu" class="orbitron px-6 py-3 bg-white/10 border border-gray-500/30 text-gray-400 rounded-xl hover:bg-white/10 transition-all w-48"> 메뉴로 </button>
