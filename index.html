@@ -84,6 +84,7 @@
         </div>
         <div class="footer-bottom">
             <p>&copy; 2026 유정쌤의 실험실. All rights reserved.</p>
+            <p class="visitor-counter" style="opacity: 0.7; font-size: 0.85rem; margin-top: 5px;">누적 방문 횟수: <span id="visitor-count">...</span>회</p>
         </div>
     </footer>
 
@@ -118,7 +119,31 @@
             syncProgramStatus();
         }).subscribe();
 
-        document.addEventListener('DOMContentLoaded', syncProgramStatus);
+        async function updateVisitorCount() {
+            try {
+                // 방문마다 카운트 증가 (RPC 호출)
+                await sb.rpc('increment_visitor_count');
+
+                // 최신 카운트 조회
+                const { data, error } = await sb
+                    .from('site_stats')
+                    .select('count')
+                    .eq('id', 'visitor_count')
+                    .single();
+
+                if (data && !error) {
+                    const countEl = document.getElementById('visitor-count');
+                    if (countEl) countEl.innerText = data.count.toLocaleString();
+                }
+            } catch (err) {
+                console.error('Visitor count update failed:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            syncProgramStatus();
+            updateVisitorCount();
+        });
     </script>
 </body>
 </html>
