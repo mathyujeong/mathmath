@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="ko" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수직선 탈출: 좀비 추격전! (늑구 에디션)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="../js/program-guard.js"></script>  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Noto+Sans+KR:wght@400;700&amp;family=JetBrains+Mono:wght@400;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #0a0a0f; }
+    
+    .orbitron { font-family: 'Orbitron', sans-serif; }
+    .noto-sans { font-family: 'Noto Sans KR', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Neon Animations */
+    @keyframes neon-flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { box-shadow: 0 0 5px #00f0ff, 0 0 10px #00f0ff, 0 0 20px #00f0ff; }
+      20%, 22%, 24%, 55% { box-shadow: none; }
+    }
+    
+    @keyframes pulse-red {
+      0%, 100% { background: rgba(255, 0, 0, 0); }
+      50% { background: rgba(255, 0, 0, 0.2); }
+    }
+
+    .neon-text-blue { color: #00f0ff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.8); }
+    .neon-text-green { color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.8); }
+    .neon-text-pink { color: #ff00aa; text-shadow: 0 0 10px rgba(255, 0, 170, 0.8); }
+    .neon-text-yellow { color: #ffee00; text-shadow: 0 0 10px rgba(255, 238, 0, 0.8); }
+
+    .glow-blue { box-shadow: 0 0 15px rgba(0, 240, 255, 0.5); }
+    .glow-red { box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+    
+    /* Game Map Styles */
+    #world-container {
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .floor {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #333, #00f0ff, #333, transparent);
+      box-shadow: 0 0 8px #00f0ff;
+    }
+    
+    .token {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      transition: left 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      z-index: 20;
+    }
+    
+    .nukgu-token {
+      background-image: url('../assets/nukgu_token_v2.png');
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
+      border: 2px solid #00f0ff;
+    }
+    
+    .zombie-token {
+      background-image: url('../assets/zombie_token_v2.png');
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+      border: 2px solid #00ff88;
+      background-color: #000; /* Fallback */
+    }
+
+    .door {
+      position: absolute;
+      width: 40px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-bottom: none;
+      border-radius: 5px 5px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* Fraction Rendering */
+    .fraction {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    .fraction-num { border-bottom: 2px solid currentColor; padding-bottom: 1px; }
+    .fraction-den { padding-top: 1px; }
+
+    /* Controls */
+    .btn-formula {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s;
+    }
+    .btn-formula:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
+      border-color: #00f0ff;
+    }
+    .btn-formula:active { transform: scale(0.95); }
+
+    /* Ranking Scrollbar */
+    #ranking-list::-webkit-scrollbar { width: 4px; }
+    #ranking-list::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    #ranking-list::-webkit-scrollbar-thumb { background: #00f0ff; border-radius: 2px; }
+
+    .hit-flash { animation: pulse-red 0.3s ease-out; }
+  </style>
+ </head>
+ <body class="h-full flex flex-col">
+  <div id="app" class="relative h-full w-full max-w-[800px] mx-auto overflow-hidden bg-[#070716] shadow-2xl border-x border-white/5">
+   
+   <!-- Header UI -->
+   <header class="absolute top-0 left-0 right-0 z-50 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between">
+    <div class="flex flex-col">
+      <div id="lives-container" class="flex gap-1 mb-1">
+        <!-- Hearts filled by JS -->
+      </div>
+      <div class="text-[10px] text-gray-500 orbitron">SURVIVAL TIME</div>
+    </div>
+    
+    <div class="text-center">
+      <div id="score-display" class="orbitron text-2xl font-black neon-text-blue">0</div>
+      <div id="combo-display" class="orbitron text-[10px] text-pink-400 font-bold opacity-0 transition-opacity">COMBO x0</div>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <button id="btn-pause" class="w-10 h-10 flex items-center justify-center rounded-lg bg-white/5 border border-white/20 hover:bg-white/10 transition-all active:scale-95">
+        <i data-lucide="pause" class="w-5 h-5 text-yellow-300"></i>
+      </button>
+    </div>
+   </header>
+
+   <!-- Main Game Screen (Vertical Scroller) -->
+   <main id="game-stage" class="absolute inset-0 overflow-hidden pointer-events-none">
+     <div id="world-container" class="absolute inset-x-0 bottom-0 origin-bottom">
+       <!-- Floors and Objects Added Here -->
+     </div>
+   </main>
+
+   <!-- Target Board & Controls -->
+   <section id="control-area" class="absolute bottom-0 left-0 right-0 z-[60] p-4 bg-black border-t border-white/10 pb-8">
+     <!-- Target Display -->
+     <div id="target-board" class="mb-4 bg-white/5 border border-cyan-500/30 rounded-2xl p-4 text-center shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+        <div class="text-[10px] text-cyan-400 orbitron mb-1 tracking-widest">FIND THE EXIT FOR:</div>
+        <div id="target-value" class="mono text-5xl font-black neon-text-yellow h-12 flex items-center justify-center">
+          <!-- Dynamic Content -->
+        </div>
+     </div>
+     
+     <!-- Formula Buttons -->
+     <div id="button-grid" class="grid grid-cols-2 gap-3">
+        <!-- 4 Buttons generated by JS -->
+     </div>
+   </section>
+
+    <!-- Distance Gauge (Mini-map) -->
+    <div id="mini-map" class="absolute right-3 bottom-52 top-24 w-1.5 bg-white/5 border border-white/10 rounded-full z-[80] overflow-visible">
+      <div id="map-zombie" class="absolute left-1/2 -translate-x-1/2 w-8 h-8 rounded-full border-2 border-[#00ff88] bg-black bg-cover bg-center shadow-[0_0_10px_#00ff88] transition-all duration-300 z-10" style="bottom: 0%; background-image: url('../assets/zombie_token_v2.png');"></div>
+      <div id="map-nukgu" class="absolute left-1/2 -translate-x-1/2 w-8 h-8 rounded-full border-2 border-[#00f0ff] bg-black bg-cover bg-center shadow-[0_0_10px_#00f0ff] transition-all duration-300 z-20" style="bottom: 90%; background-image: url('../assets/nukgu_token_v2.png');"></div>
+    </div>
+
+   <!-- Menu/Start Screen -->
+   <div id="menu-screen" class="absolute inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-8">
+      <h1 class="font-black text-center mb-2 neon-text-blue" style="font-family: 'Noto Sans KR', sans-serif; font-size: 2.2rem;">늑구의 모험</h1>
+      <p class="text-cyan-300 tracking-widest mb-8 text-sm" style="font-family: 'Noto Sans KR', sans-serif;">수직선 벽을 넘어 탈출하라</p>
+      
+      <div class="w-32 h-32 mb-8 nukgu-token shadow-[0_0_30px_rgba(0,240,255,0.4)] !bg-cover border-4 border-cyan-400 rounded-full"></div>
+      
+      <div class="flex flex-col gap-4 w-full">
+        <button id="btn-start" class="orbitron py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-lg hover:from-cyan-400 hover:to-blue-500 transition-all active:scale-95 glow-blue">START MISSION</button>
+        <button id="btn-ranking" class="orbitron py-3 rounded-xl bg-white/5 border border-white/20 text-gray-400 hover:bg-white/10 transition-all uppercase">Ranking</button>
+        <button onclick="location.href='../index.html'" class="orbitron py-3 rounded-xl bg-white/5 border border-white/10 text-gray-600 hover:text-gray-400 hover:bg-white/10 transition-all uppercase text-xs">Back to Lab</button>
+      </div>
+      
+      <div class="mt-8 text-center text-xs text-gray-500 noto-sans leading-relaxed">
+        위에서 내려오는 목표값과 같은 결과의 수식을 찾아 도망치세요!<br>
+        좀비가 당신을 따라잡으면 게임 종료입니다.
+      </div>
+   </div>
+   
+   <!-- Mode Selection Screen -->
+   <div id="mode-screen" class="absolute inset-0 z-[105] bg-black/95 hidden flex flex-col items-center justify-center p-8">
+      <h2 class="orbitron text-2xl font-black text-cyan-400 mb-8">CHOOSE YOUR CHALLENGE</h2>
+      
+      <div class="grid grid-cols-1 gap-4 w-full max-w-xs">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="add_sub">
+          <span class="text-3xl group-hover:scale-110 transition-transform">➕</span>
+          <span class="font-bold text-white">덧셈・뺄셈</span>
+          <span class="text-[10px] text-gray-500 uppercase">Addition & Subtraction</span>
+        </button>
+        
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-green-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mul_div">
+          <span class="text-3xl group-hover:scale-110 transition-transform">✖️</span>
+          <span class="font-bold text-white">곱셈・나눗셈</span>
+          <span class="text-[10px] text-gray-500 uppercase">Multiplication & Division</span>
+        </button>
+        
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mix">
+          <span class="text-3xl group-hover:scale-110 transition-transform">🔀</span>
+          <span class="font-bold text-white">혼합 계산</span>
+          <span class="text-[10px] text-gray-500 uppercase">Mixed Operations</span>
+        </button>
+        
+        <button id="btn-mode-back" class="mt-4 text-xs text-gray-600 hover:text-white transition-all orbitron">GO BACK</button>
+      </div>
+   </div>
+
+   <!-- Ranking Screen -->
+   <div id="ranking-screen" class="absolute inset-0 z-[110] bg-black/95 hidden flex flex-col p-8">
+      <div class="flex items-center gap-4 mb-6">
+        <button id="btn-ranking-back" class="p-2 hover:bg-white/10 rounded-lg transition-all">
+          <i data-lucide="chevron-left" class="w-6 h-6 text-gray-400"></i>
+        </button>
+        <h2 class="orbitron text-2xl font-bold neon-text-pink">TOP AGENTS</h2>
+      </div>
+      
+      <!-- Ranking Tabs -->
+      <div id="ranking-tabs" class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+        <button class="tab-btn active px-4 py-2 rounded-full bg-white/10 text-xs font-bold text-white whitespace-nowrap active:scale-95 transition-all" data-filter="all">ALL</button>
+        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all" data-filter="add_sub">➕ 가감</button>
+        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all" data-filter="mul_div">✖️ 승제</button>
+        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all" data-filter="mix">🔀 혼합</button>
+      </div>
+      
+      <div id="ranking-list" class="flex-1 overflow-y-auto space-y-3 pr-2">
+        <!-- Records -->
+        <p class="text-gray-600 text-center py-10 orbitron">LOADING...</p>
+      </div>
+   </div>
+
+   <!-- Game Over Screen -->
+   <div id="gameover-screen" class="absolute inset-0 z-[120] bg-black/95 hidden flex flex-col items-center justify-center p-8 text-center">
+      <h2 class="orbitron text-4xl font-black text-red-500 mb-2">MISSION FAILED</h2>
+      <p id="over-reason" class="text-gray-400 mb-8 text-sm">좀비에게 따라잡혔습니다!</p>
+      
+      <div class="bg-white/5 border border-white/10 rounded-2xl p-6 w-full mb-8">
+        <div class="text-xs text-gray-500 orbitron mb-1">FINAL SCORE</div>
+        <div id="final-score" class="orbitron text-5xl font-black neon-text-yellow mb-4">0</div>
+        
+        <input type="text" id="player-name" maxlength="10" placeholder="NAME" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-center orbitron text-white focus:outline-none focus:border-cyan-500 mb-2">
+        <button id="btn-save" class="w-full orbitron py-3 rounded-lg bg-cyan-600 text-white font-bold hover:bg-cyan-500 transition-all">SAVE RECORD</button>
+        <p id="save-status" class="text-[10px] mt-2 h-4"></p>
+      </div>
+      
+      <div class="flex flex-col gap-3 w-full">
+        <button id="btn-retry" class="orbitron w-full py-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold hover:bg-white/20 transition-all">RETRY</button>
+        <button id="btn-menu" class="orbitron w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all uppercase text-xs">Go to Menu</button>
+      </div>
+   </div>
+
+   <!-- Pause Display -->
+   <div id="pause-overlay" class="absolute inset-0 z-[150] bg-black/60 backdrop-blur-sm hidden flex flex-col items-center justify-center">
+      <h2 class="orbitron text-3xl font-black text-yellow-300 mb-8">PAUSED</h2>
+      <button id="btn-resume" class="orbitron px-12 py-4 rounded-xl bg-yellow-500 text-black font-black text-lg shadow-lg active:scale-95 mb-4">RESUME</button>
+      <button id="btn-quit" class="orbitron px-8 py-2 rounded-lg bg-white/5 border border-white/20 text-gray-400 hover:text-white transition-all text-xs uppercase">Quit to Menu</button>
+      <div id="pause-count" class="mt-6 text-xs text-yellow-500/50 orbitron">REMAINING: 2/2</div>
+   </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 0. SUPABASE CONFIG
+    // ==========================================
+    const SUPABASE_URL = 'https://vowdvdgafuyujxiwkelt.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_BvgKKPJOm9fPSZMuR7j0TA_MWtMAiNB';
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+    // ==========================================
+    // 1. UTILS & MATH ENGINE
+    // ==========================================
+    
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    
+    function formatValue(n, d) {
+      if (d === 1) return n.toString();
+      // Simplify
+      const common = gcd(Math.abs(n), d);
+      const sn = n / common;
+      const sd = d / common;
+      if (sd === 1) return sn.toString();
+      
+      const isNegative = sn < 0;
+      const absN = Math.abs(sn);
+      return `<span class="flex items-center">${isNegative ? '-' : ''}<span class="fraction"><span class="fraction-num">${absN}</span><span class="fraction-den">${sd}</span></span></span>`;
+    }
+
+    // Returns { formula: HTML_string, value: numeric_value, display: string }
+    function generateProblem(level, mode) {
+      let v1, v2, op, resultN, resultD = 1;
+      const type = (level >= 8 && Math.random() > 0.4) ? 'fraction' : 'integer';
+
+      // Mode-specific logic
+      if (mode === 'add_sub') {
+        op = Math.random() > 0.5 ? '+' : '-';
+      } else if (mode === 'mul_div') {
+        op = Math.random() > 0.5 ? '×' : '÷';
+      } else { // mixed
+        // Level increases likelihood of multiplication/division
+        op = ['+', '-', '×', '÷'][Math.floor(Math.random() * 4)];
+      }
+
+      if (type === 'integer') {
+        const range = Math.min(5 + level, 25);
+        v1 = Math.floor(Math.random() * range * 2) - range;
+        
+        // Avoid division by zero and very hard division
+        if (op === '÷') {
+          v2 = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5][Math.floor(Math.random() * 10)];
+          v1 = v2 * (Math.floor(Math.random() * 10) - 5);
+        } else {
+          v2 = Math.floor(Math.random() * range * 2) - range;
+          if (op === '×' && Math.abs(v1) > 10) v1 = v1 > 0 ? 10 : -10;
+          if (op === '×' && Math.abs(v2) > 10) v2 = v2 > 0 ? 10 : -10;
+        }
+        
+        // Calculate result
+        if (op === '+') resultN = v1 + v2;
+        else if (op === '-') resultN = v1 - v2;
+        else if (op === '×') resultN = v1 * v2;
+        else if (op === '÷') resultN = v1 / v2;
+
+        const t1 = v1 < 0 ? `(${v1})` : v1;
+        const t2 = (v2 < 0 && (op === '+' || op === '-')) ? `(${v2})` : v2;
+        const displayOp = op; 
+
+        return {
+          formula: `${t1} ${displayOp} ${t2}`,
+          value: resultN,
+          display: formatValue(resultN, 1)
+        };
+      } else {
+        // Fractions (Simpler for mul/div to keep it educational)
+        let n1, d1, n2, d2;
+        d1 = [2, 3, 4, 5][Math.floor(Math.random() * 4)];
+        d2 = (op === '+' || op === '-') ? d1 : [2, 3, 4][Math.floor(Math.random() * 3)];
+        n1 = Math.floor(Math.random() * 8) - 4;
+        n2 = Math.floor(Math.random() * 8) - 4;
+        if (n2 === 0 && (op === '÷' || op === '×')) n2 = 1;
+
+        if (op === '+') { resultN = n1 * d2 + n2 * d1; resultD = d1 * d2; }
+        else if (op === '-') { resultN = n1 * d2 - n2 * d1; resultD = d1 * d2; }
+        else if (op === '×') { resultN = n1 * n2; resultD = d1 * d2; }
+        else if (op === '÷') { resultN = n1 * d2; resultD = d1 * n2; }
+
+        if (resultD < 0) { resultN = -resultN; resultD = -resultD; }
+        
+        const f1 = formatValue(n1, d1);
+        const f2 = formatValue(n2, d2);
+        const t1 = n1 < 0 ? `(${f1})` : f1;
+        // Logic for parens around second term
+        const t2 = (n2 < 0) ? `(${f2})` : f2;
+
+        return {
+          formula: `${t1} ${op} ${t2}`,
+          value: resultN / resultD,
+          display: formatValue(resultN, resultD)
+        };
+      }
+    }
+
+    // ==========================================
+    // 2. GAME STATE & LOGIC
+    // ==========================================
+    
+    const CONFIG = {
+      FLOOR_HEIGHT: 180,
+      PLAYER_START_X: 200,
+      ZOMBIE_START_Y: -200,
+      INIT_LIVES: 5,
+    };
+
+    let state = {
+      running: false,
+      paused: false,
+      pauseCount: 2,
+      score: 0,
+      combo: 0,
+      lives: CONFIG.INIT_LIVES,
+      currentLevel: 1,
+      playerFloor: 0,
+      playerX: CONFIG.PLAYER_START_X,
+      zombieY: CONFIG.ZOMBIE_START_Y,
+      worldY: 0,
+      problems: [],
+      nextTarget: null,
+      difficulty: 1,
+      mode: 'add_sub',
+      lastTimestamp: 0
+    };
+
+    const elements = {
+      world: document.getElementById('world-container'),
+      score: document.getElementById('score-display'),
+      combo: document.getElementById('combo-display'),
+      lives: document.getElementById('lives-container'),
+      target: document.getElementById('target-value'),
+      buttonGrid: document.getElementById('button-grid'),
+      nukgu: null,
+      zombie: null,
+      app: document.getElementById('app')
+    };
+
+    function initHeader() {
+      elements.lives.innerHTML = '';
+      for (let i = 0; i < CONFIG.INIT_LIVES; i++) {
+        const h = document.createElement('i');
+        h.setAttribute('data-lucide', 'heart');
+        h.className = 'w-4 h-4 text-red-500 fill-red-500';
+        elements.lives.appendChild(h);
+      }
+      lucide.createIcons();
+    }
+
+    function updateLives(val) {
+      state.lives = val;
+      // lucide.createIcons() replaces <i> with <svg>, so we select svg elements
+      const hearts = elements.lives.querySelectorAll('svg'); 
+      hearts.forEach((h, i) => {
+        if (i < val) {
+          h.classList.remove('text-gray-700', 'fill-transparent');
+          h.classList.add('text-red-500', 'fill-red-500');
+        } else {
+          h.classList.add('text-gray-700', 'fill-transparent');
+          h.classList.remove('text-red-500', 'fill-red-500');
+        }
+      });
+    }
+
+    function createObjects() {
+      elements.world.innerHTML = '';
+      
+      // Create initial floors
+      for (let i = 0; i < 20; i++) {
+        createFloor(i);
+      }
+
+      // Nukgu
+      const n = document.createElement('div');
+      n.className = 'token nukgu-token shadow-[0_0_20px_#00f0ff]';
+      n.style.bottom = '0px';
+      n.style.left = state.playerX + 'px';
+      elements.world.appendChild(n);
+      elements.nukgu = n;
+
+      // Zombie
+      const z = document.createElement('div');
+      z.className = 'token zombie-token shadow-[0_0_20px_#00ff88]';
+      z.style.bottom = state.zombieY + 'px';
+      z.style.left = '20px';
+      elements.world.appendChild(z);
+      elements.zombie = z;
+    }
+
+    function createFloor(index) {
+      const f = document.createElement('div');
+      f.id = `floor-${index}`;
+      f.className = 'floor';
+      f.style.bottom = (index * CONFIG.FLOOR_HEIGHT) + 'px';
+      
+      const numLine = document.createElement('div');
+      numLine.id = `numline-${index}`;
+      numLine.className = 'absolute -top-6 left-0 right-0 flex justify-between px-6 text-[10px] text-gray-700 mono font-bold';
+      f.appendChild(numLine);
+
+      elements.world.appendChild(f);
+      return f;
+    }
+
+    function setNextMission() {
+      const level = state.playerFloor + 1;
+      const correct = generateProblem(level, state.mode);
+      
+      // Generate distractors
+      const distractors = [];
+      while (distractors.length < 3) {
+        const d = generateProblem(level, state.mode);
+        if (Math.abs(d.value - correct.value) > 0.0001) {
+          distractors.push(d);
+        }
+      }
+
+      const options = [correct, ...distractors].sort(() => Math.random() - 0.5);
+      state.nextTarget = correct;
+      
+      // Update UI
+      elements.target.innerHTML = correct.display;
+      elements.buttonGrid.innerHTML = '';
+      
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-formula h-16 rounded-xl flex items-center justify-center text-white mono font-bold text-xl';
+        btn.innerHTML = opt.formula;
+        btn.onclick = () => handleChoice(opt);
+        elements.buttonGrid.appendChild(btn);
+      });
+
+      // Update Dynamic Number Line and Door Position for this level
+      const centerVal = Math.round(correct.value);
+      const minVal = centerVal - 5;
+      const maxVal = centerVal + 5;
+      
+      const numLineEl = document.getElementById(`numline-${level}`);
+      if (numLineEl) {
+        let lineHTML = '';
+        for (let i = minVal; i <= maxVal; i++) {
+           lineHTML += `<span>${i}</span>`;
+        }
+        numLineEl.innerHTML = lineHTML;
+      }
+
+      const existingDoor = document.getElementById(`door-${level}`);
+      if (!existingDoor) {
+        // Calculate door X position mathematically
+        // The number line has 10 units of width (from minVal to maxVal)
+        // Let's reserve 24px padding on left and right borders of the container
+        const totalWidth = elements.app.clientWidth - 48; // padding 24*2
+        const unitWidth = totalWidth / 10;
+        // Position relative to minVal
+        const relativeVal = correct.value - minVal; 
+        const doorX = 24 + (relativeVal * unitWidth) - 20; // -20 to center the 40px door
+        
+        const d = document.createElement('div');
+        d.id = `door-${level}`;
+        d.className = 'door';
+        d.style.bottom = (level * CONFIG.FLOOR_HEIGHT) + 'px';
+        d.style.left = doorX + 'px';
+        d.innerHTML = 'EXIT';
+        elements.world.appendChild(d);
+        correct.doorX = doorX;
+      }
+    }
+
+    function handleChoice(opt) {
+      if (!state.running || state.paused || state.dying) return;
+
+      const isCorrect = Math.abs(opt.value - state.nextTarget.value) < 0.0001;
+      
+      if (isCorrect) {
+        state.combo++;
+        const points = 100 + (state.combo * 10);
+        state.score += points;
+        elements.score.innerText = state.score.toLocaleString();
+        
+        elements.combo.innerText = `COMBO x${state.combo}`;
+        elements.combo.classList.remove('opacity-0');
+        
+        // Visual effect
+        elements.app.classList.add('glow-blue');
+        setTimeout(() => elements.app.classList.remove('glow-blue'), 300);
+      } else {
+        updateLives(state.lives - 1);
+        state.combo = 0;
+        elements.combo.classList.add('opacity-0');
+        
+        // Damage effect
+        elements.app.classList.add('hit-flash');
+        setTimeout(() => elements.app.classList.remove('hit-flash'), 300);
+        
+        if (state.lives <= 0) {
+          // Enter dying sequence so the zombie visually catches up
+          state.dying = true;
+          return;
+        }
+      }
+
+      // Jump to next floor anyway to keep flow
+      
+      // Mark current door as passed
+      const passedDoor = document.getElementById(`door-${state.playerFloor + 1}`);
+      if (passedDoor) {
+        passedDoor.style.opacity = '0.3';
+        passedDoor.innerHTML = '';
+      }
+
+      state.playerFloor++;
+      state.playerX = (state.nextTarget.doorX || 200) - 10; // offset slightly to align token center with door
+      
+      // Update Nukgu pos - sit halfway between current floor and next to avoid overlapping numbers
+      const targetY = state.playerFloor * CONFIG.FLOOR_HEIGHT;
+      const nukguY = targetY + (CONFIG.FLOOR_HEIGHT / 2);
+      elements.nukgu.style.left = state.playerX + 'px';
+      elements.nukgu.style.bottom = nukguY + 'px';
+      
+      // Camera follow - Fixed offset so Nukgu sits exactly at 346px from screen bottom
+      state.worldY = nukguY - 346; 
+      elements.world.style.transform = `translateY(${state.worldY}px)`;
+      
+      // Dynamically add floors if needed
+      if (state.playerFloor % 10 === 0) {
+        for (let i = 1; i <= 10; i++) createFloor(state.playerFloor + 10 + i);
+      }
+
+      setNextMission();
+    }
+
+    function gameLoop(timestamp) {
+      if (!state.running || state.paused) {
+        state.lastTimestamp = timestamp;
+        requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      const dt = timestamp - (state.lastTimestamp || timestamp);
+      state.lastTimestamp = timestamp;
+
+      // Calculation for target positions
+      const playerActualY = state.playerFloor * CONFIG.FLOOR_HEIGHT;
+      const nukguY = playerActualY + (CONFIG.FLOOR_HEIGHT / 2);
+
+      if (state.dying) {
+        // Fast Zombie catch-up sequence
+        state.zombieY += 15 * (dt / 16);
+        elements.zombie.style.bottom = state.zombieY + 'px';
+        
+        // Game over only when visually caught
+        if (state.zombieY >= nukguY - 20) {
+           gameOver('체력을 모두 소진하여 좀비에게 잡혔습니다!');
+        }
+      } else {
+        // Move Zombie normally
+        // Level 1-2: Speed 0
+        // Normal speed: Increases with floor
+        let baseSpeed = 0;
+        if (state.playerFloor >= 2) {
+          const levelSpeed = [0, 0, 0.4, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 2.0][Math.min(Math.floor(state.playerFloor / 2), 9)];
+          baseSpeed = levelSpeed + (state.combo * 0.05);
+        }
+        
+        state.zombieY += baseSpeed * (dt / 16);
+        elements.zombie.style.bottom = state.zombieY + 'px';
+
+        // Update Mini-map Gauge
+        const mapZombie = document.getElementById('map-zombie');
+        const mapNukgu = document.getElementById('map-nukgu');
+        
+        // Calculate relative distance. Assume 3 floors distance is 100% of the gauge 
+        // Gauge height logic: Nukgu is fixed near top (90%), Zombie climbs up from 0%.
+        const refDist = CONFIG.FLOOR_HEIGHT * 4; 
+        
+        let pDelta = (nukguY - state.zombieY) / refDist; // distance ratio
+        if (pDelta < 0) pDelta = 0; if (pDelta > 1) pDelta = 1;
+        
+        // Zombie climbs UP towards Nukgu.
+        mapNukgu.style.bottom = '90%';
+        // When delta is 1 (far), zombie is at 0%. When delta is 0 (caught), zombie is at 90%.
+        mapZombie.style.bottom = ((1 - pDelta) * 90) + '%';
+        
+        // Color coding the danger (Border color of distance gauge dots)
+        if (pDelta < 0.2) mapNukgu.style.borderColor = '#ff0000';
+        else if (pDelta < 0.5) mapNukgu.style.borderColor = '#ffee00';
+        else mapNukgu.style.borderColor = '#00f0ff';
+
+        // Check Caught (Game Over logic)
+        if (state.zombieY >= nukguY - 20) {
+          gameOver('좀비에게 따라잡혔습니다!');
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function pauseGame() {
+      if (state.pauseCount <= 0 || state.paused) return;
+      state.paused = true;
+      state.pauseCount--;
+      document.getElementById('pause-overlay').classList.remove('hidden');
+      document.getElementById('pause-count').innerText = `REMAINING: ${state.pauseCount}/2`;
+      if (state.pauseCount === 0) document.getElementById('btn-pause').disabled = true;
+    }
+
+    function resumeGame() {
+      state.paused = false;
+      document.getElementById('pause-overlay').classList.add('hidden');
+    }
+
+    function startGame(mode) {
+      state = {
+        running: true,
+        paused: false,
+        dying: false,
+        pauseCount: 2,
+        score: 0,
+        combo: 0,
+        lives: CONFIG.INIT_LIVES,
+        currentLevel: 1,
+        playerFloor: 0,
+        playerX: CONFIG.PLAYER_START_X,
+        zombieY: CONFIG.ZOMBIE_START_Y,
+        worldY: 0,
+        nextTarget: null,
+        mode: mode || 'add_sub',
+        lastTimestamp: performance.now()
+      };
+
+      document.getElementById('mode-screen').classList.add('hidden');
+      document.getElementById('menu-screen').classList.add('hidden');
+      document.getElementById('gameover-screen').classList.add('hidden');
+      document.getElementById('score-display').innerText = '0';
+      
+      lucide.createIcons();
+      initHeader();
+      createObjects();
+      
+      // Initial positioning so Nukgu sits correctly at 346px
+      const nukguY = CONFIG.FLOOR_HEIGHT / 2;
+      elements.nukgu.style.bottom = nukguY + 'px';
+      
+      state.worldY = nukguY - 346;
+      elements.world.style.transform = `translateY(${state.worldY}px)`;
+      
+      setNextMission();
+      
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver(reason) {
+      state.running = false;
+      document.getElementById('gameover-screen').classList.remove('hidden');
+      document.getElementById('over-reason').innerText = reason;
+      document.getElementById('final-score').innerText = state.score.toLocaleString();
+      
+      const modeNames = { 'add_sub': '➕ 가감', 'mul_div': '✖️ 승제', 'mix': '🔀 혼합' };
+      document.getElementById('over-reason').innerHTML += `<br><span class="text-xs text-cyan-500 mt-2 block">[ ${modeNames[state.mode]} 모드 ]</span>`;
+    }
+
+    // ==========================================
+    // 3. RANKING & SUPABASE
+    // ==========================================
+    
+    async function loadRanking(filter = 'all') {
+      const container = document.getElementById('ranking-list');
+      container.innerHTML = '<p class="text-gray-600 text-center py-10 orbitron animate-pulse">LOADING RECORDS...</p>';
+      
+      try {
+        let query = supabase.from('zombie_escape_rank').select('*').order('score', { ascending: false }).limit(20);
+        if (filter !== 'all') {
+          query = query.eq('mode', filter);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (data.length === 0) {
+          container.innerHTML = '<p class="text-gray-600 text-center py-10 orbitron">NO RECORDS FOUND</p>';
+          return;
+        }
+
+        const modeNames = { 'add_sub': '➕ 가감', 'mul_div': '✖️ 승제', 'mix': '🔀 혼합' };
+
+        container.innerHTML = data.map((r, i) => `
+          <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-all">
+            <div class="flex items-center gap-4">
+              <span class="orbitron text-lg font-black ${i < 3 ? 'neon-text-yellow' : 'text-gray-500'} w-6">#${i + 1}</span>
+              <div class="flex flex-col">
+                <div class="noto-sans font-bold text-white text-sm leading-tight">${r.name || 'ANONYMOUS'}</div>
+                <div class="text-[9px] text-gray-500 mt-1 uppercase">${modeNames[r.mode] || r.mode}</div>
+              </div>
+            </div>
+            <div class="orbitron font-black neon-text-blue">${(r.score || 0).toLocaleString()}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Ranking load error:', err);
+        container.innerHTML = '<p class="text-red-500 text-center py-10 orbitron">LOAD FAILED</p>';
+      }
+    }
+
+    async function saveRecord() {
+      const name = document.getElementById('player-name').value.trim() || '늑구';
+      const status = document.getElementById('save-status');
+      const btn = document.getElementById('btn-save');
+      
+      if (btn.disabled) return;
+      btn.disabled = true;
+      status.innerText = 'SAVING...';
+      status.className = 'text-[10px] mt-2 h-4 text-cyan-400';
+
+      try {
+        const { error } = await supabase.from('zombie_escape_rank').insert([
+          { name, score: state.score, mode: state.mode }
+        ]);
+
+        if (error) throw error;
+        
+        status.innerText = 'SAVED SUCCESSFULLY!';
+        status.className = 'text-[10px] mt-2 h-4 text-green-400';
+        btn.innerText = 'SAVED ✓';
+        
+        loadRanking('all'); // Refresh ranking
+      } catch (err) {
+        status.innerText = 'SAVE FAILED: ' + (err.message || 'ERROR');
+        status.className = 'text-[10px] mt-2 h-4 text-red-500';
+        btn.disabled = false;
+        console.error(err);
+      }
+    }
+
+    // ==========================================
+    // 4. EVENT LISTENERS
+    // ==========================================
+    
+    document.getElementById('btn-start').onclick = () => {
+      document.getElementById('mode-screen').classList.remove('hidden');
+    };
+
+    document.querySelectorAll('.btn-mode').forEach(btn => {
+      btn.onclick = () => {
+        const mode = btn.getAttribute('data-mode');
+        startGame(mode);
+      };
+    });
+
+    document.getElementById('btn-mode-back').onclick = () => {
+      document.getElementById('mode-screen').classList.add('hidden');
+    };
+
+    document.getElementById('btn-retry').onclick = () => {
+      document.getElementById('gameover-screen').classList.add('hidden');
+      document.getElementById('mode-screen').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-menu').onclick = () => {
+      document.getElementById('gameover-screen').classList.add('hidden');
+      document.getElementById('menu-screen').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-quit').onclick = () => {
+      state.running = false;
+      state.paused = false;
+      document.getElementById('pause-overlay').classList.add('hidden');
+      document.getElementById('menu-screen').classList.remove('hidden');
+    };
+
+    document.getElementById('btn-pause').onclick = pauseGame;
+    document.getElementById('btn-resume').onclick = resumeGame;
+    document.getElementById('btn-save').onclick = saveRecord;
+    
+    document.getElementById('btn-ranking').onclick = () => {
+      document.getElementById('ranking-screen').classList.remove('hidden');
+      loadRanking('all');
+    };
+    
+    document.getElementById('btn-ranking-back').onclick = () => {
+      document.getElementById('ranking-screen').classList.add('hidden');
+    };
+
+    // Ranking Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+           b.classList.remove('active', 'bg-white/10', 'text-white');
+           b.classList.add('bg-white/5', 'text-gray-500');
+        });
+        btn.classList.add('active', 'bg-white/10', 'text-white');
+        btn.classList.remove('bg-white/5', 'text-gray-500');
+        loadRanking(btn.getAttribute('data-filter'));
+      };
+    });
+
+    // Initialize
+    lucide.createIcons();
+    initHeader();
+    loadRanking('all');
+
+  </script>
+ </body>
+</html>
