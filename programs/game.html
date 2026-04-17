@@ -160,15 +160,26 @@
    <div id="game-screen" class="absolute inset-0 flex flex-col z-10 hidden">
     <!-- Status Bar -->
     <div class="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-cyan-500/20 flex-shrink-0">
-     <div class="flex items-center gap-2">
-      <span class="orbitron text-xs text-gray-400">SCORE</span> <span id="score-display" class="orbitron text-xl text-cyan-300 font-bold">0</span>
+     <!-- Left: Score & Level -->
+     <div class="flex items-center gap-4 flex-1 min-w-0">
+      <div class="flex items-center gap-2">
+       <span class="orbitron text-[10px] text-gray-400">SCORE</span> <span id="score-display" class="orbitron text-lg text-cyan-300 font-bold leading-none">0</span>
+      </div>
+      <div class="flex items-center gap-2">
+       <span class="orbitron text-[10px] text-gray-400">LEVEL</span> <span id="level-display" class="orbitron text-base text-purple-400 font-bold leading-none">1</span>
+      </div>
      </div>
-     <div class="flex items-center gap-2">
-      <span class="orbitron text-xs text-gray-400">LEVEL</span> <span id="level-display" class="orbitron text-lg text-purple-400 font-bold">1</span>
+     
+     <!-- Center: Lives -->
+     <div id="lives-display" class="flex gap-1 flex-shrink-0 justify-center"></div>
+     
+     <!-- Right: Pause -->
+     <div class="flex items-center gap-3 flex-1 justify-end min-w-0">
+      <div class="flex items-center gap-2 flex-shrink-0">
+       <span class="orbitron text-[10px] text-gray-400">PAUSE</span> <span id="pause-display" class="orbitron text-sm text-yellow-300 font-bold leading-none">2 / 2</span>
+      </div>
+      <button id="btn-pause" class="orbitron px-3 py-1 bg-white/10 border border-yellow-500/40 text-yellow-300 rounded-lg hover:bg-white/20 transition-all text-xs font-bold flex-shrink-0">일시정지</button>
      </div>
-     <div id="lives-display" class="flex gap-1"></div>
-     <div class="flex items-center gap-2"><span class="orbitron text-xs text-gray-400">PAUSE</span> <span id="pause-display" class="orbitron text-sm text-yellow-300 font-bold">2 / 2</span>
-     </div><button id="btn-pause" class="orbitron px-3 py-1 bg-white/10 border border-yellow-500/40 text-yellow-300 rounded-lg hover:bg-white/20 transition-all text-xs font-bold">일시정지</button>
     </div><!-- Combo / Fever indicator -->
     <div class="relative flex-shrink-0 h-6 bg-black/40 border-b border-purple-500/20">
      <div id="combo-bar" class="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-300" style="width:0%"></div>
@@ -424,7 +435,7 @@ function updateLives() {
   for (let i = 0; i < 5; i++) {
     const heart = document.createElement('span');
     heart.textContent = i < gameState.lives ? '❤️' : '🖤';
-    heart.className = 'text-lg';
+    heart.className = 'text-base';
     container.appendChild(heart);
   }
 }
