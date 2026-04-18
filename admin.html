@@ -121,27 +121,41 @@
         let sb = null;
         let sbGame = null;
 
-        const env = window._ENV_ || {};
-        const SUPABASE_URL = env.SUPABASE_URL_MAIN;
-        const SUPABASE_KEY = env.SUPABASE_KEY_MAIN;
-        const GAME_URL = env.SUPABASE_URL_GAME;
-        const GAME_KEY = env.SUPABASE_KEY_GAME;
+        const env = window._ENV_;
+        const envLoadedAt = window._ENV_LOADED_AT;
 
-        // 환경변수 주입 체크
-        const isLoaded = !!(SUPABASE_URL && GAME_URL);
+        // 상세 진단 메시지 구성
+        function showDiagMessage(msg) {
+            const diagEl = document.getElementById('diag-msg');
+            diagEl.innerHTML = `⚠️ <b>시스템 진단 결과:</b><br>${msg}`;
+            diagEl.classList.remove('hidden');
+        }
 
-        try {
-            if (isLoaded) {
-                sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                sbGame = supabase.createClient(GAME_URL, GAME_KEY);
+        if (!env) {
+            showDiagMessage('<b>js/env.js 파일 로드 실패!</b><br>서버에서 파일을 찾을 수 없거나 브라우저 캐시 문제입니다. 빌드 로그를 확인해 주세요.');
+        } else {
+            const SUPABASE_URL = env.SUPABASE_URL_MAIN;
+            const SUPABASE_KEY = env.SUPABASE_KEY_MAIN;
+            const GAME_URL = env.SUPABASE_URL_GAME;
+            const GAME_KEY = env.SUPABASE_KEY_GAME;
+
+            const missing = [];
+            if (!SUPABASE_URL) missing.push('URL_MAIN');
+            if (!SUPABASE_KEY) missing.push('KEY_MAIN');
+            if (!GAME_URL) missing.push('URL_GAME');
+            if (!GAME_KEY) missing.push('KEY_GAME');
+
+            if (missing.length > 0) {
+                showDiagMessage(`<b>일부 환경변수 누락:</b> [${missing.join(', ')}]<br>Vercel 설정 페이지에서 해당 이름들이 정확한지 확인해 주세요.`);
             } else {
-                console.warn('환경변수 파일 로드 실패');
-                document.getElementById('diag-msg').classList.remove('hidden');
+                try {
+                    sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                    sbGame = supabase.createClient(GAME_URL, GAME_KEY);
+                    console.log('Supabase clients initialized at', envLoadedAt);
+                } catch (e) {
+                    showDiagMessage(`초기화 코드 오류: ${e.message}`);
+                }
             }
-        } catch (e) {
-            console.error('Supabase initialization failed:', e);
-            document.getElementById('diag-msg').innerHTML += `<br><span class="text-[10px] text-red-300">상세 오류: ${e.message}</span>`;
-            document.getElementById('diag-msg').classList.remove('hidden');
         }
 
         // 페이지 로드 시 이미 로그인 상태면 바로 대시보드 표시
