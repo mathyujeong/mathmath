@@ -55,30 +55,56 @@
     </div>
 
     <div id="admin-dashboard" class="hidden p-8 pt-20 max-w-4xl mx-auto">
-        <nav class="flex items-center justify-between mb-12">
+        <nav class="flex items-center justify-between mb-8">
             <button onclick="location.href='index.html'" class="text-gray-400 hover:text-gray-700 font-bold flex items-center gap-2">
                 <span>&larr;</span> 연구실로 돌아가기
             </button>
-            <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Black Han Sans';">프로그램 활성화 관리</h1>
+            <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Black Han Sans';">관리자 도구</h1>
             <button onclick="logout()" class="text-gray-400 hover:text-red-400 font-bold flex items-center gap-2 transition-colors">
                 로그아웃 <span>→</span>
             </button>
         </nav>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="program-list">
-            <!-- Program items will be loaded here -->
-            <div class="admin-glass p-8 rounded-[30px] flex items-center justify-between animate-pulse">
-                <div class="h-6 w-32 bg-gray-200 rounded"></div>
-                <div class="h-8 w-14 bg-gray-200 rounded-full"></div>
+        <!-- Tab Navigation -->
+        <div class="flex gap-4 mb-10 border-b border-gray-100 pb-1">
+            <button onclick="switchTab('programs')" id="tab-programs" class="text-lg font-bold pb-3 px-2 border-b-4 border-pink-300 text-gray-800 transition-all">프로그램 제어</button>
+            <button onclick="switchTab('rankings')" id="tab-rankings" class="text-lg font-bold pb-3 px-2 border-b-4 border-transparent text-gray-400 hover:text-gray-600 transition-all">랭킹 기록 관리</button>
+        </div>
+
+        <div id="section-programs">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="program-list">
+                <!-- Program items loaded here -->
             </div>
-            <div class="admin-glass p-8 rounded-[30px] flex items-center justify-between animate-pulse">
-                <div class="h-6 w-32 bg-gray-200 rounded"></div>
-                <div class="h-8 w-14 bg-gray-200 rounded-full"></div>
+
+            <div class="mt-12 text-center text-gray-400 text-sm">
+                <p>프로그램을 끄면 학생들의 화면에서 즉시 잠김 화면이 표시됩니다. 🌱</p>
             </div>
         </div>
 
-        <div class="mt-12 text-center text-gray-400 text-sm">
-            <p>프로그램을 끄면 학생들의 화면에서 즉시 잠김 화면이 표시됩니다. 🌱</p>
+        <div id="section-rankings" class="hidden">
+            <div class="flex flex-wrap gap-4 mb-8">
+                <button onclick="loadRankings('zombie_escape_rank')" class="px-6 py-3 rounded-2xl bg-white border-2 border-ghibli-pink text-gray-700 font-bold hover:bg-pink-50 transition-all">🐺 늑구의 모험</button>
+                <button onclick="loadRankings('primenumber')" class="px-6 py-3 rounded-2xl bg-white border-2 border-cyan-200 text-gray-700 font-bold hover:bg-cyan-50 transition-all">🛡️ 소인수분해 수호자</button>
+            </div>
+
+            <div class="admin-glass rounded-[30px] overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50/50 text-gray-500 text-sm uppercase">
+                        <tr>
+                            <th class="p-5 font-bold">이름</th>
+                            <th class="p-5 font-bold">점수</th>
+                            <th class="p-5 font-bold">모드/난이도</th>
+                            <th class="p-5 font-bold">날짜</th>
+                            <th class="p-5 font-bold text-center">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-table-body" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="5" class="p-10 text-center text-gray-400">게임을 선택하여 기록을 불러오세요.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -86,6 +112,11 @@
         const SUPABASE_URL = '__SUPABASE_URL_MAIN__';
         const SUPABASE_KEY = '__SUPABASE_KEY_MAIN__';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 게임용 DB (랭킹 관리용)
+        const GAME_URL = '__SUPABASE_URL_GAME__';
+        const GAME_KEY = '__SUPABASE_KEY_GAME__';
+        const sbGame = supabase.createClient(GAME_URL, GAME_KEY);
 
         // 페이지 로드 시 이미 로그인 상태면 바로 대시보드 표시
         sb.auth.getSession().then(({ data: { session } }) => {
@@ -127,6 +158,78 @@
         async function logout() {
             await sb.auth.signOut();
             location.reload();
+        }
+
+        function switchTab(tab) {
+            const sections = ['programs', 'rankings'];
+            sections.forEach(s => {
+                document.getElementById(`section-${s}`).classList.toggle('hidden', s !== tab);
+                const btn = document.getElementById(`tab-${s}`);
+                if (s === tab) {
+                    btn.classList.add('border-pink-300', 'text-gray-800');
+                    btn.classList.remove('border-transparent', 'text-gray-400');
+                } else {
+                    btn.classList.remove('border-pink-300', 'text-gray-800');
+                    btn.classList.add('border-transparent', 'text-gray-400');
+                }
+            });
+        }
+
+        // --- 랭킹 관리 로직 ---
+        let currentTable = '';
+
+        async function loadRankings(tableName) {
+            currentTable = tableName;
+            const tbody = document.getElementById('ranking-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center animate-pulse">불러오는 중...</td></tr>';
+
+            const { data, error } = await sbGame
+                .from(tableName)
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-400">데이터를 불러오지 못했습니다: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-gray-400">기록이 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(r => `
+                <tr class="hover:bg-gray-50/50 transition-colors">
+                    <td class="p-5 font-medium text-gray-700">${r.name || '익명'}</td>
+                    <td class="p-5 font-bold text-pink-500">${r.score.toLocaleString()}</td>
+                    <td class="p-5 text-gray-500 text-sm">${r.mode || r.level || '-'}</td>
+                    <td class="p-5 text-gray-400 text-xs">${new Date(r.created_at).toLocaleString()}</td>
+                    <td class="p-5 text-center">
+                        <button onclick="deleteRankRecord('${tableName}', ${r.id})" class="text-red-300 hover:text-red-500 p-2 transition-colors" title="삭제">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteRankRecord(tableName, id) {
+            if (!confirm('정말로 이 기록을 삭제할까요? 되돌릴 수 없습니다.')) return;
+
+            const { error } = await sbGame
+                .from(tableName)
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Delete error:', error);
+                alert('삭제에 실패했습니다: ' + error.message);
+            } else {
+                loadRankings(tableName);
+            }
         }
 
         // 메인 페이지와 동일한 순서 유지
