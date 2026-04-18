@@ -42,13 +42,15 @@
     <div id="login-screen" class="login-container">
         <div class="admin-glass p-10 rounded-[40px] w-full max-w-md text-center">
             <div class="text-4xl mb-4">🔑</div>
-            <h1 class="font-bold text-2xl mb-6 text-gray-700">관리자 확인</h1>
-            <input type="password" id="admin-pass" placeholder="비밀번호를 입력하세요" 
-                class="w-full p-4 rounded-2xl border-2 border-gray-100 bg-white shadow-inner mb-4 focus:outline-none focus:border-ghibli-pink text-center">
-            <button onclick="checkPass()" class="w-full bg-[#ffd6e0] text-[#c026d3] font-bold py-4 rounded-2xl shadow-[0_5px_0_#fbcfe8] hover:translate-y-[2px] hover:shadow-[0_3px_0_#fbcfe8] transition-all">
-                확인
+            <h1 class="font-bold text-2xl mb-6 text-gray-700">관리자 로그인</h1>
+            <input type="email" id="admin-email" placeholder="이메일" 
+                class="w-full p-4 rounded-2xl border-2 border-gray-100 bg-white shadow-inner mb-3 focus:outline-none focus:border-pink-300 text-center">
+            <input type="password" id="admin-pass" placeholder="비밀번호" 
+                class="w-full p-4 rounded-2xl border-2 border-gray-100 bg-white shadow-inner mb-4 focus:outline-none focus:border-pink-300 text-center">
+            <button onclick="checkPass()" id="login-btn" class="w-full bg-[#ffd6e0] text-[#c026d3] font-bold py-4 rounded-2xl shadow-[0_5px_0_#fbcfe8] hover:translate-y-[2px] hover:shadow-[0_3px_0_#fbcfe8] transition-all">
+                로그인
             </button>
-            <p id="login-error" class="text-red-400 mt-4 text-sm hidden">비밀번호가 올바르지 않습니다.</p>
+            <p id="login-error" class="text-red-400 mt-4 text-sm hidden">이메일 또는 비밀번호가 올바르지 않습니다.</p>
         </div>
     </div>
 
@@ -58,7 +60,9 @@
                 <span>&larr;</span> 연구실로 돌아가기
             </button>
             <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Black Han Sans';">프로그램 활성화 관리</h1>
-            <div class="w-24"></div>
+            <button onclick="logout()" class="text-gray-400 hover:text-red-400 font-bold flex items-center gap-2 transition-colors">
+                로그아웃 <span>→</span>
+            </button>
         </nav>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="program-list">
@@ -83,19 +87,46 @@
         const SUPABASE_KEY = 'sb_publishable_AIrRcoIfhXmB5OgKY2FZFg_AQ9WuZGC';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const ADMIN_PASS = 'teacher123';
+        // 페이지 로드 시 이미 로그인 상태면 바로 대시보드 표시
+        sb.auth.getSession().then(({ data: { session } }) => {
+            if (session) showDashboard();
+        });
 
-        function checkPass() {
-            const input = document.getElementById('admin-pass').value;
-            if (input === ADMIN_PASS) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('admin-dashboard').classList.remove('hidden');
-                loadPrograms();
-            } else {
-                const err = document.getElementById('login-error');
+        // 엔터키로도 로그인 가능
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkPass();
+        });
+
+        async function checkPass() {
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-pass').value;
+            const btn = document.getElementById('login-btn');
+            const err = document.getElementById('login-error');
+
+            btn.textContent = '확인 중...';
+            btn.disabled = true;
+            err.classList.add('hidden');
+
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+
+            if (error) {
                 err.classList.remove('hidden');
-                err.classList.add('animate-bounce');
+                btn.textContent = '로그인';
+                btn.disabled = false;
+            } else {
+                showDashboard();
             }
+        }
+
+        function showDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            loadPrograms();
+        }
+
+        async function logout() {
+            await sb.auth.signOut();
+            location.reload();
         }
 
         // 메인 페이지와 동일한 순서 유지
