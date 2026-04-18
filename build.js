@@ -1,12 +1,16 @@
 /**
- * build.js
- * Vercel 빌드 시 모든 파일을 dist 폴더로 복사하고, 환경변수를 삽입함.
+ * build.js (Deep Debug Version)
+ * Vercel 빌드 시 환경변수 상태를 상세히 출력하고 치환 작업을 수행함.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// 1. 환경변수 읽기
+console.log('--- 🛡️  Vercel 빌드 보조 스크립트 (디버그 모드) ---');
+console.log('Node.js 버전:', process.version);
+console.log('현재 작업 경로:', process.cwd());
+
+// 1. 환경변수 읽기 및 상태 출력
 const replacements = {
     '__SUPABASE_URL_MAIN__': process.env.SUPABASE_URL_MAIN,
     '__SUPABASE_KEY_MAIN__': process.env.SUPABASE_KEY_MAIN,
@@ -14,79 +18,84 @@ const replacements = {
     '__SUPABASE_KEY_GAME__': process.env.SUPABASE_KEY_GAME,
 };
 
-// 필수 환경변수 체크
 let hasError = false;
+console.log('\n[1] 환경변수 점검:');
 Object.entries(replacements).forEach(([placeholder, value]) => {
+    const keyName = placeholder.replace(/__/g, '');
     if (!value) {
-        console.error(`❌ 환경변수 누락: ${placeholder.replace(/__/g, '')}`);
+        console.error(`❌ ${keyName}: 설정되지 않았습니다!`);
         hasError = true;
+    } else {
+        const masked = value.substring(0, 10) + '...' + value.substring(value.length - 5);
+        console.log(`✅ ${keyName}: 감지됨 (길이: ${value.length}, 시작: ${value.substring(0, 5)}...)`);
     }
 });
 
 if (hasError) {
-    console.error('⚠️  모든 환경변수(MAIN 2개, GAME 2개)를 Vercel에 등록해야 합니다.');
+    console.error('\n⚠️  필수 환경변수가 누락되어 빌드를 중단합니다.');
+    console.error('Vercel Settings > Environment Variables에서 4개의 키가 모두 [Production]으로 설정되었는지 확인하세요.');
     process.exit(1);
 }
 
-// 2. dist 폴더 초기화
+// 2. dist 폴더 생성 및 파일 복사
 const distPath = path.join(__dirname, 'dist');
+console.log(`\n[2] 빌드 출력 전용 폴더(dist) 생성 중: ${distPath}`);
+
 if (fs.existsSync(distPath)) {
     fs.rmSync(distPath, { recursive: true, force: true });
 }
 fs.mkdirSync(distPath);
 
-// 3. 재귀적으로 파일 복사하는 함수
 function copyRecursive(src, dest) {
-    const exists = fs.existsSync(src);
-    const stats = exists && fs.statSync(src);
-    const isDirectory = exists && stats.isDirectory();
-
-    if (isDirectory) {
+    if (!fs.existsSync(src)) return;
+    const stats = fs.statSync(src);
+    if (stats.isDirectory()) {
         if (!fs.existsSync(dest)) fs.mkdirSync(dest);
-        fs.readdirSync(src).forEach(childItemName => {
-            if (childItemName === 'node_modules' || childItemName === '.git' || childItemName === 'dist') return;
-            copyRecursive(path.join(src, childItemName), path.join(dest, childItemName));
+        fs.readdirSync(src).forEach(child => {
+            if (['node_modules', '.git', 'dist'].includes(child)) return;
+            copyRecursive(path.join(src, child), path.join(dest, child));
         });
     } else {
         fs.copyFileSync(src, dest);
     }
 }
 
-console.log('📦 파일을 dist 폴더로 복사 중...');
 copyRecursive(__dirname, distPath);
+console.log('✅ 파일 복사 완료');
 
-// 4. 치환 대상 파일 목록 (dist 폴더 기준)
-const targetFiles = [
-    'index.html',
-    'admin.html',
-    'js/program-guard.js',
-    'programs/math_dice.html',
-    'programs/game.html',
-    'programs/zombie_escape.html',
-];
+// 3. 모든 HTML, JS 파일을 대상으로 치환 (정규표현식 사용)
+function processDirectory(directory) {
+    const items = fs.readdirSync(directory);
+    items.forEach(item => {
+        const fullPath = path.join(directory, item);
+        const stats = fs.statSync(fullPath);
 
-console.log('🔧 환경변수 치환 작업 시작...');
-targetFiles.forEach(relPath => {
-    const fullPath = path.join(distPath, relPath);
-    if (!fs.existsSync(fullPath)) {
-        console.warn(`⚠️  파일을 찾을 수 없음: ${relPath}`);
-        return;
-    }
+        if (stats.isDirectory()) {
+            processDirectory(fullPath);
+        } else if (item.endsWith('.html') || item.endsWith('.js')) {
+            let content = fs.readFileSync(fullPath, 'utf8');
+            let fileChanged = false;
 
-    let content = fs.readFileSync(fullPath, 'utf8');
-    let changed = false;
+            Object.entries(replacements).forEach(([placeholder, value]) => {
+                // 더 강력한 정규표현식 사용 (g: 전역 치환)
+                const regex = new RegExp(placeholder, 'g');
+                if (regex.test(content)) {
+                    content = content.replace(regex, value);
+                    fileChanged = true;
+                    console.log(`   └─ 치환: ${item} (${placeholder} -> 적용됨)`);
+                }
+            });
 
-    Object.entries(replacements).forEach(([placeholder, value]) => {
-        if (content.includes(placeholder)) {
-            content = content.split(placeholder).join(value);
-            changed = true;
+            if (fileChanged) {
+                fs.writeFileSync(fullPath, content);
+            }
         }
     });
+}
 
-    if (changed) {
-        fs.writeFileSync(fullPath, content);
-        console.log(`✅ 치환 완료: ${relPath}`);
-    }
-});
+console.log('\n[3] 이름표(Placeholder) 치환 작업 시작:');
+processDirectory(distPath);
 
-console.log('\n🎉 모든 작업이 완료되었습니다! dist 폴더가 배포 준비되었습니다.');
+console.log('\n🎉 빌드 시스템이 모든 작업을 성공적으로 마쳤습니다!');
+console.log('Vercel이 이제 dist 폴더의 내용물을 배포합니다.');
+console.log('--- 🛡️  빌드 보조 스크립트 종료 ---');
