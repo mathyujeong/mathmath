@@ -199,25 +199,25 @@
       <h2 class="orbitron text-2xl font-black text-cyan-400 mb-8">CHOOSE YOUR CHALLENGE</h2>
       
       <div class="grid grid-cols-1 gap-4 w-full max-w-xs">
-        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="add_sub">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="add_sub" onclick="startGame('add_sub')">
           <span class="text-3xl group-hover:scale-110 transition-transform">➕</span>
           <span class="font-bold text-white">덧셈・뺄셈</span>
           <span class="text-[10px] text-gray-500 uppercase">Addition & Subtraction</span>
         </button>
         
-        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-green-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mul_div">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-green-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mul_div" onclick="startGame('mul_div')">
           <span class="text-3xl group-hover:scale-110 transition-transform">✖️</span>
           <span class="font-bold text-white">곱셈・나눗셈</span>
           <span class="text-[10px] text-gray-500 uppercase">Multiplication & Division</span>
         </button>
         
-        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mix">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mix" onclick="startGame('mix')">
           <span class="text-3xl group-hover:scale-110 transition-transform">🔀</span>
           <span class="font-bold text-white">혼합 계산</span>
           <span class="text-[10px] text-gray-500 uppercase">Mixed Operations</span>
         </button>
         
-        <button id="btn-mode-back" class="mt-4 text-xs text-gray-600 hover:text-white transition-all orbitron">GO BACK</button>
+        <button id="btn-mode-back" onclick="document.getElementById('mode-screen').classList.add('hidden')" class="mt-4 text-xs text-gray-600 hover:text-white transition-all orbitron">GO BACK</button>
       </div>
    </div>
 
@@ -259,16 +259,16 @@
       </div>
       
       <div class="flex flex-col gap-3 w-full">
-        <button id="btn-retry" class="orbitron w-full py-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold hover:bg-white/20 transition-all">RETRY</button>
-        <button id="btn-menu" class="orbitron w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all uppercase text-xs">Go to Menu</button>
+        <button id="btn-retry" onclick="document.getElementById('gameover-screen').classList.add('hidden'); document.getElementById('mode-screen').classList.remove('hidden');" class="orbitron w-full py-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold hover:bg-white/20 transition-all">RETRY</button>
+        <button id="btn-menu" onclick="document.getElementById('gameover-screen').classList.add('hidden'); document.getElementById('menu-screen').classList.remove('hidden');" class="orbitron w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-500 hover:text-white transition-all uppercase text-xs">Go to Menu</button>
       </div>
    </div>
 
    <!-- Pause Display -->
    <div id="pause-overlay" class="absolute inset-0 z-[150] bg-black/60 backdrop-blur-sm hidden flex flex-col items-center justify-center">
       <h2 class="orbitron text-3xl font-black text-yellow-300 mb-8">PAUSED</h2>
-      <button id="btn-resume" class="orbitron px-12 py-4 rounded-xl bg-yellow-500 text-black font-black text-lg shadow-lg active:scale-95 mb-4">RESUME</button>
-      <button id="btn-quit" class="orbitron px-8 py-2 rounded-lg bg-white/5 border border-white/20 text-gray-400 hover:text-white transition-all text-xs uppercase">Quit to Menu</button>
+      <button id="btn-resume" onclick="resumeGame()" class="orbitron px-12 py-4 rounded-xl bg-yellow-500 text-black font-black text-lg shadow-lg active:scale-95 mb-4">RESUME</button>
+      <button id="btn-quit" onclick="state.running=false; state.paused=false; document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('menu-screen').classList.remove('hidden');" class="orbitron px-8 py-2 rounded-lg bg-white/5 border border-white/20 text-gray-400 hover:text-white transition-all text-xs uppercase">Quit to Menu</button>
       <div id="pause-count" class="mt-6 text-xs text-yellow-500/50 orbitron">REMAINING: 2/2</div>
    </div>
 
