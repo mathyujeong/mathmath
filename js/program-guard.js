@@ -4,8 +4,8 @@
  */
 
 const GUARD_CONFIG = {
-    supabaseUrl: 'https://ivpxdmmsdulidcjrkcjh.supabase.co',
-    supabaseKey: 'sb_publishable_AIrRcoIfhXmB5OgKY2FZFg_AQ9WuZGC'
+    supabaseUrl: '__SUPABASE_URL_MAIN__',
+    supabaseKey: '__SUPABASE_KEY_MAIN__'
 };
 
 async function initProgramGuard() {

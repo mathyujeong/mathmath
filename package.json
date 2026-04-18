@@ -1,0 +1,8 @@
+{
+  "name": "mathmath",
+  "version": "1.0.0",
+  "description": "유정쌤의 수학 실험실",
+  "scripts": {
+    "build": "node build.js"
+  }
+}
