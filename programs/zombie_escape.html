@@ -308,7 +308,7 @@
     // ==========================================
     const SUPABASE_URL = 'https://vowdvdgafuyujxiwkelt.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_BvgKKPJOm9fPSZMuR7j0TA_MWtMAiNB';
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
     // ==========================================
     // 1. UTILS & MATH ENGINE
@@ -776,7 +776,7 @@
       container.innerHTML = '<p class="text-gray-600 text-center py-10 orbitron animate-pulse">LOADING RECORDS...</p>';
       
       try {
-        let query = supabase.from('zombie_escape_rank').select('*').order('score', { ascending: false }).limit(20);
+        let query = sbClient.from('zombie_escape_rank').select('*').order('score', { ascending: false }).limit(20);
         if (filter !== 'all') {
           query = query.eq('mode', filter);
         }
@@ -820,7 +820,7 @@
       status.className = 'text-[10px] mt-2 h-4 text-cyan-400';
 
       try {
-        const { error } = await supabase.from('zombie_escape_rank').insert([
+        const { error } = await sbClient.from('zombie_escape_rank').insert([
           { name, score: state.score, mode: state.mode }
         ]);
 
