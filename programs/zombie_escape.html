@@ -367,8 +367,8 @@
         else if (op === '×') resultN = v1 * v2;
         else if (op === '÷') resultN = v1 / v2;
 
-        const t1 = v1 < 0 ? `(${v1})` : v1;
-        const t2 = (v2 < 0 && (op === '+' || op === '-')) ? `(${v2})` : v2;
+        const t1 = v1 < 0 ? '(' + v1 + ')' : v1;
+        const t2 = v2 < 0 ? '(' + v2 + ')' : v2;
         const displayOp = op; 
 
         return {
