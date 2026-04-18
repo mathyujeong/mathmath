@@ -281,7 +281,11 @@
         <div class="text-xs text-gray-500 orbitron mb-1">FINAL SCORE</div>
         <div id="final-score" class="orbitron text-5xl font-black neon-text-yellow mb-4">0</div>
         
-        <input type="text" id="player-name" maxlength="10" placeholder="NAME" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-center orbitron text-white focus:outline-none focus:border-cyan-500 mb-2">
+        <input type="text" id="player-name" maxlength="12" placeholder="예) 1234홍길동" class="w-full bg-black/50 border border-white/20 rounded-lg p-3 text-center orbitron text-white focus:outline-none focus:border-cyan-500 mb-1">
+        <p class="text-[10px] text-gray-500 mb-2 noto-sans leading-relaxed">
+          📝 <span class="text-cyan-500">학번+이름</span>으로 입력해주세요 (예: 1234홍길동)<br>
+          재도전 후 다시 기록할 땐 뒤에 숫자를 붙여주세요 (예: 1234홍길동2)
+        </p>
         <button id="btn-save" class="w-full orbitron py-3 rounded-lg bg-cyan-600 text-white font-bold hover:bg-cyan-500 transition-all">SAVE RECORD</button>
         <p id="save-status" class="text-[10px] mt-2 h-4"></p>
       </div>
