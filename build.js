@@ -1,6 +1,7 @@
 /**
- * build.js (Self-Reference Protected Version)
- * Vercel 빌드 시 발생한 ERR_FS_CP_EINVAL 오류를 해결한 버전입니다.
+ * build.js (Head Injection Version)
+ * 모든 HTML 파일의 <head> 태그 직후에 환경변수를 주입하여 
+ * 다른 스크립트가 실행되기 전에 변수를 미리 준비함.
  */
 
 const fs = require('fs');
@@ -8,9 +9,9 @@ const path = require('path');
 
 const distPath = path.join(__dirname, 'dist');
 
-console.log('--- 🛡️  Vercel 빌드 보조 스크립트 (무한 루프 방지 버전) ---');
+console.log('--- 🛡️  Vercel 빌드 보조 스크립트 (헤드 주입 방식) ---');
 
-// 1. 환경변수 읽기
+// 1. 환경변수 준비
 const envData = {
     SUPABASE_URL_MAIN: process.env.SUPABASE_URL_MAIN,
     SUPABASE_KEY_MAIN: process.env.SUPABASE_KEY_MAIN,
@@ -18,26 +19,19 @@ const envData = {
     SUPABASE_KEY_GAME: process.env.SUPABASE_KEY_GAME,
 };
 
-console.log('[1] 환경변수 상태 점검:');
-Object.entries(envData).forEach(([key, value]) => {
-    if (!value) console.warn(`  ⚠️  ${key}: 누락됨`);
-    else console.log(`  ✅ ${key}: 감지됨 (${value.substring(0, 8)}...)`);
-});
-
 // 2. dist 폴더 초기화
 if (fs.existsSync(distPath)) {
     fs.rmSync(distPath, { recursive: true, force: true });
 }
 fs.mkdirSync(distPath);
 
-// 3. 파일 복사 (수동 재귀 방식 - ERR_FS_CP_EINVAL 방지)
-console.log('[2] 파일 복사 중 (안전 모드)...');
+// 3. 파일 복사
+console.log('[1] 파일 복사 중...');
 function safeCopyRecursive(src, dest) {
     const stats = fs.statSync(src);
     if (stats.isDirectory()) {
         if (!fs.existsSync(dest)) fs.mkdirSync(dest);
         fs.readdirSync(src).forEach(child => {
-            // 핵심: 'dist' 폴더를 비롯한 시스템 폴더는 절대 복사하지 않음
             if (['node_modules', '.git', 'dist', '.gemini', 'build.js', 'package-lock.json'].includes(child)) return;
             safeCopyRecursive(path.join(src, child), path.join(dest, child));
         });
@@ -45,16 +39,9 @@ function safeCopyRecursive(src, dest) {
         fs.copyFileSync(src, dest);
     }
 }
+safeCopyRecursive(__dirname, distPath);
 
-try {
-    safeCopyRecursive(__dirname, distPath);
-    console.log('  ✅ 복사 완료.');
-} catch (err) {
-    console.error('  ❌ 복사 실패:', err);
-    process.exit(1);
-}
-
-// 4. HTML 파일에 환경변수 직접 주입
+// 4. HTML 파일의 <head>에 환경변수 주입 (가장 먼저 실행되도록!)
 function injectEnvToHtml(dir) {
     const files = fs.readdirSync(dir);
     files.forEach(file => {
@@ -67,22 +54,26 @@ function injectEnvToHtml(dir) {
 <script id="env-injection">
   window._ENV_ = ${JSON.stringify(envData)};
   window._ENV_INJECTED = true;
-  console.log('🚀 [Build-Time] 환경변수 주입 완료');
+  console.log('🚀 [Critical] 환경변수 헤드 주입 완료');
 </script>
 `;
-            if (content.includes('</body>')) {
-                content = content.replace('</body>', scriptTag + '</body>');
+            // <head> 태그 바로 다음에 삽입하여 모든 스크립트보다 먼저 실행되게 함
+            if (content.includes('<head>')) {
+                content = content.replace('<head>', '<head>' + scriptTag);
+            } else if (content.includes('<html>')) {
+                content = content.replace('<html>', '<html>' + scriptTag);
             } else {
-                content += scriptTag;
+                content = scriptTag + content;
             }
+            
             fs.writeFileSync(fullPath, content);
-            console.log(`  💉 주입 완료: ${path.relative(distPath, fullPath)}`);
+            console.log(`  💉 헤드 주입 완료: ${path.relative(distPath, fullPath)}`);
         }
     });
 }
 
-console.log('[3] HTML 파일 내 환경변수 주입 시작...');
+console.log('[2] HTML 헤드 내 환경변수 주입 시작...');
 injectEnvToHtml(distPath);
 
-console.log('\n🎉 빌드 보조 작업이 무사히 완료되었습니다!');
+console.log('\n🎉 모든 작업이 완료되었습니다. 이제 변수가 먼저 도착해 기다리고 있을 겁니다!');
 console.log('--- 🛡️  빌드 보조 스크립트 종료 ---');
