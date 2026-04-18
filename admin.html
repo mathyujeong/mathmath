@@ -116,25 +116,38 @@
     </div>
 
     <script>
+        // 변수를 미리 선언 (초기화 에러 방지)
+        let sb = null;
+        let sbGame = null;
+
         const SUPABASE_URL = '__SUPABASE_URL_MAIN__';
         const SUPABASE_KEY = '__SUPABASE_KEY_MAIN__';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // 게임용 DB (랭킹 관리용)
         const GAME_URL = '__SUPABASE_URL_GAME__';
         const GAME_KEY = '__SUPABASE_KEY_GAME__';
-        const sbGame = supabase.createClient(GAME_URL, GAME_KEY);
 
-        // 환경변수 주입 체크 (진단용)
-        if (SUPABASE_URL.startsWith('__') || GAME_URL.startsWith('__')) {
+        // 환경변수 주입 체크
+        const isPlaceholder = SUPABASE_URL.startsWith('__') || GAME_URL.startsWith('__');
+
+        try {
+            if (!isPlaceholder) {
+                sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                sbGame = supabase.createClient(GAME_URL, GAME_KEY);
+            } else {
+                console.warn('환경변수가 아직 주입되지 않았습니다. (Placeholder 상태)');
+                document.getElementById('diag-msg').classList.remove('hidden');
+            }
+        } catch (e) {
+            console.error('Supabase initialization failed:', e);
+            document.getElementById('diag-msg').innerHTML += `<br><span class="text-[10px] text-red-300">상세 오류: ${e.message}</span>`;
             document.getElementById('diag-msg').classList.remove('hidden');
-            console.error('환경변수가 정상적으로 주입되지 않았습니다.');
         }
 
         // 페이지 로드 시 이미 로그인 상태면 바로 대시보드 표시
-        sb.auth.getSession().then(({ data: { session } }) => {
-            if (session) showDashboard();
-        });
+        if (sb && sb.auth) {
+            sb.auth.getSession().then(({ data: { session } }) => {
+                if (session) showDashboard();
+            });
+        }
 
         // 엔터키로도 로그인 가능
         document.addEventListener('keydown', (e) => {
