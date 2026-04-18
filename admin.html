@@ -134,18 +134,37 @@
             const btn = document.getElementById('login-btn');
             const err = document.getElementById('login-error');
 
+            if (!email || !password) {
+                alert('이메일과 비밀번호를 모두 입력해 주세요.');
+                return;
+            }
+
             btn.textContent = '확인 중...';
             btn.disabled = true;
             err.classList.add('hidden');
 
-            const { error } = await sb.auth.signInWithPassword({ email, password });
+            try {
+                // Supabase 클라이언트가 정상적으로 초기화되었는지 확인
+                if (!sb || !sb.auth) {
+                    throw new Error('Supabase 클라이언트 초기화 실패. 환경변수를 확인하세요.');
+                }
 
-            if (error) {
+                const { error } = await sb.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    err.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+                    err.classList.remove('hidden');
+                    btn.textContent = '로그인';
+                    btn.disabled = false;
+                } else {
+                    showDashboard();
+                }
+            } catch (e) {
+                console.error('Login error:', e);
+                err.textContent = '로그인 중 기술적인 오류가 발생했습니다: ' + e.message;
                 err.classList.remove('hidden');
                 btn.textContent = '로그인';
                 btn.disabled = false;
-            } else {
-                showDashboard();
             }
         }
 
