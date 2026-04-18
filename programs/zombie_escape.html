@@ -7,7 +7,8 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="../js/program-guard.js"></script>  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Noto+Sans+KR:wght@400;700&amp;family=JetBrains+Mono:wght@400;700;800&amp;display=swap" rel="stylesheet">
+  <script src="../js/program-guard.js"></script>  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+
   <style>
     html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #0a0a0f; }
     
@@ -121,6 +122,29 @@
 
     .hit-flash { animation: pulse-red 0.3s ease-out; }
   </style>
+  <script>
+    // Bootstrap: define global wrappers that mode buttons need
+    // These run in a SEPARATE script block, isolated from main script errors
+    function selectMode(mode) {
+      document.getElementById('mode-screen').classList.add('hidden');
+      document.getElementById('menu-screen').classList.add('hidden');
+      document.getElementById('gameover-screen').classList.add('hidden');
+      // startGame is defined in the main script block below
+      // If it's available, call it; otherwise show a console error
+      if (typeof startGame === 'function') {
+        startGame(mode);
+      } else {
+        // startGame not defined yet - retry after a short delay
+        setTimeout(function() {
+          if (typeof startGame === 'function') {
+            startGame(mode);
+          } else {
+            alert('게임 로딩 중 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+          }
+        }, 500);
+      }
+    }
+  </script>
  </head>
  <body class="h-full flex flex-col">
   <div id="app" class="relative h-full w-full max-w-[800px] mx-auto overflow-hidden bg-[#070716] shadow-2xl border-x border-white/5">
@@ -199,19 +223,19 @@
       <h2 class="orbitron text-2xl font-black text-cyan-400 mb-8">CHOOSE YOUR CHALLENGE</h2>
       
       <div class="grid grid-cols-1 gap-4 w-full max-w-xs">
-        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="add_sub" onclick="startGame('add_sub')">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="add_sub" onclick="selectMode('add_sub')">
           <span class="text-3xl group-hover:scale-110 transition-transform">➕</span>
           <span class="font-bold text-white">덧셈・뺄셈</span>
           <span class="text-[10px] text-gray-500 uppercase">Addition & Subtraction</span>
         </button>
         
-        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-green-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mul_div" onclick="startGame('mul_div')">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-green-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mul_div" onclick="selectMode('mul_div')">
           <span class="text-3xl group-hover:scale-110 transition-transform">✖️</span>
           <span class="font-bold text-white">곱셈・나눗셈</span>
           <span class="text-[10px] text-gray-500 uppercase">Multiplication & Division</span>
         </button>
         
-        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mix" onclick="startGame('mix')">
+        <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mix" onclick="selectMode('mix')">
           <span class="text-3xl group-hover:scale-110 transition-transform">🔀</span>
           <span class="font-bold text-white">혼합 계산</span>
           <span class="text-[10px] text-gray-500 uppercase">Mixed Operations</span>
