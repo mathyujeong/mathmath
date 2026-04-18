@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="js/env.js"></script>
     <style>
         body { background-color: #fdfbf7; font-family: 'Noto Sans KR', sans-serif; }
         .admin-glass {
@@ -132,7 +131,7 @@
         }
 
         if (!env) {
-            showDiagMessage('<b>js/env.js 파일 로드 실패!</b><br>서버에서 파일을 찾을 수 없거나 브라우저 캐시 문제입니다. 빌드 로그를 확인해 주세요.');
+            showDiagMessage('<b>환경변수 주입 실패!</b><br>빌드 과정에서 문제가 발생했습니다. 빌드 로그(Logs)를 확인해 주세요.');
         } else {
             const SUPABASE_URL = env.SUPABASE_URL_MAIN;
             const SUPABASE_KEY = env.SUPABASE_KEY_MAIN;
