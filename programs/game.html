@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/env.js"></script>
   <script src="../js/program-guard.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <style>
@@ -241,11 +242,11 @@
    </div>
   </div>
   <script>
-// ===================== SUPABASE CONFIG =====================
-const SUPABASE_URL = '__SUPABASE_URL_GAME__';
-const SUPABASE_KEY = '__SUPABASE_KEY_GAME__';
+const env = window._ENV_ || {};
+const SUPABASE_URL = env.SUPABASE_URL_GAME || '__SUPABASE_URL_GAME__';
+const SUPABASE_KEY = env.SUPABASE_KEY_GAME || '__SUPABASE_KEY_GAME__';
 // ReferenceError 방지를 위해 선언 방식 변경 및 안전하게 초기화
-const supabaseClient = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabaseClient = (window.supabase && SUPABASE_URL !== '__SUPABASE_URL_GAME__') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 // ===================== GAME STATE =====================
 const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];

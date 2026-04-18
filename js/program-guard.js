@@ -4,8 +4,8 @@
  */
 
 const GUARD_CONFIG = {
-    supabaseUrl: '__SUPABASE_URL_MAIN__',
-    supabaseKey: '__SUPABASE_KEY_MAIN__'
+    supabaseUrl: (window._ENV_ && window._ENV_.SUPABASE_URL_MAIN) || '__SUPABASE_URL_MAIN__',
+    supabaseKey: (window._ENV_ && window._ENV_.SUPABASE_KEY_MAIN) || '__SUPABASE_KEY_MAIN__'
 };
 
 async function initProgramGuard() {

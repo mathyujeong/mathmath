@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/env.js"></script>
     <style>
         body { background-color: #fdfbf7; font-family: 'Noto Sans KR', sans-serif; }
         .admin-glass {
@@ -120,20 +121,21 @@
         let sb = null;
         let sbGame = null;
 
-        const SUPABASE_URL = '__SUPABASE_URL_MAIN__';
-        const SUPABASE_KEY = '__SUPABASE_KEY_MAIN__';
-        const GAME_URL = '__SUPABASE_URL_GAME__';
-        const GAME_KEY = '__SUPABASE_KEY_GAME__';
+        const env = window._ENV_ || {};
+        const SUPABASE_URL = env.SUPABASE_URL_MAIN;
+        const SUPABASE_KEY = env.SUPABASE_KEY_MAIN;
+        const GAME_URL = env.SUPABASE_URL_GAME;
+        const GAME_KEY = env.SUPABASE_KEY_GAME;
 
         // 환경변수 주입 체크
-        const isPlaceholder = SUPABASE_URL.startsWith('__') || GAME_URL.startsWith('__');
+        const isLoaded = !!(SUPABASE_URL && GAME_URL);
 
         try {
-            if (!isPlaceholder) {
+            if (isLoaded) {
                 sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 sbGame = supabase.createClient(GAME_URL, GAME_KEY);
             } else {
-                console.warn('환경변수가 아직 주입되지 않았습니다. (Placeholder 상태)');
+                console.warn('환경변수 파일 로드 실패');
                 document.getElementById('diag-msg').classList.remove('hidden');
             }
         } catch (e) {
