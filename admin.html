@@ -250,10 +250,19 @@
             const tbody = document.getElementById('ranking-table-body');
             tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center animate-pulse">불러오는 중...</td></tr>';
 
-            const { data, error } = await sbGame
-                .from(tableName)
-                .select('*')
-                .order('created_at', { ascending: false });
+            let query = sbGame.from(tableName).select('*');
+            
+            // 테이블별 최적 정렬 기준 설정
+            if (tableName === 'primenumber') {
+                query = query.order('score', { ascending: false }); // 소인수분해는 점수순 정렬
+            } else if (tableName === 'scores') {
+                query = query.order('score', { ascending: false }); // 수학 다이스
+            } else {
+                // 기본값: 생성일순 (없을 경우 id순)
+                query = query.order('id', { ascending: false }); 
+            }
+
+            const { data, error } = await query;
 
             if (error) {
                 console.error('Error:', error);
