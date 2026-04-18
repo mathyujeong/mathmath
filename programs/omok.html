@@ -52,7 +52,19 @@
         .input-record:focus { border-color: #ffd6e0; }
         
         /* Coordinate Selection Grid */
-        .coord-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px; background: rgba(0,0,0,0.03); border-radius: 12px; }
+        .coord-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 6px; 
+            padding: 8px; 
+            background: rgba(0,0,0,0.03); 
+            border-radius: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .coord-grid::-webkit-scrollbar { width: 6px; }
+        .coord-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .coord-title { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 4px; text-align: center; }
 
         @media (max-width: 1024px) {
@@ -224,10 +236,10 @@
                 axes.forEach((axis) => {
                     const container = document.getElementById(`${side}-${axis}-btns`);
                     container.innerHTML = '';
-                    // Range -10 to 10
-                    for(let v = -10; v <= 10; v++) {
+                    // Range 10 to -10 (Positive at top, Negative at bottom)
+                    for(let v = 10; v >= -10; v--) {
                         const b = document.createElement('button');
-                        b.className = 'coord-btn';
+                        b.className = 'coord-btn w-full'; // Full width for single column
                         b.textContent = v;
                         b.onclick = () => {
                             sel[pi][axis==='x'?0:1] = v;
