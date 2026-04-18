@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="../js/program-guard.js"></script>  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+  <script src="../js/program-guard.js"></script>  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 
   <style>
     html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #0a0a0f; }
@@ -121,6 +121,7 @@
     #ranking-list::-webkit-scrollbar-thumb { background: #00f0ff; border-radius: 2px; }
 
     .hit-flash { animation: pulse-red 0.3s ease-out; }
+    .kr-bold { font-family: 'Black Han Sans', 'Noto Sans KR', sans-serif; }
   </style>
   <script>
     // Error handler: shows any JS errors on screen for debugging
@@ -211,9 +212,9 @@
       <div class="w-32 h-32 mb-8 nukgu-token shadow-[0_0_30px_rgba(0,240,255,0.4)] !bg-cover border-4 border-cyan-400 rounded-full"></div>
       
       <div class="flex flex-col gap-4 w-full">
-        <button id="btn-start" onclick="document.getElementById('mode-screen').classList.remove('hidden')" class="orbitron py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-lg hover:from-cyan-400 hover:to-blue-500 transition-all active:scale-95 glow-blue">START MISSION</button>
-        <button id="btn-ranking" onclick="document.getElementById('ranking-screen').classList.remove('hidden'); if(typeof loadRanking==='function') loadRanking('all');" class="orbitron py-3 rounded-xl bg-white/5 border border-white/20 text-gray-400 hover:bg-white/10 transition-all uppercase">Ranking</button>
-        <button onclick="location.href='../index.html'" class="orbitron py-3 rounded-xl bg-white/5 border border-white/10 text-gray-600 hover:text-gray-400 hover:bg-white/10 transition-all uppercase text-xs">Back to Lab</button>
+        <button id="btn-start" onclick="document.getElementById('mode-screen').classList.remove('hidden')" class="kr-bold py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 font-bold text-xl hover:from-cyan-400 hover:to-blue-500 transition-all active:scale-95 glow-blue text-white">🎮 게임 시작</button>
+        <button id="btn-ranking" onclick="document.getElementById('ranking-screen').classList.remove('hidden'); if(typeof loadRanking==='function') loadRanking('all');" class="kr-bold py-3 rounded-xl bg-white/5 border border-white/20 text-gray-400 hover:bg-white/10 transition-all">🏆 기록 보기</button>
+        <button onclick="location.href='../index.html'" class="kr-bold py-3 rounded-xl bg-white/5 border border-white/10 text-gray-600 hover:text-gray-400 hover:bg-white/10 transition-all text-sm">← 실험실로 돌아가기</button>
       </div>
       
       <div class="mt-8 text-center text-xs text-gray-500 noto-sans leading-relaxed">
@@ -222,30 +223,30 @@
       </div>
    </div>
    
-   <!-- Mode Selection Screen -->
+    <!-- Mode Selection Screen -->
    <div id="mode-screen" class="absolute inset-0 z-[105] bg-black/95 hidden flex flex-col items-center justify-center p-8">
-      <h2 class="orbitron text-2xl font-black text-cyan-400 mb-8">CHOOSE YOUR CHALLENGE</h2>
+      <h2 class="kr-bold text-2xl font-black text-cyan-400 mb-8">어떤 계산을 연습할까요?</h2>
       
       <div class="grid grid-cols-1 gap-4 w-full max-w-xs">
         <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-cyan-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="add_sub" onclick="selectMode('add_sub')">
           <span class="text-3xl group-hover:scale-110 transition-transform">➕</span>
-          <span class="font-bold text-white">덧셈・뺄셈</span>
-          <span class="text-[10px] text-gray-500 uppercase">Addition & Subtraction</span>
+          <span class="kr-bold text-lg text-white">덧셈과 뺄셈</span>
+          <span class="text-[10px] text-gray-500 noto-sans">양수・음수 더하고 빼기</span>
         </button>
         
         <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-green-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mul_div" onclick="selectMode('mul_div')">
           <span class="text-3xl group-hover:scale-110 transition-transform">✖️</span>
-          <span class="font-bold text-white">곱셈・나눗셈</span>
-          <span class="text-[10px] text-gray-500 uppercase">Multiplication & Division</span>
+          <span class="kr-bold text-lg text-white">곱셈과 나눗셈</span>
+          <span class="text-[10px] text-gray-500 noto-sans">양수・음수 곱하고 나누기</span>
         </button>
         
         <button class="btn-mode p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-pink-500 transition-all flex flex-col items-center gap-2 group active:scale-95" data-mode="mix" onclick="selectMode('mix')">
           <span class="text-3xl group-hover:scale-110 transition-transform">🔀</span>
-          <span class="font-bold text-white">혼합 계산</span>
-          <span class="text-[10px] text-gray-500 uppercase">Mixed Operations</span>
+          <span class="kr-bold text-lg text-white">사칙연산 섞기</span>
+          <span class="text-[10px] text-gray-500 noto-sans">덧셈・뺄셈・곱셈・나눗셈 모두</span>
         </button>
         
-        <button id="btn-mode-back" onclick="document.getElementById('mode-screen').classList.add('hidden')" class="mt-4 text-xs text-gray-600 hover:text-white transition-all orbitron">GO BACK</button>
+        <button id="btn-mode-back" onclick="document.getElementById('mode-screen').classList.add('hidden')" class="mt-4 text-sm text-gray-600 hover:text-white transition-all kr-bold">← 뒤로 가기</button>
       </div>
    </div>
 
@@ -255,15 +256,15 @@
         <button id="btn-ranking-back" class="p-2 hover:bg-white/10 rounded-lg transition-all">
           <i data-lucide="chevron-left" class="w-6 h-6 text-gray-400"></i>
         </button>
-        <h2 class="orbitron text-2xl font-bold neon-text-pink">TOP AGENTS</h2>
+        <h2 class="kr-bold text-2xl font-bold neon-text-pink">🏆 명예의 전당</h2>
       </div>
       
       <!-- Ranking Tabs -->
       <div id="ranking-tabs" class="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-        <button class="tab-btn active px-4 py-2 rounded-full bg-white/10 text-xs font-bold text-white whitespace-nowrap active:scale-95 transition-all" data-filter="all">ALL</button>
-        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all" data-filter="add_sub">➕ 가감</button>
-        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all" data-filter="mul_div">✖️ 승제</button>
-        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all" data-filter="mix">🔀 혼합</button>
+        <button class="tab-btn active px-4 py-2 rounded-full bg-white/10 text-xs font-bold text-white whitespace-nowrap active:scale-95 transition-all kr-bold" data-filter="all">전체</button>
+        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all kr-bold" data-filter="add_sub">➕ 덧셈뺄셈</button>
+        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all kr-bold" data-filter="mul_div">✖️ 곱셈나눗셈</button>
+        <button class="tab-btn px-4 py-2 rounded-full bg-white/5 text-xs font-bold text-gray-500 whitespace-nowrap active:scale-95 transition-all kr-bold" data-filter="mix">🔀 사칙혼합</button>
       </div>
       
       <div id="ranking-list" class="flex-1 overflow-y-auto space-y-3 pr-2">
@@ -286,22 +287,22 @@
           📝 <span class="text-cyan-500">학번+이름</span>으로 입력해주세요 (예: 1601조유정)<br>
           재도전 후 다시 기록할 땐 뒤에 숫자를 붙여주세요 (예: 1601조유정2)
         </p>
-        <button id="btn-save" class="w-full orbitron py-3 rounded-lg bg-cyan-600 text-white font-bold hover:bg-cyan-500 transition-all">SAVE RECORD</button>
+        <button id="btn-save" class="w-full kr-bold py-3 rounded-lg bg-cyan-600 text-white text-lg hover:bg-cyan-500 transition-all">💾 기록 저장</button>
         <p id="save-status" class="text-[10px] mt-2 h-4"></p>
       </div>
       
       <div class="flex flex-col gap-3 w-full">
-        <button id="btn-retry" onclick="document.getElementById('gameover-screen').classList.add('hidden'); document.getElementById('mode-screen').classList.remove('hidden');" class="orbitron w-full py-4 rounded-xl bg-white/10 border border-white/20 text-white font-bold hover:bg-white/20 transition-all">RETRY</button>
-        <button id="btn-menu" onclick="if(confirm('메인 메뉴로 돌아갈까요?')){document.getElementById('gameover-screen').classList.add('hidden'); document.getElementById('menu-screen').classList.remove('hidden');}" class="orbitron w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-600 hover:text-gray-400 transition-all uppercase text-xs">Go to Menu</button>
+        <button id="btn-retry" onclick="document.getElementById('gameover-screen').classList.add('hidden'); document.getElementById('mode-screen').classList.remove('hidden');" class="kr-bold w-full py-4 rounded-xl bg-white/10 border border-white/20 text-white text-lg hover:bg-white/20 transition-all">🔄 다시 도전</button>
+        <button id="btn-menu" onclick="if(confirm('메인 메뉴로 돌아갈까요?')){document.getElementById('gameover-screen').classList.add('hidden'); document.getElementById('menu-screen').classList.remove('hidden');}" class="kr-bold w-full py-3 rounded-xl bg-white/5 border border-white/10 text-gray-600 hover:text-gray-400 transition-all text-sm">처음 화면으로</button>
       </div>
    </div>
 
    <!-- Pause Display -->
    <div id="pause-overlay" class="absolute inset-0 z-[150] bg-black/60 backdrop-blur-sm hidden flex flex-col items-center justify-center">
-      <h2 class="orbitron text-3xl font-black text-yellow-300 mb-8">PAUSED</h2>
-      <button id="btn-resume" onclick="resumeGame()" class="orbitron px-12 py-4 rounded-xl bg-yellow-500 text-black font-black text-lg shadow-lg active:scale-95 mb-4">RESUME</button>
-      <button id="btn-quit" onclick="state.running=false; state.paused=false; document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('menu-screen').classList.remove('hidden');" class="orbitron px-8 py-2 rounded-lg bg-white/5 border border-white/20 text-gray-400 hover:text-white transition-all text-xs uppercase">Quit to Menu</button>
-      <div id="pause-count" class="mt-6 text-xs text-yellow-500/50 orbitron">REMAINING: 2/2</div>
+      <h2 class="kr-bold text-3xl font-black text-yellow-300 mb-8">⏸ 잠깐 멈춤</h2>
+      <button id="btn-resume" onclick="resumeGame()" class="kr-bold px-12 py-4 rounded-xl bg-yellow-500 text-black font-black text-xl shadow-lg active:scale-95 mb-4">▶ 계속하기</button>
+      <button id="btn-quit" onclick="state.running=false; state.paused=false; document.getElementById('pause-overlay').classList.add('hidden'); document.getElementById('menu-screen').classList.remove('hidden');" class="kr-bold px-8 py-2 rounded-lg bg-white/5 border border-white/20 text-gray-400 hover:text-white transition-all text-sm">그만하기</button>
+      <div id="pause-count" class="mt-6 text-xs text-yellow-500/50 noto-sans">남은 일시정지: 2/2</div>
    </div>
 
   </div>
@@ -767,7 +768,7 @@
       document.getElementById('over-reason').innerText = reason;
       document.getElementById('final-score').innerText = state.score.toLocaleString();
       
-      const modeNames = { 'add_sub': '➕ 가감', 'mul_div': '✖️ 승제', 'mix': '🔀 혼합' };
+      const modeNames = { 'add_sub': '➕ 덧셈뺄셈', 'mul_div': '✖️ 곱셈나눗셈', 'mix': '🔀 사칙혼합' };
       document.getElementById('over-reason').innerHTML += `<br><span class="text-xs text-cyan-500 mt-2 block">[ ${modeNames[state.mode]} 모드 ]</span>`;
     }
 
@@ -793,7 +794,7 @@
           return;
         }
 
-        const modeNames = { 'add_sub': '➕ 가감', 'mul_div': '✖️ 승제', 'mix': '🔀 혼합' };
+        const modeNames = { 'add_sub': '➕ 덧셈뺄셈', 'mul_div': '✖️ 곱셈나눗셈', 'mix': '🔀 사칙혼합' };
 
         container.innerHTML = data.map((r, i) => `
           <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-all">
