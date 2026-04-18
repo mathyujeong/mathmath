@@ -3,336 +3,552 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>좌표평면 오목 - 유정쌤의 실험실</title>
+    <title>유정쌤과 함께하는 좌표평면 오목두기</title>
     <link rel="icon" href="../assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="../css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/program-guard.js"></script>
     <style>
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 100px 5% 50px;
-            min-height: 100vh;
+        :root { --vh: 1vh; }
+        body { font-family: 'Noto Sans KR', sans-serif; overflow: hidden; background: #fdfbf7; }
+        .coord-btn { 
+            width: 1.8rem; height: 1.8rem; border-radius: 0.5rem; 
+            font-size: 0.75rem; font-weight: 700; border: 2px solid #e2e8f0; 
+            background: #fff; color: #475569; cursor: pointer; transition: all 0.15s;
         }
-
-        .game-wrapper {
-            display: flex;
-            gap: 2rem;
-            align-items: flex-start;
-            justify-content: center;
-            width: 100%;
-            max-width: 1200px;
-            margin-top: 2rem;
+        .coord-btn:hover:not(:disabled) { background: #fee2e2; border-color: #fca5a5; }
+        .coord-btn.selected { background: #ef4444; color: #fff; border-color: #ef4444; }
+        .coord-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        
+        .panel-inactive { opacity: 0.35; pointer-events: none; filter: grayscale(0.5); }
+        
+        .game-layout { height: calc(100vh - 60px); display: flex; }
+        .side-panel { 
+            width: 300px; padding: 1.5rem; background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(10px); border-right: 1px solid rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; gap: 1rem; justify-content: center;
         }
-
-        .game-panel {
-            flex: 1;
-            min-width: 250px;
-            padding: 2rem;
-            text-align: center;
+        .right-panel { border-right: none; border-left: 1px solid rgba(0,0,0,0.05); }
+        
+        .place-btn { 
+            padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 800; 
+            font-size: 1.1rem; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 0 #cbd5e1;
         }
-
-        .game-panel h3 {
-            margin-bottom: 1.5rem;
-            font-size: 1.25rem;
-            color: var(--text-color);
-        }
-
-        .board-container {
-            position: relative;
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--glass-border);
-        }
-
-        canvas#board {
-            display: block;
-            border-radius: 4px;
-        }
-
-        .axis-row {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .axis-block {
-            flex: 1;
-        }
-
-        .axis-label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .btn-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .coord-btn {
-            padding: 8px 0;
-            font-size: 0.85rem;
-            border: 1px solid var(--glass-border);
-            border-radius: 6px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .coord-btn:hover {
-            border-color: #f472b6;
-            background: #fff5f8;
-        }
-
-        .coord-btn.selected {
-            background: linear-gradient(135deg, #f472b6, #a78bfa);
-            color: white;
-            border: none;
-        }
-
-        .status-badge {
-            margin-bottom: 2rem;
-            padding: 0.8rem 2rem;
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
-        }
-
-        .action-btn {
-            width: 100%;
-        }
+        .place-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #cbd5e1; }
+        .place-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-black { background: #334155; color: white; box-shadow: 0 4px 0 #0f172a; }
+        .btn-white { background: #ffffff; color: #334155; border: 2px solid #e2e8f0; box-shadow: 0 4px 0 #cbd5e1; }
+        
+        .board-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #f1f5f9; position: relative; overflow: hidden; }
+        
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal { background: white; padding: 2.5rem; border-radius: 30px; text-align: center; width: 90%; max-width: 450px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        
+        .input-record { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #f1f5f9; margin-top: 8px; outline: none; transition: border-color 0.2s; }
+        .input-record:focus { border-color: #ffd6e0; }
+        
+        /* Coordinate Selection Grid */
+        .coord-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px; background: rgba(0,0,0,0.03); border-radius: 12px; }
+        .coord-title { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 4px; text-align: center; }
 
         @media (max-width: 1024px) {
-            .game-wrapper {
-                flex-direction: column;
-                align-items: center;
-            }
-            .game-panel {
-                width: 100%;
-                max-width: 500px;
-            }
+            .game-layout { flex-direction: column; overflow-y: auto; height: auto; }
+            .side-panel { width: 100%; border: none; }
+            .board-container { min-height: 500px; order: -1; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar scrolled">
-        <div class="logo" onclick="location.href='../index.html'">유정쌤의 실험실</div>
+    <nav class="navbar scrolled" style="position: relative; z-index: 50;">
+        <div class="logo" onclick="location.href='../index.html'" style="font-family: 'Black Han Sans'; cursor: pointer;">유정쌤의 실험실</div>
         <div class="nav-links">
-            <a href="../index.html#home">홈</a>
-            <a href="../index.html#programs">학습 프로그램</a>
+            <span style="font-weight: 700; color: #334155;">유정쌤과 함께하는 좌표평면 오목두기</span>
         </div>
         <button class="login-btn" onclick="location.href='../index.html'">돌아가기</button>
     </nav>
 
-    <div class="game-container">
-        <div id="status" class="status-badge blur-glass">현재 차례: <span style="color: #6366f1;">흑돌</span></div>
-        
-        <div class="game-wrapper">
-            <!-- Player 1 Panel -->
-            <div class="game-panel blur-glass" id="panel1">
-                <h3>Player 1 (흑돌)</h3>
-                <div class="axis-row">
-                    <div class="axis-block">
-                        <div class="axis-label">X 좌표</div>
-                        <div class="btn-grid" id="p1x"></div>
+    <!-- MODE SELECTION SCREEN -->
+    <div id="mode-screen" class="flex flex-col items-center justify-center gap-8" style="height: calc(100vh - 80px);">
+        <div class="text-center">
+            <h1 style="font-family: 'Black Han Sans'; font-size: 3.5rem; color: #334155; margin-bottom: 0.5rem;">🎯 좌표평면 오목</h1>
+            <p style="font-size: 1.25rem; color: #64748b;">(X, Y) 좌표를 생각하며 돌을 두어보세요!</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button onclick="startGame(1)" class="place-btn btn-white px-10 py-5">🤖 AI와 대결하기</button>
+            <button onclick="startGame(2)" class="place-btn btn-black px-10 py-5">🤝 친구와 대결하기</button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="hidden">
+        <div class="game-layout">
+            <!-- Left Panel: Player 1 (Black) -->
+            <div id="left-panel" class="side-panel">
+                <div class="text-center">
+                    <div style="font-size: 2.5rem;">⚫</div>
+                    <p id="p1-label" style="font-weight: 800; font-size: 1.2rem;">플레이어 1</p>
+                </div>
+                
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <p class="coord-title">X 좌표</p>
+                        <div id="left-x-btns" class="coord-grid"></div>
                     </div>
-                    <div class="axis-block">
-                        <div class="axis-label">Y 좌표</div>
-                        <div class="btn-grid" id="p1y"></div>
+                    <div class="flex-1">
+                        <p class="coord-title">Y 좌표</p>
+                        <div id="left-y-btns" class="coord-grid"></div>
                     </div>
                 </div>
-                <button class="btn-primary action-btn" id="p1Place">착수하기</button>
+
+                <div class="text-center mt-2">
+                    <span id="left-coord-display" style="font-size: 1.5rem; font-weight: 800; color: #334155;">( _ , _ )</span>
+                </div>
+                
+                <button id="p1-place-btn" onclick="placeStone(0)" class="place-btn btn-black">착수하기</button>
+                <p id="left-warn" class="text-red-500 text-xs text-center h-4"></p>
             </div>
 
-            <!-- Board -->
+            <!-- Board Center -->
             <div class="board-container">
-                <canvas id="board" width="600" height="600"></canvas>
+                <canvas id="board"></canvas>
             </div>
 
-            <!-- Player 2 Panel -->
-            <div class="game-panel blur-glass" id="panel2">
-                <h3>Player 2 (백돌)</h3>
-                <div class="axis-row">
-                    <div class="axis-block">
-                        <div class="axis-label">X 좌표</div>
-                        <div class="btn-grid" id="p2x"></div>
-                    </div>
-                    <div class="axis-block">
-                        <div class="axis-label">Y 좌표</div>
-                        <div class="btn-grid" id="p2y"></div>
-                    </div>
+            <!-- Right Panel: Player 2 (White) / AI -->
+            <div id="right-panel" class="side-panel right-panel">
+                <div class="text-center">
+                    <div style="font-size: 2.5rem;">⚪</div>
+                    <p id="p2-label" style="font-weight: 800; font-size: 1.2rem;">플레이어 2</p>
                 </div>
-                <button class="btn-secondary action-btn" id="p2Place">착수하기</button>
+
+                <div id="right-controls">
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <p class="coord-title">X 좌표</p>
+                            <div id="right-x-btns" class="coord-grid"></div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="coord-title">Y 좌표</p>
+                            <div id="right-y-btns" class="coord-grid"></div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <span id="right-coord-display" style="font-size: 1.5rem; font-weight: 800; color: #334155;">( _ , _ )</span>
+                    </div>
+                    <button id="p2-place-btn" onclick="placeStone(1)" class="place-btn btn-white w-full mt-4">착수하기</button>
+                </div>
+
+                <div id="ai-status-box" class="hidden text-center p-4 bg-white/50 rounded-2xl">
+                    <p id="ai-status" class="font-bold text-gray-500">AI의 관찰 중...</p>
+                </div>
+                
+                <p id="right-warn" class="text-red-500 text-xs text-center h-4"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIN RECORD OVERLAY -->
+    <div id="win-overlay" class="overlay hidden">
+        <div class="modal">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🏆</div>
+            <h2 id="win-title" style="font-family: 'Black Han Sans'; font-size: 2rem; color: #334155; margin-bottom: 1rem;">승리!</h2>
+            <div id="record-form" class="mt-4 text-left">
+                <p class="font-bold text-gray-600 mb-2">기록을 남겨주세요 🌱</p>
+                <select id="user-class" class="input-record">
+                    <option value="" disabled selected>반을 선택하세요</option>
+                    <option value="1반">1반</option>
+                    <option value="2반">2반</option>
+                    <option value="3반">3반</option>
+                    <option value="4반">4반</option>
+                    <option value="5반">5반</option>
+                </select>
+                <input type="text" id="user-name" class="input-record" placeholder="이름을 입력하세요">
+                <button onclick="submitRecord()" id="submit-btn" class="place-btn btn-black w-full mt-6">기록 저장하기</button>
+            </div>
+            <div class="flex gap-4 mt-4">
+                <button onclick="restartGame()" class="flex-1 py-3 text-gray-500 font-bold hover:text-gray-800">다시 도전</button>
+                <button onclick="location.href='../index.html'" class="flex-1 py-3 text-gray-500 font-bold hover:text-gray-800">메인으로</button>
             </div>
         </div>
     </div>
 
     <script>
-        const boardSize = 31;
-        const canvas = document.getElementById('board');
-        const ctx = canvas.getContext('2d');
-        const margin = 35;
-        const gridCells = boardSize - 1;
-        const cell = (canvas.width - margin * 2) / gridCells;
-        const board = Array.from({length: boardSize}, () => Array(boardSize).fill(0));
-        let current = 1, gameOver = false;
-        const selections = {1: {x: null, y: null}, 2: {x: null, y: null}};
+        // CORE CONSTANTS
+        const H = 10; // Half size
+        const S = 2*H + 1; // Size (21)
+        let board = Array.from({length:S}, () => Array(S).fill(0));
+        let mode = 1, turn = 1, gameOver = false, lastMove = null, winLine = null;
+        let sel = [[null,null],[null,null]];
+        
+        let canvas, ctx, cellSize, pad = 40;
 
-        function drawBoard() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // SUPABASE SETUP (Integration with existing dashboard)
+        let sbGame = null;
+        const env = window._ENV_ || {};
+        if (env.SUPABASE_URL_GAME && env.SUPABASE_KEY_GAME) {
+            sbGame = supabase.createClient(env.SUPABASE_URL_GAME, env.SUPABASE_KEY_GAME);
+        }
+
+        function startGame(m) {
+            mode = m;
+            board = Array.from({length:S}, () => Array(S).fill(0));
+            turn = 1; gameOver = false; lastMove = null; winLine = null;
+            sel = [[null,null],[null,null]];
             
-            // Grid Lines
-            ctx.strokeStyle = "#e2e8f0"; 
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= gridCells; i++) {
-                const pos = margin + i * cell;
-                ctx.beginPath(); ctx.moveTo(pos, margin); ctx.lineTo(pos, margin + gridCells * cell); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(margin, pos); ctx.lineTo(margin + gridCells * cell, pos); ctx.stroke();
+            document.getElementById('mode-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('win-overlay').classList.add('hidden');
+
+            if(mode === 1) {
+                document.getElementById('right-controls').classList.add('hidden');
+                document.getElementById('ai-status-box').classList.remove('hidden');
+                document.getElementById('p2-label').textContent = '인공지능(AI)';
+            } else {
+                document.getElementById('right-controls').classList.remove('hidden');
+                document.getElementById('ai-status-box').classList.add('hidden');
+                document.getElementById('p2-label').textContent = '플레이어 2';
             }
 
-            // Axis Lines (0,0 center)
-            ctx.strokeStyle = "#94a3b8";
-            ctx.lineWidth = 2;
-            const zeroPos = margin + 15 * cell;
-            ctx.beginPath(); ctx.moveTo(zeroPos, margin); ctx.lineTo(zeroPos, margin + gridCells * cell); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(margin, zeroPos); ctx.lineTo(margin + gridCells * cell, zeroPos); ctx.stroke();
+            buildCoordBtns();
+            resizeBoard();
+            updateUI();
+        }
 
-            // Labels
-            ctx.fillStyle = "#64748b";
-            ctx.font = "bold 11px Inter, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "top";
-            for (let i = -15; i <= 15; i += 5) {
-                ctx.fillText(i, margin + (i + 15) * cell, zeroPos + 5);
-            }
-            ctx.textAlign = "right";
-            ctx.textBaseline = "middle";
-            for (let i = -15; i <= 15; i += 5) {
-                if (i === 0) continue;
-                ctx.fillText(i, zeroPos - 5, margin + (15 - i) * cell);
+        function buildCoordBtns() {
+            const sides = ['left', 'right'];
+            const axes = ['x', 'y'];
+            sides.forEach((side, pi) => {
+                axes.forEach((axis) => {
+                    const container = document.getElementById(`${side}-${axis}-btns`);
+                    container.innerHTML = '';
+                    // Range -10 to 10
+                    for(let v = -10; v <= 10; v++) {
+                        const b = document.createElement('button');
+                        b.className = 'coord-btn';
+                        b.textContent = v;
+                        b.onclick = () => {
+                            sel[pi][axis==='x'?0:1] = v;
+                            updateCoordBtns(pi);
+                        };
+                        container.appendChild(b);
+                    }
+                });
+            });
+        }
+
+        function updateCoordBtns(pi) {
+            const side = pi === 0 ? 'left' : 'right';
+            const axes = ['x', 'y'];
+            axes.forEach((axis, ai) => {
+                const btns = document.getElementById(`${side}-${axis}-btns`).children;
+                for(let i=0; i<btns.length; i++){
+                    const val = parseInt(btns[i].textContent);
+                    btns[i].classList.toggle('selected', sel[pi][ai] === val);
+                }
+            });
+            const x = sel[pi][0], y = sel[pi][1];
+            document.getElementById(`${side}-coord-display`).textContent = `(${x??'_'}, ${y??'_'})`;
+            document.getElementById(`${side}-warn`).textContent = '';
+        }
+
+        function updateUI() {
+            const lp = document.getElementById('left-panel');
+            const rp = document.getElementById('right-panel');
+            
+            lp.classList.toggle('panel-inactive', turn !== 1 || gameOver);
+            rp.classList.toggle('panel-inactive', turn !== 2 || gameOver);
+            
+            drawBoard();
+        }
+
+        function toGrid(x, y) { return [H - y, x + H]; }
+        function fromGrid(r, c) { return [c - H, H - r]; }
+
+        function placeStone(pi) {
+            if(gameOver || turn !== pi + 1) return;
+            
+            const [x, y] = sel[pi];
+            const side = pi === 0 ? 'left' : 'right';
+            
+            if(x === null || y === null) {
+                document.getElementById(`${side}-warn`).textContent = '좌표(X, Y)를 모두 선택해주세요!';
+                return;
             }
 
-            // Stones
-            for (let r = 0; r < boardSize; r++) {
-                for (let c = 0; c < boardSize; c++) {
-                    if (board[r][c] !== 0) drawStone(r, c, board[r][c] === 1 ? "#334155" : "#f8fafc");
+            const [r, c] = toGrid(x, y);
+            if(board[r][c] !== 0) {
+                document.getElementById(`${side}-warn`).textContent = '이미 돌이 놓여 있는 좌표입니다!';
+                return;
+            }
+
+            board[r][c] = turn;
+            lastMove = [r, c];
+            sel[pi] = [null, null];
+            updateCoordBtns(pi);
+
+            if(checkWin(r, c, turn)) {
+                gameOver = true;
+                drawBoard();
+                showWinOverlay();
+                return;
+            }
+
+            if(isDraw()) {
+                gameOver = true;
+                alert('무승부입니다!');
+                location.reload();
+                return;
+            }
+
+            turn = (turn === 1) ? 2 : 1;
+            updateUI();
+
+            if(mode === 1 && turn === 2) aiMove();
+        }
+
+        // --- AI LOGIC ---
+        function aiMove() {
+            document.getElementById('ai-status').textContent = 'AI가 수 읽기 중...';
+            setTimeout(() => {
+                const [r, c] = bestMove();
+                board[r][c] = 2;
+                lastMove = [r, c];
+                
+                if(checkWin(r, c, 2)) {
+                    gameOver = true;
+                    drawBoard();
+                    showWinOverlay();
+                    return;
+                }
+                
+                turn = 1;
+                document.getElementById('ai-status').textContent = 'AI의 관찰 중...';
+                updateUI();
+            }, 800);
+        }
+
+        function bestMove() {
+            let best = null, maxScore = -1;
+            for(let r=0; r<S; r++) {
+                for(let c=0; c<S; c++) {
+                    if(board[r][c] !== 0) continue;
+                    if(!hasNeighbor(r,c) && !(r===H && c===H)) continue;
+                    let sc = scorePos(r, c);
+                    if(sc > maxScore) { maxScore = sc; best = [r, c]; }
                 }
             }
+            return best || [H, H];
         }
 
-        function drawStone(r, c, color) {
-            const x = margin + c * cell, y = margin + r * cell, radius = cell * 0.42;
-            
-            // Shadow
-            ctx.shadowColor = "rgba(0,0,0,0.2)";
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetY = 2;
+        function hasNeighbor(r, c) {
+            for(let dr=-2; dr<=2; dr++) {
+                for(let dc=-2; dc<=2; dc++) {
+                    const nr = r+dr, nc = c+dc;
+                    if(nr>=0 && nr<S && nc>=0 && nc<S && board[nr][nc]) return true;
+                }
+            }
+            return false;
+        }
 
+        const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+        function scorePos(r, c) {
+            let s = 0;
+            // Center weight
+            s += Math.max(0, 10 - Math.abs(r-H) - Math.abs(c-H));
+            for(const [dr, dc] of dirs) {
+                s += evalLine(r, c, dr, dc, 2) * 1.5; // AI Attack
+                s += evalLine(r, c, dr, dc, 1);       // Blocking Player
+            }
+            return s;
+        }
+
+        function evalLine(r, c, dr, dc, p) {
+            let cnt = 0, open = 0;
+            for(let d=1; d<5; d++){
+                const nr=r+dr*d, nc=c+dc*d;
+                if(nr<0 || nr>=S || nc<0 || nc>=S) break;
+                if(board[nr][nc] === p) cnt++;
+                else if(board[nr][nc] === 0) { open++; break; }
+                else break;
+            }
+            for(let d=1; d<5; d++){
+                const nr=r-dr*d, nc=c-dc*d;
+                if(nr<0 || nr>=S || nc<0 || nc>=S) break;
+                if(board[nr][nc] === p) cnt++;
+                else if(board[nr][nc] === 0) { open++; break; }
+                else break;
+            }
+            if(cnt >= 4) return 100000;
+            if(cnt === 3 && open === 2) return 10000;
+            if(cnt === 3 && open === 1) return 1000;
+            return cnt * 10;
+        }
+
+        // --- DRAWING ---
+        function resizeBoard() {
+            canvas = document.getElementById('board');
+            const wrap = canvas.parentElement;
+            const size = Math.min(wrap.clientWidth - 40, wrap.clientHeight - 40);
+            cellSize = Math.floor((size - pad*2) / (S-1));
+            const actual = cellSize * (S-1) + pad*2;
+            canvas.width = actual; canvas.height = actual;
+            ctx = canvas.getContext('2d');
+            drawBoard();
+        }
+
+        function drawBoard() {
+            if(!ctx) return;
+            const w = canvas.width, cz = cellSize, off = pad;
+
+            // Wood Texture Background
+            ctx.fillStyle = '#D2A56B';
+            ctx.fillRect(0,0,w,w);
+            
+            // Grain
+            ctx.strokeStyle = 'rgba(139,90,43,0.15)';
+            for(let i=0; i<w; i+=5) {
+                ctx.beginPath();
+                ctx.moveTo(0, i + Math.sin(i*0.1)*3);
+                ctx.lineTo(w, i + Math.cos(i*0.1)*3);
+                ctx.stroke();
+            }
+
+            // Grid Lines
+            ctx.strokeStyle = '#2d1e12';
+            for(let i=0; i<S; i++) {
+                const p = off + i*cz;
+                const isAxis = (i === H);
+                ctx.lineWidth = isAxis ? 2.5 : 0.8;
+                ctx.beginPath(); ctx.moveTo(off, p); ctx.lineTo(w-off, p); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(p, off); ctx.lineTo(p, w-off); ctx.stroke();
+            }
+
+            // Origin dot
+            ctx.fillStyle = '#2d1e12';
             ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = color;
+            ctx.arc(off + H*cz, off + H*cz, 4, 0, Math.PI*2);
             ctx.fill();
 
-            // Gradient for stone
-            const grad = ctx.createRadialGradient(x - radius/3, y - radius/3, radius/10, x, y, radius);
-            grad.addColorStop(0, "rgba(255,255,255,0.2)");
-            grad.addColorStop(1, "rgba(0,0,0,0.1)");
-            ctx.fillStyle = grad;
-            ctx.fill();
-
-            // Outline
-            ctx.shadowColor = "transparent";
-            ctx.strokeStyle = "#cbd5e1";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-
-        function buildButtons(gridId, axis, player) {
-            const grid = document.getElementById(gridId);
-            for (let v = -15; v <= 15; v++) {
-                const btn = document.createElement('button');
-                btn.textContent = v;
-                btn.className = 'coord-btn';
-                btn.dataset.axis = axis;
-                btn.dataset.value = v;
-                btn.dataset.player = player;
-                btn.addEventListener('click', coordClick);
-                grid.appendChild(btn);
+            // Labels
+            ctx.fillStyle = '#3e2723';
+            ctx.font = `bold ${Math.max(12, cz*0.4)}px Noto Sans KR`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for(let i=0; i<S; i++) {
+                const val = i - H;
+                if(val !== 0) {
+                    // X-axis (horizontal)
+                    ctx.fillText(val, off+i*cz, off+H*cz+14);
+                    // Y-axis (vertical)
+                    ctx.fillText(H-i, off+H*cz-18, off+i*cz);
+                }
             }
-        }
+            ctx.fillText('0', off+H*cz-10, off+H*cz+14);
 
-        ["x", "y"].forEach(a => {
-            buildButtons("p1" + a, a, 1);
-            buildButtons("p2" + a, a, 2);
-        });
-
-        function coordClick(e) {
-            const btn = e.target, axis = btn.dataset.axis, val = parseInt(btn.dataset.value, 10);
-            const player = parseInt(btn.dataset.player, 10);
-            const grid = document.getElementById(`p${player}${axis}`);
-            [...grid.children].forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selections[player][axis] = val;
-        }
-
-        function updateButtons() {
-            document.getElementById('p1Place').style.opacity = (current !== 1 || gameOver) ? "0.5" : "1";
-            document.getElementById('p2Place').style.opacity = (current !== 2 || gameOver) ? "0.5" : "1";
-            document.getElementById('p1Place').disabled = current !== 1 || gameOver;
-            document.getElementById('p2Place').disabled = current !== 2 || gameOver;
-        }
-
-        function attemptPlace(player) {
-            if (gameOver || current !== player) return;
-            const {x, y} = selections[player];
-            if (x === null || y === null) { alert("X, Y 좌표를 모두 선택하세요!"); return; }
-            const col = x + 15, row = 15 - y;
-            if (board[row][col] !== 0) { alert("이미 돌이 놓여 있습니다!"); return; }
-            
-            board[row][col] = player;
-            if (checkWin(row, col, player)) {
-                drawBoard();
-                document.getElementById('status').innerHTML = `<span style="color: #f472b6;">${player === 1 ? "흑돌" : "백돌"} 승리! 축하합니다!</span>`;
-                gameOver = true; updateButtons(); return;
+            // Stones
+            for(let r=0; r<S; r++) {
+                for(let c=0; c<S; c++) {
+                    if(!board[r][c]) continue;
+                    const cx = off+c*cz, cy = off+r*cz, rad = cz*0.45;
+                    const g = ctx.createRadialGradient(cx-rad*0.3, cy-rad*0.3, rad*0.1, cx, cy, rad);
+                    if(board[r][c] === 1) {
+                        g.addColorStop(0, '#555'); g.addColorStop(1, '#000');
+                    } else {
+                        g.addColorStop(0, '#fff'); g.addColorStop(1, '#ccc');
+                    }
+                    ctx.fillStyle = g;
+                    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI*2); ctx.fill();
+                    if(board[r][c] === 2) { ctx.strokeStyle = '#999'; ctx.stroke(); }
+                }
             }
-            current = current === 1 ? 2 : 1;
-            const turnText = current === 1 ? "흑돌" : "백돌";
-            const turnColor = current === 1 ? "#6366f1" : "#f472b6";
-            document.getElementById('status').innerHTML = `현재 차례: <span style="color: ${turnColor};">${turnText}</span>`;
-            drawBoard(); updateButtons();
-        }
 
-        function countDir(r, c, dr, dc, p) {
-            let k = 0, nr = r + dr, nc = c + dc;
-            while (nr >= 0 && nr < boardSize && nc >= 0 && nc < boardSize && board[nr][nc] === p) { k++; nr += dr; nc += dc; }
-            return k;
+            // Highlights
+            if(winLine) {
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+                ctx.lineWidth = cz*0.3; ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(off+winLine[0][1]*cz, off+winLine[0][0]*cz);
+                ctx.lineTo(off+winLine[winLine.length-1][1]*cz, off+winLine[winLine.length-1][0]*cz);
+                ctx.stroke();
+            }
+            if(lastMove) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath(); ctx.arc(off+lastMove[1]*cz, off+lastMove[0]*cz, cz*0.15, 0, Math.PI*2); ctx.fill();
+            }
         }
 
         function checkWin(r, c, p) {
-            const dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
-            return dirs.some(([dr, dc]) => 1 + countDir(r, c, dr, dc, p) + countDir(r, c, -dr, -dc, p) >= 5);
+            for(const [dr, dc] of dirs) {
+                let line = [[r,c]];
+                for(let d=1; d<5; d++){
+                    const nr=r+dr*d, nc=c+dc*d;
+                    if(nr>=0 && nr<S && nc>=0 && nc<S && board[nr][nc] === p) line.push([nr,nc]); else break;
+                }
+                for(let d=1; d<5; d++){
+                    const nr=r-dr*d, nc=c-dc*d;
+                    if(nr>=0 && nr<S && nc>=0 && nc<S && board[nr][nc] === p) line.unshift([nr,nc]); else break;
+                }
+                if(line.length >= 5) { winLine = line; return true; }
+            }
+            return false;
         }
 
-        document.getElementById('p1Place').addEventListener('click', () => attemptPlace(1));
-        document.getElementById('p2Place').addEventListener('click', () => attemptPlace(2));
-        drawBoard(); updateButtons();
+        function isDraw() { return board.every(row => row.every(cell => cell !== 0)); }
+
+        // --- WINNER RECORDING ---
+        function showWinOverlay() {
+            const overlay = document.getElementById('win-overlay');
+            const title = document.getElementById('win-title');
+            const winnerName = turn === 1 ? '플레이어 1(흑돌)' : (mode === 1 ? 'AI(백돌)' : '플레이어 2(백돌)');
+            
+            title.textContent = `${winnerName} 승리!`;
+            overlay.classList.remove('hidden');
+
+            if(mode === 1 && turn === 2) {
+                // AI win: hide record form
+                document.getElementById('record-form').classList.add('hidden');
+            } else {
+                document.getElementById('record-form').classList.remove('hidden');
+            }
+        }
+
+        async function submitRecord() {
+            const cls = document.getElementById('user-class').value;
+            const name = document.getElementById('user-name').value.trim();
+            const btn = document.getElementById('submit-btn');
+
+            if(!cls || !name) { alert('반과 이름을 모두 입력해 주세요!'); return; }
+            if(!sbGame) { alert('데이터베이스가 연결되지 않았습니다.'); return; }
+
+            btn.disabled = true;
+            btn.textContent = '기록 중...';
+
+            const { error } = await sbGame.from('omok_rank').insert({
+                name: name,
+                mode: cls,
+                score: 1
+            });
+
+            if(error) {
+                alert('기록 저장 실패: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = '기록 저장하기';
+            } else {
+                alert('기록이 보관되었습니다! 대단해요 🌱');
+                restartGame();
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('mode-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('win-overlay').classList.add('hidden');
+            gameOver = false;
+        }
+
+        window.onresize = resizeBoard;
     </script>
 </body>
 </html>
