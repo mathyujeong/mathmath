@@ -281,17 +281,21 @@
         }
 
         async function deleteRankRecord(tableName, id) {
-            if (!confirm('정말로 이 기록을 삭제할까요? 되돌릴 수 없습니다.')) return;
+            const secret = prompt('⚠️ 이 작업은 되돌릴 수 없습니다.\n본인 확인을 위해 삭제 비밀번호를 입력해 주세요:');
+            if (secret === null) return; // 취소
+            if (!secret) { alert('비밀번호를 입력해야 합니다.'); return; }
 
-            const { error } = await sbGame
-                .from(tableName)
-                .delete()
-                .eq('id', id);
+            const { data, error } = await sbGame.rpc('delete_ranking_record', {
+                p_table: tableName,
+                p_id: id,
+                p_secret: secret
+            });
 
             if (error) {
                 console.error('Delete error:', error);
-                alert('삭제에 실패했습니다: ' + error.message);
+                alert('삭제 실패: ' + (error.message || '비밀번호가 틀렸거나 권한이 없습니다.'));
             } else {
+                alert('기록이 성공적으로 삭제되었습니다.');
                 loadRankings(tableName);
             }
         }
