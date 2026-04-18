@@ -1,13 +1,14 @@
 /**
- * build.js (In-Place Injection Version)
- * Vercel이 dist 폴더를 무시하는(Root 배포) 설정을 강제하고 있을 가능성에 대비하여,
- * 루트 폴더에 있는 모든 HTML 원본 파일에 직접 환경변수를 주입합니다.
+ * build.js (Public Directory Version)
+ * Vercel의 기본 폴더인 public 폴더를 생성하고 안전하게 코드를 주입하는 버전입니다.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-console.log('--- 🛡️  Vercel 빌드 보조 스크립트 (직접 원본 주입 방식) ---');
+const outputDir = path.join(__dirname, 'public');
+
+console.log('--- 🛡️ Vercel 빌드 보조 스크립트 (Public 폴더 배포) ---');
 
 // 1. 환경변수 준비
 const envData = {
@@ -17,41 +18,53 @@ const envData = {
     SUPABASE_KEY_GAME: process.env.SUPABASE_KEY_GAME,
 };
 
-console.log('[1] 환경변수 상태 점검:');
+console.log('[1] 환경변수 점검:');
 Object.entries(envData).forEach(([key, value]) => {
-    if (!value) console.warn(`  ⚠️  ${key}: 누락됨 (Vercel 대시보드 설정 필요!)`);
-    else console.log(`  ✅ ${key}: 감지됨 (${value.substring(0, 8)}...)`);
+    if (!value) console.warn(`  ⚠️ ${key}: 누락됨`);
+    else console.log(`  ✅ ${key}: 감지됨`);
 });
 
-// 2. HTML 파일 탐색 및 IN-PLACE 주입
-function injectEnvInPlace(dir) {
+// 2. public 폴더 초기화
+if (fs.existsSync(outputDir)) {
+    fs.rmSync(outputDir, { recursive: true, force: true });
+}
+fs.mkdirSync(outputDir);
+
+// 3. 파일 복사 (안전한 재귀 복사)
+console.log('[2] 파일 복사 중 (public 폴더)...');
+function safeCopyRecursive(src, dest) {
+    const stats = fs.statSync(src);
+    if (stats.isDirectory()) {
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest);
+        fs.readdirSync(src).forEach(child => {
+            // 시스템 폴더 및 의미없는 파일 무시
+            if (['node_modules', '.git', 'public', '.gemini', 'dist', 'build.js', 'package-lock.json'].includes(child)) return;
+            safeCopyRecursive(path.join(src, child), path.join(dest, child));
+        });
+    } else {
+        fs.copyFileSync(src, dest);
+    }
+}
+safeCopyRecursive(__dirname, outputDir);
+console.log('  ✅ 복사 완료.');
+
+// 4. HTML 파일 <head>에 직접 주입
+function injectEnvToHtml(dir) {
     const files = fs.readdirSync(dir);
     files.forEach(file => {
         const fullPath = path.join(dir, file);
-        const stat = fs.statSync(fullPath);
-        
-        if (stat.isDirectory()) {
-            // 시스템 폴더 및 의미없는 폴더는 무시
-            if (!['node_modules', '.git', 'dist', '.gemini'].includes(file)) {
-                injectEnvInPlace(fullPath);
-            }
+        if (fs.statSync(fullPath).isDirectory()) {
+            injectEnvToHtml(fullPath);
         } else if (file.endsWith('.html')) {
             let content = fs.readFileSync(fullPath, 'utf8');
             
-            // 중복 주입 방지
-            if (content.includes('id="env-injection"')) {
-                console.log(`  ⏩ 이미 주입됨 (건너뜀): ${file}`);
-                return;
-            }
-
             const scriptTag = `
 <script id="env-injection">
   window._ENV_ = ${JSON.stringify(envData)};
-  window._ENV_LOADED_AT = "${new Date().toLocaleString()}";
-  console.log('🚀 [Critical] 환경변수 원본 주입 완료');
+  window._ENV_LOADED_AT = "${new Date().toISOString()}";
+  console.log('🚀 [Critical] 환경변수 Public 주입 완료');
 </script>
 `;
-            
             if (content.includes('<head>')) {
                 content = content.replace('<head>', '<head>\n' + scriptTag);
             } else if (content.includes('<html>')) {
@@ -61,18 +74,12 @@ function injectEnvInPlace(dir) {
             }
             
             fs.writeFileSync(fullPath, content);
-            console.log(`  💉 원본 주입 완료: ${path.relative(__dirname, fullPath)}`);
+            console.log(`  💉 주입 완료: ${path.relative(outputDir, fullPath)}`);
         }
     });
 }
 
-console.log('[2] 파일 원본 내 환경변수 주입 시작...');
-try {
-    injectEnvInPlace(__dirname);
-    console.log('\n🎉 조치 완료! 이제 Vercel 패스 설정과 무관하게 환경변수가 주입됩니다.');
-} catch (err) {
-    console.error('  ❌ 주입 실패:', err);
-    process.exit(1);
-}
+console.log('[3] HTML 파일 환경변수 주입 시작...');
+injectEnvToHtml(outputDir);
 
-console.log('--- 🛡️  빌드 보조 스크립트 종료 ---');
+console.log('\n🎉 모든 빌드 준비가 완료되었습니다. Vercel이 public 폴더를 배포합니다.');
