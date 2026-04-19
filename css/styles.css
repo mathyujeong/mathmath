@@ -214,42 +214,54 @@ html {
 
 .lab-controls {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 240px;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 800px;
     z-index: 10;
     pointer-events: auto;
-    padding: 1.5rem;
+    padding: 1rem 2rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
 }
 
 .formula-box {
     background: rgba(244, 114, 182, 0.05);
-    padding: 1rem;
+    padding: 0.6rem 1rem;
     border-radius: 12px;
     border: 1px solid rgba(244, 114, 182, 0.1);
     font-family: 'Courier New', Courier, monospace;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #f472b6;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
+    flex-shrink: 0;
 }
 
 .control-group {
     display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 1.2rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0;
+    flex: 1;
 }
 
 .control-group label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--text-muted);
-    font-weight: 600;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .control-group input[type="range"] {
-    width: 100%;
+    flex: 1;
+    min-width: 80px;
     accent-color: #f472b6;
     height: 4px;
     background: #e2e8f0;
@@ -258,14 +270,14 @@ html {
 }
 
 .status-badge {
-    display: inline-block;
     padding: 0.4rem 0.8rem;
     background: #fdf2f8;
     color: #db2777;
     border: 1px solid #fbcfe8;
     border-radius: 999px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 /* Programs Section */

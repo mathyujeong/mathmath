@@ -93,8 +93,9 @@ class HeartLab {
      * y = 13 * cos(t) - 5 * cos(2t) - 2 * cos(3t) - cos(4t)
      */
     getHeartCoordinates(t, k) {
-        const x = 16 * Math.pow(Math.sin(t), 3);
-        const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        // 좀 더 '둥실둥실'하고 귀여운 비율을 위해 계수 조정
+        const x = 1.15 * 16 * Math.pow(Math.sin(t), 3);
+        const y = -1.05 * (13 * Math.cos(t) - 4.2 * Math.cos(2 * t) - 1.8 * Math.cos(3 * t) - 0.8 * Math.cos(4 * t));
         return {
             x: x * k,
             y: y * k
