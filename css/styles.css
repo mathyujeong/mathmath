@@ -200,7 +200,7 @@ html {
     border-radius: 28px;
     overflow: hidden;
     position: relative;
-    background: #ffffff; /* 가독성을 위해 흰색 배경 기반 */
+    background: #ffffff;
     box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
     border: 1px solid var(--glass-border);
 }
@@ -212,48 +212,64 @@ html {
     cursor: crosshair;
 }
 
-.lab-controls {
+/* 상단 수식 패널 */
+.lab-header-panel {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    width: 90%;
+    display: flex;
+    justify-content: center;
+}
+
+.formula-box {
+    padding: 0.8rem 1.5rem;
+    border-radius: 16px;
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f472b6;
+    pointer-events: auto;
+    box-shadow: 0 10px 25px -5px rgba(244, 114, 182, 0.15);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+/* 하단 제어 패널 */
+.lab-controls-panel {
     position: absolute;
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
     width: 92%;
-    max-width: 800px;
+    max-width: 650px;
     z-index: 10;
     pointer-events: auto;
     padding: 1rem 2rem;
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 2rem;
-}
-
-.formula-box {
-    background: rgba(244, 114, 182, 0.05);
-    padding: 0.6rem 1rem;
-    border-radius: 12px;
-    border: 1px solid rgba(244, 114, 182, 0.1);
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.8rem;
-    color: #f472b6;
-    margin-bottom: 0;
-    flex-shrink: 0;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
 }
 
 .control-group {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 0;
+    gap: 0.8rem;
     flex: 1;
 }
 
 .control-group label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     color: var(--text-muted);
     font-weight: 700;
     white-space: nowrap;
@@ -263,7 +279,7 @@ html {
     flex: 1;
     min-width: 80px;
     accent-color: #f472b6;
-    height: 4px;
+    height: 5px;
     background: #e2e8f0;
     border-radius: 2px;
     cursor: pointer;
@@ -275,7 +291,7 @@ html {
     color: #db2777;
     border: 1px solid #fbcfe8;
     border-radius: 999px;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     font-weight: 700;
     white-space: nowrap;
 }
