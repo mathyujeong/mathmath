@@ -193,7 +193,117 @@ html {
     z-index: 1;
 }
 
-/* Heart Lab Premium UI */
+/* Floating Shapes in Hero (Restored) */
+.floating-shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: float 10s infinite alternate ease-in-out;
+    z-index: 1;
+}
+
+.shape-1 {
+    width: 350px;
+    height: 350px;
+    background: rgba(244, 114, 182, 0.35);
+    top: 0;
+    left: 0;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    width: 300px;
+    height: 300px;
+    background: rgba(167, 139, 250, 0.35);
+    bottom: 0px;
+    right: 0px;
+    animation-delay: -3s;
+}
+
+.shape-3 {
+    width: 250px;
+    height: 250px;
+    background: rgba(129, 140, 248, 0.35);
+    top: 200px;
+    right: 150px;
+    animation-delay: -5s;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    100% { transform: translate(40px, 60px) scale(1.1) rotate(20deg); }
+}
+
+/* Tabs System */
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4rem;
+}
+
+.tabs-wrapper {
+    background: #f1f5f9;
+    padding: 0.5rem;
+    border-radius: 999px;
+    display: flex;
+    gap: 0.5rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.tab-btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-btn.active {
+    background: white;
+    color: #f472b6;
+    box-shadow: 0 4px 12px rgba(244, 114, 182, 0.15);
+}
+
+.tab-btn:hover:not(.active) {
+    color: var(--text-color);
+}
+
+.tab-pane {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.tab-pane.active {
+    display: block;
+    animation: tabFadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes tabFadeUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Gallery Styling */
+.gallery-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.gallery-item {
+    aspect-ratio: 16 / 9;
+    min-height: 500px;
+    width: 100%;
+}
+
+/* Heart Lab Premium UI (Refined for Gallery) */
 #heart-lab-container {
     width: 100%;
     height: 100%;

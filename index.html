@@ -30,72 +30,90 @@
             </div>
         </div>
         <div class="hero-visual">
-            <div id="heart-lab-container" class="glass-lab">
-                <div class="lab-header-panel">
-                    <div class="formula-box blur-glass">
-                        <span class="formula">(x² + y² - 1)³ - x²y³ = 0</span>
-                    </div>
-                </div>
-                <div class="lab-controls-panel blur-glass">
-                    <div class="control-group">
-                        <label>Size</label>
-                        <input type="range" id="heart-size" min="0.5" max="2" step="0.1" value="1">
-                    </div>
-                    <div class="control-group">
-                        <label>Beat Speed</label>
-                        <input type="range" id="beat-speed" min="1" max="5" step="0.5" value="2.5">
-                    </div>
-                    <div class="status-badge">Animation: Active</div>
-                </div>
-                <canvas id="heart-canvas"></canvas>
-            </div>
+            <div class="floating-shape shape-1"></div>
+            <div class="floating-shape shape-2"></div>
+            <div class="floating-shape shape-3"></div>
         </div>
     </header>
 
     <section id="programs" class="programs-section">
-        <h2 class="section-title">다양한 수학 학습 프로그램</h2>
-        <div class="program-grid">
-            <!-- Program Card 1: Sieve of Eratosthenes -->
-            <div class="program-card" data-program-id="sieve" onclick="location.href='programs/sieve.html'">
-                <div class="card-icon">🌿</div>
-                <h3>에라토스테네스의 체</h3>
-                <p>소수의 원리를 시각적으로 탐구하며 소수를 찾아내는 가장 유명한 알고리즘을 직접 체험해보세요.</p>
-                <a href="programs/sieve.html" class="card-link">탐험 시작하기 &rarr;</a>
+        <div class="tabs-container">
+            <div class="tabs-wrapper">
+                <button class="tab-btn active" data-tab-id="learning">학습 프로그램</button>
+                <button class="tab-btn" data-tab-id="gallery">그래프 전시</button>
             </div>
-            <!-- Program Card 2: Prime Defender -->
-            <div class="program-card" data-program-id="game" onclick="location.href='programs/game.html'">
-                <div class="card-icon">🛡️</div>
-                <h3>수호자: 소인수분해</h3>
-                <p>합성수 블록을 소수로 나누어 파괴하세요! 긴장감 넘치는 디펜스 게임으로 소인수분해 실력을 키워보세요.</p>
-                <a href="programs/game.html" class="card-link">게임 시작하기 &rarr;</a>
+        </div>
+
+        <div id="learning-tab" class="tab-pane active">
+            <h2 class="section-title">다양한 수학 학습 프로그램</h2>
+            <div class="program-grid">
+                <!-- Program Card 1: Sieve of Eratosthenes -->
+                <div class="program-card" data-program-id="sieve" onclick="location.href='programs/sieve.html'">
+                    <div class="card-icon">🌿</div>
+                    <h3>에라토스테네스의 체</h3>
+                    <p>소수의 원리를 시각적으로 탐구하며 소수를 찾아내는 가장 유명한 알고리즘을 직접 체험해보세요.</p>
+                    <a href="programs/sieve.html" class="card-link">탐험 시작하기 &rarr;</a>
+                </div>
+                <!-- Program Card 2: Prime Defender -->
+                <div class="program-card" data-program-id="game" onclick="location.href='programs/game.html'">
+                    <div class="card-icon">🛡️</div>
+                    <h3>수호자: 소인수분해</h3>
+                    <p>합성수 블록을 소수로 나누어 파괴하세요! 긴장감 넘치는 디펜스 게임으로 소인수분해 실력을 키워보세요.</p>
+                    <a href="programs/game.html" class="card-link">게임 시작하기 &rarr;</a>
+                </div>
+                <!-- Program Card 3: Zombie Escape -->
+                <div class="program-card" data-program-id="zombie_escape" onclick="location.href='programs/zombie_escape.html'">
+                    <div class="card-icon">🐺</div>
+                    <h3>수직선 탈출: 늑구의 모험</h3>
+                    <p>좀비를 피해 수직선을 탈출하라! 수식을 풀어 목표값에 닿으면 앞으로 도망칠 수 있어요.</p>
+                    <a href="programs/zombie_escape.html" class="card-link">탈출 시작하기 &rarr;</a>
+                </div>
+                <!-- Program Card 4: Math Dice -->
+                <div class="program-card" data-program-id="math_dice" onclick="location.href='programs/math_dice.html'">
+                    <div class="card-icon">🎲</div>
+                    <h3>수학 다이스 팀 배틀</h3>
+                    <p>주어진 주사위 숫자로 기발한 수식을 만들어 정답을 맞혀보세요. 친구들과 실시간으로 경쟁하는 협동 수학 게임입니다!</p>
+                    <a href="programs/math_dice.html" class="card-link">실시간 배틀 참여하기 &rarr;</a>
+                </div>
+                <!-- Program Card 5: Math Transformer -->
+                <div class="program-card locked" data-program-id="transformer" onclick="location.href='programs/transformer.html'">
+                    <div class="card-icon">⚙️</div>
+                    <h3>수학 변환 기계</h3>
+                    <p>입력값이 어떤 규칙으로 변하는지 추론해 보세요! 다양한 함수와 연산의 원리를 탐구하는 추리 게임입니다.</p>
+                    <a href="programs/transformer.html" class="card-link">변환 시작하기 &rarr;</a>
+                </div>
+                <!-- Program Card 6: Coordinate Plane Omok -->
+                <div class="program-card" data-program-id="omok" onclick="location.href='programs/omok.html'">
+                    <div class="card-icon">🎯</div>
+                    <h3>좌표평면 오목두기</h3>
+                    <p>X, Y 좌표를 직접 선택하며 오목을 두는 과정을 통해 좌표평면의 개념을 쉽고 재미있게 익힐 수 있습니다.</p>
+                    <a href="programs/omok.html" class="card-link">실험 시작하기 &rarr;</a>
+                </div>
             </div>
-            <!-- Program Card 3: Zombie Escape -->
-            <div class="program-card" data-program-id="zombie_escape" onclick="location.href='programs/zombie_escape.html'">
-                <div class="card-icon">🐺</div>
-                <h3>수직선 탈출: 늑구의 모험</h3>
-                <p>좀비를 피해 수직선을 탈출하라! 수식을 풀어 목표값에 닿으면 앞으로 도망칠 수 있어요.</p>
-                <a href="programs/zombie_escape.html" class="card-link">탈출 시작하기 &rarr;</a>
-            </div>
-            <!-- Program Card 4: Math Dice -->
-            <div class="program-card" data-program-id="math_dice" onclick="location.href='programs/math_dice.html'">
-                <div class="card-icon">🎲</div>
-                <h3>수학 다이스 팀 배틀</h3>
-                <p>주어진 주사위 숫자로 기발한 수식을 만들어 정답을 맞혀보세요. 친구들과 실시간으로 경쟁하는 협동 수학 게임입니다!</p>
-                <a href="programs/math_dice.html" class="card-link">실시간 배틀 참여하기 &rarr;</a>
-            </div>
-            <!-- Program Card 5: Math Transformer -->
-            <div class="program-card locked" data-program-id="transformer" onclick="location.href='programs/transformer.html'">
-                <div class="card-icon">⚙️</div>
-                <h3>수학 변환 기계</h3>
-                <p>입력값이 어떤 규칙으로 변하는지 추론해 보세요! 다양한 함수와 연산의 원리를 탐구하는 추리 게임입니다.</p>
-                <a href="programs/transformer.html" class="card-link">변환 시작하기 &rarr;</a>
-            </div>
-            <!-- Program Card 6: Coordinate Plane Omok -->
-            <div class="program-card" data-program-id="omok" onclick="location.href='programs/omok.html'">
-                <div class="card-icon">🎯</div>
-                <h3>좌표평면 오목두기</h3>
-                <p>X, Y 좌표를 직접 선택하며 오목을 두는 과정을 통해 좌표평면의 개념을 쉽고 재미있게 익힐 수 있습니다.</p>
-                <a href="programs/omok.html" class="card-link">실험 시작하기 &rarr;</a>
+        </div>
+
+        <div id="gallery-tab" class="tab-pane">
+            <h2 class="section-title">인터랙티브 그래프 전시</h2>
+            <div class="gallery-wrapper">
+                <div id="heart-lab-container" class="glass-lab gallery-item">
+                    <div class="lab-header-panel">
+                        <div class="formula-box blur-glass">
+                            <span class="formula">(x² + y² - 1)³ - x²y³ = 0</span>
+                        </div>
+                    </div>
+                    <div class="lab-controls-panel blur-glass">
+                        <div class="control-group">
+                            <label>Size</label>
+                            <input type="range" id="heart-size" min="0.5" max="2" step="0.1" value="1">
+                        </div>
+                        <div class="control-group">
+                            <label>Beat Speed</label>
+                            <input type="range" id="beat-speed" min="1" max="5" step="0.5" value="2.5">
+                        </div>
+                        <div class="status-badge">Animation: Active</div>
+                    </div>
+                    <canvas id="heart-canvas"></canvas>
+                </div>
             </div>
         </div>
     </section>
