@@ -30,9 +30,23 @@
             </div>
         </div>
         <div class="hero-visual">
-            <div class="floating-shape shape-1"></div>
-            <div class="floating-shape shape-2"></div>
-            <div class="floating-shape shape-3"></div>
+            <div id="heart-lab-container" class="glass-lab">
+                <div class="lab-controls blur-glass">
+                    <div class="formula-box">
+                        <span class="formula">(x² + y² - 1)³ - x²y³ = 0</span>
+                    </div>
+                    <div class="control-group">
+                        <label>Size</label>
+                        <input type="range" id="heart-size" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="control-group">
+                        <label>Beat Speed</label>
+                        <input type="range" id="beat-speed" min="1" max="5" step="0.5" value="2.5">
+                    </div>
+                    <div class="status-badge">Animation: Active</div>
+                </div>
+                <canvas id="heart-canvas"></canvas>
+            </div>
         </div>
     </header>
 
@@ -97,6 +111,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/app.js"></script>
+    <script src="js/heart-lab.js"></script>
     <script>
         // Program Activation Logic for Portal
         const env = window._ENV_ || {};
