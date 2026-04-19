@@ -63,9 +63,10 @@
 
     <div id="admin-dashboard" class="hidden p-8 pt-20 max-w-4xl mx-auto">
         <nav class="flex items-center justify-between mb-8">
-            <button onclick="location.href='index.html'" class="text-gray-400 hover:text-gray-700 font-bold flex items-center gap-2">
-                <span>&larr;</span> 연구실로 돌아가기
-            </button>
+            <div class="logo cursor-pointer flex items-center gap-3" onclick="location.href='index.html'">
+                <img src="assets/favicon.png?v=2" alt="Logo" class="site-logo">
+                <span class="font-bold text-gray-600">유정쌤의 실험실</span>
+            </div>
             <h1 class="text-3xl font-bold text-gray-800" style="font-family: 'Black Han Sans';">관리자 도구</h1>
             <button onclick="logout()" class="text-gray-400 hover:text-red-400 font-bold flex items-center gap-2 transition-colors">
                 로그아웃 <span>→</span>

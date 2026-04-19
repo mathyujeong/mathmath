@@ -48,6 +48,9 @@ html {
 }
 
 .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
     font-size: 1.5rem;
     font-weight: 700;
     background: linear-gradient(135deg, #f472b6, #818cf8);
@@ -55,6 +58,14 @@ html {
     -webkit-text-fill-color: transparent;
     cursor: pointer;
     letter-spacing: -0.5px;
+}
+
+.site-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    -webkit-text-fill-color: initial; /* 그라데이션 텍스트 영향을 받지 않도록 초기화 */
 }
 
 .nav-links a {
@@ -530,6 +541,9 @@ html {
 }
 
 .footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-color);
