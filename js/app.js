@@ -51,4 +51,28 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.transition = `all 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s`;
         animateObserver.observe(el);
     });
+
+    // 4. 탭 전환 로직 (Tabs Switching)
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab-id');
+            
+            // 버튼 활성화 상태 변경
+            tabButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 탭 패널 활성화 상태 변경
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            const targetPane = document.getElementById(`${tabId}-tab`);
+            if (targetPane) {
+                targetPane.classList.add('active');
+                
+                // 탭 전환을 알리는 커스텀 이벤트 발생 (다른 컴포넌트의 리사이즈 등 보정용)
+                window.dispatchEvent(new CustomEvent('tabChanged', { detail: { tabId } }));
+            }
+        });
+    });
 });

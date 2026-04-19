@@ -34,6 +34,14 @@ class HeartLab {
             this.drawProgress = 0;
             this.isDrawing = true;
         });
+
+        // 탭 전환 시 리사이즈 처리 (갤러리 탭으로 올 때 크기 재계산)
+        window.addEventListener('tabChanged', (e) => {
+            if (e.detail.tabId === 'gallery') {
+                // 부드러운 전환 애니메이션을 위해 아주 약간의 지연 후 리사이즈
+                setTimeout(() => this.resize(), 100);
+            }
+        });
     }
 
     resize() {
