@@ -11,80 +11,103 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/program-guard.js"></script>
   <style>
-    body { font-family: 'Noto Sans KR', 'DM Sans', sans-serif; margin: 0; background: #0a0e27; color: #fff; overflow-x: hidden; }
+    :root {
+      --ghibli-bg: #fdfbf7;
+      --ghibli-pink: #ffd6e0;
+      --ghibli-mint: #bdf1d5;
+      --ghibli-peach: #ffdfba;
+      --ghibli-lavender: #e2d5f8;
+      --ghibli-olive: #dff1a3;
+      --tile-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    body { 
+      font-family: 'Noto Sans KR', 'DM Sans', sans-serif; 
+      margin: 0; 
+      background: var(--ghibli-bg); 
+      color: #4b5563; 
+      overflow-x: hidden; 
+    }
     
-    /* Algebra Tile Styles */
+    /* Algebra Tile Styles - Bright & Vibrant */
     .tile {
       display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 8px; font-weight: 700; color: #fff;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      border-radius: 12px; font-weight: 800; color: #fff;
+      box-shadow: var(--tile-shadow);
       user-select: none; position: absolute; cursor: grab;
       touch-action: none; z-index: 10;
-      border: 1px solid rgba(255,255,255,0.2);
-      transition: transform 0.1s;
+      border: 2px solid rgba(255,255,255,0.4);
+      transition: transform 0.1s, box-shadow 0.2s;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
-    .tile:active { cursor: grabbing; z-index: 100; transform: scale(1.05); }
+    .tile:active { cursor: grabbing; z-index: 100; transform: scale(1.08); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
     .tile.no-drag { cursor: default; }
-    .tile-x { width: 38px; height: 66px; font-size: 14px; }
-    .tile-y { width: 38px; height: 52px; font-size: 14px; }
-    .tile-1 { width: 38px; height: 38px; font-size: 13px; }
-    .tile-pos-x { background: linear-gradient(135deg, #06b6d4, #0891b2); }
-    .tile-neg-x { background: linear-gradient(135deg, #f43f5e, #e11d48); }
-    .tile-pos-y { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-    .tile-neg-y { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .tile-pos-1 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
-    .tile-neg-1 { background: linear-gradient(135deg, #fb7185, #f43f5e); }
     
-    .tile.cancel { animation: cancelOut 0.45s forwards; pointer-events: none; }
+    .tile-x { width: 44px; height: 72px; font-size: 16px; }
+    .tile-y { width: 44px; height: 58px; font-size: 16px; }
+    .tile-1 { width: 44px; height: 44px; font-size: 15px; }
+
+    /* Distinct Vibrant Colors for Tiles */
+    .tile-pos-x { background: linear-gradient(135deg, #0ea5e9, #0284c7); } /* Cyan Blue */
+    .tile-neg-x { background: linear-gradient(135deg, #f43f5e, #be123c); } /* Red */
+    .tile-pos-y { background: linear-gradient(135deg, #8b5cf6, #6d28d9); } /* Violet */
+    .tile-neg-y { background: linear-gradient(135deg, #f59e0b, #d97706); } /* Orange */
+    .tile-pos-1 { background: linear-gradient(135deg, #10b981, #047857); } /* Emerald */
+    .tile-neg-1 { background: linear-gradient(135deg, #e11d48, #9f1239); } /* Rose Red */
+    
+    .tile.cancel { animation: cancelOut 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: none; }
     @keyframes cancelOut {
       0% { opacity:1; transform:scale(1); }
-      40% { opacity:0.7; transform:scale(1.3); box-shadow: 0 0 20px rgba(6,182,212,0.9); }
+      40% { opacity:0.7; transform:scale(1.3); box-shadow: 0 0 25px rgba(6,182,212,0.6); }
       100% { opacity:0; transform:scale(0); }
     }
-    .tile.slide-down { animation: slideDown 0.4s ease forwards; }
-    @keyframes slideDown { from { transform:translateY(-50px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+    .tile.slide-down { animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes slideDown { from { transform:translateY(-30px); opacity:0; } to { transform:translateY(0); opacity:1; } }
     .tile.flip-in { animation: flipIn 0.5s ease forwards; }
     @keyframes flipIn { 0%{transform:rotateY(0)} 50%{transform:rotateY(90deg)} 100%{transform:rotateY(0)} }
     
     .tile.flipped { animation: pulseGlow 1.5s ease-in-out infinite; }
     @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 8px rgba(6,182,212,0.4), 0 4px 12px rgba(0,0,0,0.5); }
-      50% { box-shadow: 0 0 20px rgba(6,182,212,0.8), 0 4px 12px rgba(0,0,0,0.5); }
+      0%, 100% { box-shadow: var(--tile-shadow); }
+      50% { box-shadow: 0 0 15px rgba(245,158,11,0.6); border-color: #f59e0b; }
     }
     .tile.flipped::after {
-      content: '↔'; position: absolute; top: -8px; right: -8px;
-      font-size: 12px; background: #06b6d4; color: #fff;
-      width: 20px; height: 20px; border-radius: 50%;
+      content: '↔'; position: absolute; top: -6px; right: -6px;
+      font-size: 10px; background: #f59e0b; color: #fff;
+      width: 18px; height: 18px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center; font-weight: 900;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #fff;
     }
     
     .zero-float {
-      position: absolute; font-weight: 900; font-size: 28px; color: #06b6d4;
-      pointer-events: none; z-index: 200; animation: floatZero 0.8s ease forwards;
-      text-shadow: 0 0 15px rgba(6,182,212,0.9);
+      position: absolute; font-weight: 900; font-size: 32px; color: #10b981;
+      pointer-events: none; z-index: 200; animation: floatZero 0.8s ease-out forwards;
+      text-shadow: 0 2px 10px rgba(16,185,129,0.4);
     }
-    @keyframes floatZero { 0%{opacity:1;transform:scale(1) translateY(0)} 100%{opacity:0;transform:scale(1.6) translateY(-40px)} }
+    @keyframes floatZero { 0%{opacity:1;transform:scale(1) translateY(0)} 100%{opacity:0;transform:scale(1.8) translateY(-50px)} }
     
+    /* Ghibli Panel Styles */
     .glass-card {
-      background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1);
-      backdrop-filter: blur(12px); border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      background: rgba(255, 255, 255, 0.7); 
+      border: 2px solid #ffffff;
+      backdrop-filter: blur(12px); 
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
     }
     .workspace-zone {
-      position: relative; min-height: 120px; border-radius: 14px;
-      background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15);
-      transition: all 0.3s;
+      position: relative; min-height: 140px; border-radius: 18px;
+      background: rgba(255,255,255,0.4); border: 2px dashed #e5e7eb;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .workspace-zone:hover { background: rgba(255,255,255,0.05); border-color: rgba(6,182,212,0.3); }
+    .workspace-zone:hover { background: rgba(255,255,255,0.8); border-color: var(--ghibli-mint); }
 
     .palette-tile-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 12px; font-weight: 700; color: #fff; cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      border-radius: 14px; font-weight: 800; color: #fff; cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.4); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .palette-tile-btn:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 8px 20px rgba(6,182,212,0.4); }
+    .palette-tile-btn:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
     .palette-tile-btn:active { transform: scale(0.95); }
     .palette-tile-btn:disabled { opacity: 0.2; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
@@ -92,295 +115,297 @@
     
     .flip-msg {
       animation: flipMsgIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-      background: rgba(245,158,11,0.2); color: #f59e0b;
-      padding: 10px 20px; border-radius: 10px; font-weight: 600; text-align: center; font-size: 15px;
-      border: 1px solid rgba(245,158,11,0.4);
+      background: #fef3c7; color: #d97706;
+      padding: 12px 24px; border-radius: 12px; font-weight: 700; text-align: center; font-size: 15px;
+      border: 2px solid #fbbf24;
     }
     @keyframes flipMsgIn { 0%{opacity:0;transform:translateY(-20px)} 100%{opacity:1;transform:translateY(0)} }
 
-    .mode-btn { transition: all 0.3s; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
-    .mode-btn.active { background: rgba(6,182,212,0.2); border-color: #06b6d4; box-shadow: 0 0 15px rgba(6,182,212,0.4); color: #06b6d4; }
+    .btn-ghibli {
+      background: white; border: 2px solid #e5e7eb;
+      padding: 12px 24px; border-radius: 16px; font-weight: 700;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02), inset 0 -3px 0 rgba(0,0,0,0.05);
+      color: #4b5563;
+    }
+    .btn-ghibli:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.05); border-color: var(--ghibli-mint); }
+    .btn-ghibli:active { transform: translateY(1px); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-    .star-bg {
-      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
-      position: relative;
+    .btn-primary-ghibli {
+      background: var(--ghibli-mint); color: #065f46; border: 2px solid #fff;
+      padding: 12px 24px; border-radius: 16px; font-weight: 700;
+      transition: all 0.2s; box-shadow: 0 4px 0 #93c5fd;
     }
-    .star-bg::before {
-      content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-image: 
-        radial-gradient(1px 1px at 10% 20%, #fff 100%, transparent),
-        radial-gradient(1px 1px at 30% 50%, #fff 100%, transparent),
-        radial-gradient(1px 1px at 50% 10%, #fff 100%, transparent),
-        radial-gradient(1px 1px at 70% 60%, #fff 100%, transparent),
-        radial-gradient(1px 1px at 90% 30%, #fff 100%, transparent);
-      opacity: 0.3; pointer-events: none; z-index: 0;
-    }
-    .star-bg > * { position: relative; z-index: 1; }
+    .btn-primary-ghibli:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    .btn-primary-ghibli:active { transform: translateY(2px); box-shadow: none; }
+
+    .mode-btn { transition: all 0.3s; background: white; border: 2px solid #f3f4f6; color: #9ca3af; }
+    .mode-btn.active { background: var(--ghibli-mint); border-color: #fff; color: #065f46; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
     .tab-btn-custom { transition: all 0.3s; }
-    .tab-btn-custom.active { background: rgba(6,182,212,0.2); border-color: #06b6d4; color: #fff; }
-    .tab-btn-custom:not(.active) { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #64748b; }
+    .tab-btn-custom.active { background: white; border-color: var(--ghibli-mint); color: #047857; font-weight: 800; transform: scale(1.05); }
+    .tab-btn-custom:not(.active) { background: #f9fafb; border-color: #e5e7eb; color: #9ca3af; }
 
-    .clone-group { border: 1px dashed rgba(6,182,212,0.3); border-radius: 12px; padding: 10px; margin-bottom: 10px; background: rgba(6,182,212,0.02); }
-    .clone-group-label { font-size: 13px; color: #06b6d4; font-weight: 700; margin-bottom: 6px; }
+    .nav-bright { 
+      background: rgba(255, 255, 255, 0.9); height: 74px; border-bottom: 2px solid #f3f4f6;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 6%;
+      backdrop-filter: blur(8px);
+    }
 
-    /* Login & Ranking Overlays */
-    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal { background: #0f172a; padding: 3rem; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-    .input-field { width: 100%; padding: 14px; border-radius: 14px; border: 2px solid #1e293b; background: #020617; color: #fff; margin-top: 10px; outline: none; transition: all 0.2s; text-align: center; font-weight: 700; }
-    .input-field:focus { border-color: #06b6d4; box-shadow: 0 0 15px rgba(6,182,212,0.2); }
-    
-    .ranking-list { max-height: 400px; overflow-y: auto; margin: 20px 0; padding-right: 10px; }
-    .ranking-list::-webkit-scrollbar { width: 6px; }
-    .ranking-list::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-    .rank-item { display: flex; justify-content: space-between; padding: 12px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); }
-    .rank-item.top { background: rgba(6,182,212,0.1); border-color: rgba(6,182,212,0.2); }
-    
-    .btn-main { background: #06b6d4; color: white; padding: 12px 24px; border-radius: 12px; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 0 #0891b2; }
-    .btn-main:active { transform: translateY(2px); box-shadow: 0 2px 0 #0891b2; }
-    .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
+    .footer-bright {
+      background: #fdfbf7; border-top: 2px solid #f3f4f6; padding: 40px 0; margin-top: 80px; text-align: center;
+    }
 
-    .nav-custom { height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 5%; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.9); }
+    /* Modal Styling */
+    .overlay { position: fixed; inset: 0; background: rgba(253,251,247,0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: #ffffff; padding: 3rem; border-radius: 32px; border: 2px solid #f3f4f6; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); }
+    .input-field { width: 100%; padding: 16px; border-radius: 18px; border: 2px solid #f3f4f6; background: #f9fafb; color: #1f2937; margin-top: 10px; outline: none; transition: all 0.2s; text-align: center; font-weight: 800; font-size: 1.1rem; }
+    .input-field:focus { border-color: var(--ghibli-mint); background: #fff; box-shadow: 0 0 15px rgba(189,241,213,0.3); }
+
+    .clone-group { border: 2px dashed var(--ghibli-lavender); border-radius: 16px; padding: 14px; margin-bottom: 12px; background: rgba(255,255,255,0.5); }
+    .clone-group-label { font-size: 14px; color: #7c3aed; font-weight: 800; margin-bottom: 8px; }
+
+    .ranking-list { max-height: 400px; overflow-y: auto; margin: 24px 0; padding-right: 12px; }
+    .rank-item { display: flex; justify-content: space-between; padding: 14px 20px; border-radius: 16px; background: #f9fafb; margin-bottom: 10px; border: 2px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .rank-item.top { background: var(--ghibli-mint); border-color: #fff; }
   </style>
  </head>
- <body class="star-bg min-h-screen">
+ <body>
   
-  <nav class="nav-custom sticky top-0 z-50">
+  <nav class="nav-bright sticky top-0 z-50">
     <div class="logo flex items-center gap-2 cursor-pointer" onclick="location.href='../index.html'">
-        <img src="../assets/favicon.png?v=2" alt="Logo" class="w-8 h-8">
-        <span style="font-family: 'Black Han Sans'; font-size: 1.4rem;">유정쌤의 실험실</span>
+        <img src="../assets/favicon.png?v=2" alt="Logo" class="w-9 h-9">
+        <span style="font-family: 'Black Han Sans'; font-size: 1.6rem; color: #374151;">유정쌤의 실험실</span>
     </div>
     <div class="flex items-center gap-4">
-        <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-full border border-slate-700">
-            <span class="text-xs text-slate-400">학습 중:</span>
-            <span id="user-display" class="text-sm font-bold text-cyan-400">---</span>
+        <div class="hidden md:flex items-center gap-3 px-5 py-2.5 bg-white rounded-full border-2 border-slate-50 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Researcher</span>
+            <span id="user-display" class="text-sm font-extrabold text-teal-600">---</span>
         </div>
-        <button onclick="location.href='../index.html'" class="px-4 py-2 rounded-full border border-slate-700 text-sm font-bold hover:bg-slate-800 transition-all text-slate-300">나가기</button>
+        <button onclick="location.href='../index.html'" class="btn-ghibli text-sm">나가기</button>
     </div>
   </nav>
 
-  <div class="w-full max-w-2xl mx-auto px-4 py-8 space-y-6">
-   <header class="text-center space-y-2">
-    <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent" style="font-family: 'Black Han Sans';">대수막대 일차식 학습</h1>
-    <p class="text-slate-400 text-sm">막대를 움직이며 일차식의 연산 원리를 탐구해 보세요.</p>
+  <div class="w-full max-w-3xl mx-auto px-5 py-12 space-y-8">
+   <header class="text-center space-y-3">
+    <div class="inline-block px-4 py-1 rounded-full bg-ghibli-mint text-emerald-800 text-[10px] font-black uppercase tracking-widest mb-2">Math Lab 06</div>
+    <h1 class="text-4xl font-bold text-gray-800" style="font-family: 'Black Han Sans';">대수막대 일차식 학습</h1>
+    <p class="text-gray-500 font-medium">색깔 막대를 움직이며 일차식의 연산과 분배법칙을 탐구해 보아요.</p>
    </header>
 
    <!-- Tab Navigation -->
-   <div class="flex gap-2 justify-center">
-    <button id="tab-add-sub" class="tab-btn-custom active px-6 py-3 rounded-2xl font-bold border-2">덧셈·뺄셈</button> 
-    <button id="tab-distribute" class="tab-btn-custom px-6 py-3 rounded-2xl font-bold border-2">분배법칙</button>
+   <div class="flex gap-3 justify-center">
+    <button id="tab-add-sub" class="tab-btn-custom active px-8 py-3.5 rounded-2xl font-black border-2 shadow-sm">덧셈·뺄셈</button> 
+    <button id="tab-distribute" class="tab-btn-custom px-8 py-3.5 rounded-2xl font-black border-2 shadow-sm">분배법칙</button>
    </div>
 
    <!-- Legend -->
-   <div class="glass-card p-5">
-    <p class="font-bold mb-3 text-sm text-cyan-400 flex items-center gap-2"><span class="w-1.5 h-4 bg-cyan-400 rounded-full"></span> 범례 (Legend)</p>
-    <div class="flex flex-wrap gap-4 text-xs items-center justify-center">
-        <span class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center rounded-lg font-bold text-white tile-pos-x" style="width:20px;height:32px;font-size:10px">x</span><span>x</span></span> 
-        <span class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center rounded-lg font-bold text-white tile-neg-x" style="width:20px;height:32px;font-size:10px">-x</span><span>-x</span></span> 
-        <span class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center rounded-lg font-bold text-white tile-pos-y" style="width:20px;height:26px;font-size:10px">y</span><span>y</span></span> 
-        <span class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center rounded-lg font-bold text-white tile-neg-y" style="width:20px;height:26px;font-size:10px">-y</span><span>-y</span></span> 
-        <span class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center rounded-lg font-bold text-white tile-pos-1" style="width:20px;height:20px;font-size:10px">1</span><span>1</span></span> 
-        <span class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center rounded-lg font-bold text-white tile-neg-1" style="width:20px;height:20px;font-size:10px">-1</span><span>-1</span></span>
+   <div class="glass-card p-6">
+    <p class="font-black mb-4 text-xs text-gray-400 uppercase tracking-widest flex items-center gap-2">
+        <span class="w-2 h-2 bg-ghibli-peach rounded-full"></span> 막대 기호 (Legend)
+    </p>
+    <div class="flex flex-wrap gap-5 text-sm items-center justify-center">
+        <span class="flex items-center gap-2"><span class="inline-flex items-center justify-center rounded-lg font-black text-white tile-pos-x" style="width:22px;height:36px;font-size:11px">x</span><span class="font-bold text-gray-600">x</span></span> 
+        <span class="flex items-center gap-2"><span class="inline-flex items-center justify-center rounded-lg font-black text-white tile-neg-x" style="width:22px;height:36px;font-size:11px">-x</span><span class="font-bold text-gray-600">-x</span></span> 
+        <span class="flex items-center gap-2"><span class="inline-flex items-center justify-center rounded-lg font-black text-white tile-pos-y" style="width:22px;height:30px;font-size:11px">y</span><span class="font-bold text-gray-600">y</span></span> 
+        <span class="flex items-center gap-2"><span class="inline-flex items-center justify-center rounded-lg font-black text-white tile-neg-y" style="width:22px;height:30px;font-size:11px">-y</span><span class="font-bold text-gray-600">-y</span></span> 
+        <span class="flex items-center gap-2"><span class="inline-flex items-center justify-center rounded-lg font-black text-white tile-pos-1" style="width:22px;height:22px;font-size:11px">1</span><span class="font-bold text-gray-600">1</span></span> 
+        <span class="flex items-center gap-2"><span class="inline-flex items-center justify-center rounded-lg font-black text-white tile-neg-1" style="width:22px;height:22px;font-size:11px">-1</span><span class="font-bold text-gray-600">-1</span></span>
     </div>
    </div>
 
    <!-- Variable Mode -->
-   <div class="flex items-center gap-3 justify-center flex-wrap">
-    <span class="text-sm font-bold text-slate-400">사용 변수:</span> 
-    <button id="var-x-btn" class="px-5 py-2 rounded-xl font-bold transition-all mode-btn active">x</button> 
-    <button id="var-y-btn" class="px-5 py-2 rounded-xl font-bold transition-all mode-btn">y</button> 
-    <button id="var-xy-btn" class="px-5 py-2 rounded-xl font-bold transition-all mode-btn">x, y</button>
+   <div class="flex items-center gap-4 justify-center flex-wrap">
+    <span class="text-sm font-black text-gray-400 uppercase tracking-tighter">변수:</span> 
+    <button id="var-x-btn" class="px-6 py-2.5 rounded-xl font-bold transition-all mode-btn active">x</button> 
+    <button id="var-y-btn" class="px-6 py-2.5 rounded-xl font-bold transition-all mode-btn">y</button> 
+    <button id="var-xy-btn" class="px-6 py-2.5 rounded-xl font-bold transition-all mode-btn">x, y</button>
    </div>
 
    <!-- ============ TAB 1: 덧셈·뺄셈 ============ -->
-   <div id="tab1-content" class="space-y-6">
-    <div class="flex items-center gap-3 justify-center flex-wrap">
-        <span class="text-sm font-bold text-slate-400">연산 선택:</span> 
-        <button id="add-btn" class="px-5 py-2 rounded-xl font-bold transition-all mode-btn active">덧셈 (+)</button> 
-        <button id="sub-btn" class="px-5 py-2 rounded-xl font-bold transition-all mode-btn">뺄셈 (−)</button>
+   <div id="tab1-content" class="space-y-8">
+    <div class="flex items-center gap-4 justify-center flex-wrap">
+        <span class="text-sm font-black text-gray-400 uppercase tracking-tighter">연산:</span> 
+        <button id="add-btn" class="px-6 py-2.5 rounded-xl font-bold transition-all mode-btn active">덧셈 (+)</button> 
+        <button id="sub-btn" class="px-6 py-2.5 rounded-xl font-bold transition-all mode-btn">뺄셈 (−)</button>
     </div>
 
-    <div class="glass-card p-6 space-y-3 text-center">
-     <p class="text-xs font-bold text-cyan-400 uppercase tracking-widest">Problem</p>
-     <p class="text-2xl font-bold" id="problem-text"></p>
+    <div class="glass-card p-8 space-y-3 text-center border-ghibli-pink">
+     <p class="text-xs font-black text-pink-400 uppercase tracking-widest">Question</p>
+     <p class="text-3xl font-black text-gray-800" id="problem-text"></p>
     </div>
 
-    <div id="palette-section" class="glass-card p-5 space-y-4">
-     <p class="font-bold text-sm text-center text-slate-300">막대를 클릭하여 아래에 식을 구성하세요</p>
-     <div class="flex flex-wrap gap-4 justify-center" id="palette-btns">
-        <button type="button" class="palette-tile-btn palette-x tile-pos-x" style="width:50px;height:70px;" data-ptype="x" data-psign="1">+x</button> 
-        <button type="button" class="palette-tile-btn palette-x tile-neg-x" style="width:50px;height:70px;" data-ptype="x" data-psign="-1">−x</button> 
-        <button type="button" class="palette-tile-btn palette-y tile-pos-y" style="width:50px;height:60px;" data-ptype="y" data-psign="1">+y</button> 
-        <button type="button" class="palette-tile-btn palette-y tile-neg-y" style="width:50px;height:60px;" data-ptype="y" data-psign="-1">−y</button> 
-        <button type="button" class="palette-tile-btn tile-pos-1" style="width:50px;height:50px;" data-ptype="c" data-psign="1">+1</button> 
-        <button type="button" class="palette-tile-btn tile-neg-1" style="width:50px;height:50px;" data-ptype="c" data-psign="-1">−1</button>
+    <div id="palette-section" class="glass-card p-6 space-y-5">
+     <p class="font-bold text-center text-gray-500">막대를 클릭하여 아래 칸에 문제를 구성하세요</p>
+     <div class="flex flex-wrap gap-5 justify-center" id="palette-btns">
+        <button type="button" class="palette-tile-btn palette-x tile-pos-x" style="width:54px;height:74px;" data-ptype="x" data-psign="1">+x</button> 
+        <button type="button" class="palette-tile-btn palette-x tile-neg-x" style="width:54px;height:74px;" data-ptype="x" data-psign="-1">−x</button> 
+        <button type="button" class="palette-tile-btn palette-y tile-pos-y" style="width:54px;height:64px;" data-ptype="y" data-psign="1">+y</button> 
+        <button type="button" class="palette-tile-btn palette-y tile-neg-y" style="width:54px;height:64px;" data-ptype="y" data-psign="-1">−y</button> 
+        <button type="button" class="palette-tile-btn tile-pos-1" style="width:54px;height:54px;" data-ptype="c" data-psign="1">+1</button> 
+        <button type="button" class="palette-tile-btn tile-neg-1" style="width:54px;height:54px;" data-ptype="c" data-psign="-1">−1</button>
      </div>
     </div>
 
-    <div id="build-section" class="glass-card p-6 space-y-4">
-     <p class="font-bold text-center text-cyan-400" id="build-label"></p>
-     <div class="grid gap-4" id="build-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div id="build-section" class="glass-card p-8 space-y-6">
+     <p class="font-black text-center text-emerald-600 text-lg" id="build-label"></p>
+     <div class="grid gap-6" id="build-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div id="build-x-col">
-       <p class="text-[10px] uppercase font-bold mb-2 text-center text-slate-500">x-tiles</p>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">X-Zone</p>
        <div id="build-x-zone" class="workspace-zone"></div>
       </div>
       <div id="build-y-col">
-       <p class="text-[10px] uppercase font-bold mb-2 text-center text-slate-500">y-tiles</p>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">Y-Zone</p>
        <div id="build-y-zone" class="workspace-zone"></div>
       </div>
       <div>
-       <p class="text-[10px] uppercase font-bold mb-2 text-center text-slate-500">constant</p>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">CONST</p>
        <div id="build-c-zone" class="workspace-zone"></div>
       </div>
      </div>
-     <p id="build-feedback" class="text-center font-bold text-sm h-5"></p>
-     <div class="flex flex-wrap gap-2 justify-center">
-        <button id="undo-btn" class="px-4 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 transition-all text-sm border border-slate-700">취소</button> 
-        <button id="clear-btn" class="px-4 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 transition-all text-sm border border-slate-700">전체 삭제</button> 
-        <button id="confirm-btn" class="btn-main px-8">식 확인</button>
+     <p id="build-feedback" class="text-center font-bold h-6"></p>
+     <div class="flex flex-wrap gap-3 justify-center">
+        <button id="undo-btn" class="btn-ghibli px-6 py-2 text-sm">뒤로</button> 
+        <button id="clear-btn" class="btn-ghibli px-6 py-2 text-sm">비우기</button> 
+        <button id="confirm-btn" class="btn-primary-ghibli px-12">준비 완료</button>
      </div>
     </div>
 
-    <div id="workspace-section" class="glass-card p-6 space-y-4 phase-hidden">
+    <div id="workspace-section" class="glass-card p-8 space-y-6 phase-hidden border-ghibli-olive/40">
      <div class="flex items-center justify-between">
-      <p class="font-bold text-cyan-400">상쇄 구역 (Zero Pairs)</p>
-      <div class="flex items-center gap-2 bg-cyan-950/30 px-3 py-1 rounded-full border border-cyan-900/50">
-        <span class="text-[10px] font-bold text-cyan-500 uppercase">상쇄 횟수:</span> 
-        <span id="zero-count" class="font-bold text-cyan-400 text-sm">0</span>
+      <p class="font-black text-emerald-700 uppercase tracking-tight">상쇄 구역 (Zero Pairs)</p>
+      <div class="flex items-center gap-3 bg-white px-4 py-1.5 rounded-full border-2 border-ghibli-mint shadow-sm">
+        <span class="text-[11px] font-black text-emerald-800 uppercase italic">Canceled:</span> 
+        <span id="zero-count" class="font-black text-emerald-600 text-lg">0</span>
       </div>
      </div>
-     <p class="text-xs text-slate-400 italic text-center">반대 부호의 막대를 서로 겹쳐서 0으로 만드세요</p>
+     <p class="text-sm text-gray-400 font-medium text-center">반대 부호의 막대를 겹쳐서 0으로 만드세요</p>
      <div id="flip-msg" class="phase-hidden flip-msg"></div>
-     <div class="grid gap-4" id="ws-grid" style="grid-template-columns: repeat(3, 1fr);">
+     <div class="grid gap-6" id="ws-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div id="ws-x-col">
-       <p class="text-[10px] font-bold mb-2 text-center text-slate-500 tracking-widest">X</p>
-       <div id="x-zone" class="workspace-zone"></div>
+       <div id="x-zone" class="workspace-zone shadow-inner"></div>
       </div>
       <div id="ws-y-col">
-       <p class="text-[10px] font-bold mb-2 text-center text-slate-500 tracking-widest">Y</p>
-       <div id="y-zone" class="workspace-zone"></div>
+       <div id="y-zone" class="workspace-zone shadow-inner"></div>
       </div>
       <div>
-       <p class="text-[10px] font-bold mb-2 text-center text-slate-500 tracking-widest">CONST</p>
-       <div id="const-zone" class="workspace-zone"></div>
+       <div id="const-zone" class="workspace-zone shadow-inner"></div>
       </div>
      </div>
     </div>
 
-    <div id="answer-section" class="glass-card p-6 space-y-4 phase-hidden">
-     <p class="font-bold text-slate-300">최종 결과를 입력하세요</p>
-     <div class="flex gap-3">
+    <div id="answer-section" class="glass-card p-8 space-y-5 phase-hidden bg-emerald-50/30">
+     <p class="font-bold text-gray-600 text-center text-lg">최종 결과를 입력하세요</p>
+     <div class="flex gap-4 max-w-sm mx-auto">
         <input id="answer-input" type="text" placeholder="예: 2x + 3" class="input-field flex-1 mt-0"> 
-        <button id="check-btn" class="btn-main mt-0 px-8">제출</button>
+        <button id="check-btn" class="btn-primary-ghibli mt-0 px-10">제출</button>
      </div>
-     <p id="feedback-text" class="text-center font-bold text-lg h-8"></p>
+     <p id="feedback-text" class="text-center font-black text-xl h-10"></p>
     </div>
 
-    <div class="flex flex-wrap gap-4 justify-center py-4">
-        <button id="rank-btn" class="px-6 py-3 rounded-2xl bg-slate-800 border border-slate-700 font-bold hover:bg-slate-700 transition-all text-sm">랭킹 보기</button>
-        <button id="new-btn" class="px-6 py-3 rounded-2xl bg-slate-800 border border-slate-700 font-bold hover:bg-slate-700 transition-all text-sm">새 문제</button>
+    <div class="flex flex-wrap gap-5 justify-center py-6">
+        <button id="rank-btn" class="btn-ghibli">🏅 랭킹 보기</button>
+        <button id="new-btn" class="btn-ghibli bg-white border-ghibli-peach text-orange-600">🆕 다음 문제</button>
     </div>
    </div>
 
    <!-- ============ TAB 2: 분배법칙 ============ -->
-   <div id="tab2-content" class="phase-hidden space-y-6">
-    <div class="glass-card p-6 space-y-3 text-center">
-     <p class="text-xs font-bold text-violet-400 uppercase tracking-widest">Distribution Problem</p>
-     <p class="text-2xl font-bold" id="dist-problem-text"></p>
+   <div id="tab2-content" class="phase-hidden space-y-8">
+    <div class="glass-card p-10 space-y-4 text-center border-ghibli-lavender">
+     <p class="text-xs font-black text-violet-400 uppercase tracking-widest italic">Multiplication Step</p>
+     <p class="text-4xl font-black text-gray-800" id="dist-problem-text"></p>
     </div>
 
-    <div id="dist-build-section" class="glass-card p-6 space-y-5">
-     <p class="font-bold text-center text-slate-300" id="dist-build-label"></p>
-     <div class="flex flex-wrap gap-3 justify-center" id="dist-palette-btns">
-        <button type="button" class="palette-tile-btn dist-palette-x tile-pos-x" style="width:50px;height:70px;" data-ptype="x" data-psign="1">+x</button> 
-        <button type="button" class="palette-tile-btn dist-palette-x tile-neg-x" style="width:50px;height:70px;" data-ptype="x" data-psign="-1">−x</button> 
-        <button type="button" class="palette-tile-btn dist-palette-y tile-pos-y" style="width:50px;height:60px;" data-ptype="y" data-psign="1">+y</button> 
-        <button type="button" class="palette-tile-btn dist-palette-y tile-neg-y" style="width:50px;height:60px;" data-ptype="y" data-psign="-1">−y</button> 
-        <button type="button" class="palette-tile-btn tile-pos-1" style="width:50px;height:50px;" data-ptype="c" data-psign="1">+1</button> 
-        <button type="button" class="palette-tile-btn tile-neg-1" style="width:50px;height:50px;" data-ptype="c" data-psign="-1">−1</button>
+    <div id="dist-build-section" class="glass-card p-8 space-y-6">
+     <p class="font-black text-center text-violet-600 text-lg" id="dist-build-label"></p>
+     <div class="flex flex-wrap gap-5 justify-center" id="dist-palette-btns">
+        <button type="button" class="palette-tile-btn dist-palette-x tile-pos-x" style="width:54px;height:74px;" data-ptype="x" data-psign="1">+x</button> 
+        <button type="button" class="palette-tile-btn dist-palette-x tile-neg-x" style="width:54px;height:74px;" data-ptype="x" data-psign="-1">−x</button> 
+        <button type="button" class="palette-tile-btn dist-palette-y tile-pos-y" style="width:54px;height:64px;" data-ptype="y" data-psign="1">+y</button> 
+        <button type="button" class="palette-tile-btn dist-palette-y tile-neg-y" style="width:54px;height:64px;" data-ptype="y" data-psign="-1">−y</button> 
+        <button type="button" class="palette-tile-btn tile-pos-1" style="width:54px;height:54px;" data-ptype="c" data-psign="1">+1</button> 
+        <button type="button" class="palette-tile-btn tile-neg-1" style="width:54px;height:54px;" data-ptype="c" data-psign="-1">−1</button>
      </div>
-     <div class="grid gap-4" id="dist-build-grid" style="grid-template-columns: repeat(3, 1fr);">
-      <div id="dist-build-x-col">
-       <div id="dist-build-x-zone" class="workspace-zone"></div>
-      </div>
-      <div id="dist-build-y-col">
-       <div id="dist-build-y-zone" class="workspace-zone"></div>
-      </div>
-      <div>
-       <div id="dist-build-c-zone" class="workspace-zone"></div>
-      </div>
+     <div class="grid gap-6" id="dist-build-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div id="dist-build-x-col"><div id="dist-build-x-zone" class="workspace-zone"></div></div>
+      <div id="dist-build-y-col"><div id="dist-build-y-zone" class="workspace-zone"></div></div>
+      <div><div id="dist-build-c-zone" class="workspace-zone"></div></div>
      </div>
-     <p id="dist-build-feedback" class="text-center font-bold text-sm h-5"></p>
-     <div class="flex flex-wrap gap-2 justify-center">
-        <button id="dist-undo-btn" class="px-4 py-2 rounded-xl font-bold bg-slate-800 border border-slate-700 transition-all text-sm">취소</button> 
-        <button id="dist-clear-btn" class="px-4 py-2 rounded-xl font-bold bg-slate-800 border border-slate-700 transition-all text-sm">전체 삭제</button> 
-        <button id="dist-confirm-btn" class="btn-main px-8">식 확인</button>
+     <p id="dist-build-feedback" class="text-center font-bold h-6"></p>
+     <div class="flex flex-wrap gap-3 justify-center">
+        <button id="dist-undo-btn" class="btn-ghibli px-6 py-2 text-sm">뒤로</button> 
+        <button id="dist-clear-btn" class="btn-ghibli px-6 py-2 text-sm">비우기</button> 
+        <button id="dist-confirm-btn" class="btn-primary-ghibli bg-violet-200 text-violet-800 border-violet-400 px-12">괄호 완성</button>
      </div>
     </div>
 
-    <div id="dist-clone-section" class="glass-card p-6 space-y-4 phase-hidden">
-     <p class="font-bold text-center text-cyan-400" id="dist-clone-label"></p>
-     <div id="dist-clone-area" class="space-y-3"></div>
+    <div id="dist-clone-section" class="glass-card p-8 space-y-6 phase-hidden border-indigo-100">
+     <p class="font-black text-center text-indigo-600 text-xl" id="dist-clone-label"></p>
+     <div id="dist-clone-area" class="space-y-4"></div>
     </div>
 
-    <div id="dist-flip-section" class="glass-card p-6 space-y-4 phase-hidden">
-     <p class="font-bold text-center text-amber-400">부호 반전 단계</p>
+    <div id="dist-flip-section" class="glass-card p-8 space-y-6 phase-hidden border-orange-100">
+     <p class="font-black text-center text-orange-600 text-xl">부호 반전 단계</p>
      <div id="dist-flip-msg" class="phase-hidden flip-msg"></div>
-     <div id="dist-flip-area" class="space-y-3"></div>
+     <div id="dist-flip-area" class="space-y-4"></div>
     </div>
 
-    <div id="dist-answer-section" class="glass-card p-6 space-y-4 phase-hidden">
-     <p class="font-bold text-slate-300">최종 합계 결과를 입력하세요</p>
-     <div class="flex gap-3">
+    <div id="dist-answer-section" class="glass-card p-8 space-y-6 phase-hidden bg-violet-50/30">
+     <p class="font-bold text-violet-700 text-center text-lg">최종 합계 결과를 입력하세요</p>
+     <div class="flex gap-4 max-w-sm mx-auto">
         <input id="dist-answer-input" type="text" placeholder="예: 4x - 6" class="input-field flex-1 mt-0"> 
-        <button id="dist-check-btn" class="btn-main mt-0 px-8">제출</button>
+        <button id="dist-check-btn" class="btn-primary-ghibli bg-violet-400 text-white border-violet-500 mt-0 px-10">제출</button>
      </div>
-     <p id="dist-feedback-text" class="text-center font-bold text-lg h-8"></p>
+     <p id="dist-feedback-text" class="text-center font-black text-xl h-10"></p>
     </div>
 
-    <div class="flex flex-wrap gap-4 justify-center py-4">
-        <button id="dist-next-step-btn" class="btn-main phase-hidden px-10">다음 단계</button> 
-        <button id="dist-new-problem-btn" class="px-6 py-3 rounded-2xl bg-slate-800 border border-slate-700 font-bold hover:bg-slate-700 transition-all text-sm">새 문제</button>
+    <div class="flex flex-wrap gap-5 justify-center py-6">
+        <button id="dist-next-step-btn" class="btn-primary-ghibli bg-ghibli-pink text-pink-900 border-pink-300 phase-hidden px-14">다음 과정 진행 &rarr;</button> 
+        <button id="dist-new-problem-btn" class="btn-ghibli">🆕 다음 문제</button>
     </div>
    </div>
   </div>
 
-  <footer class="footer mt-12">
-    <div class="footer-content">
-        <div class="footer-logo">
-            <img src="../assets/favicon.png?v=2" alt="Logo" class="site-logo">
-            유정쌤의 실험실
+  <footer class="footer-bright">
+    <div class="max-w-4xl mx-auto px-6">
+        <div class="flex flex-col items-center gap-4">
+            <img src="../assets/favicon.png?v=2" alt="Logo" class="w-10 h-10 opacity-70">
+            <div class="font-black text-xl text-gray-500 uppercase tracking-tighter" style="font-family: 'Black Han Sans'">유정쌤의 실험실</div>
+            <p class="text-gray-400 font-medium">수학의 원리를 밝고 따뜻한 시선으로 경험하는 정원 🌱</p>
+            <div class="mt-4 text-gray-300 text-[10px]">&copy; 2026 Yujeong's Math Lab. All rights reserved.</div>
         </div>
-        <p>수학의 원리를 직접 만지고 경험하는 공간 🌱</p>
     </div>
   </footer>
 
   <!-- LOGIN OVERLAY -->
   <div id="login-overlay" class="overlay">
     <div class="modal text-center">
-        <div class="mb-6">
-            <h2 class="text-3xl font-bold mb-2" style="font-family: Black Han Sans">실험 참여하기</h2>
-            <p class="text-slate-400 text-sm">학번과 이름을 입력하고 실험실에 입장하세요.</p>
+        <div class="mb-8">
+            <div class="w-20 h-20 bg-ghibli-mint rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-sm border-4 border-white">
+                <span class="text-4xl">🌱</span>
+            </div>
+            <h2 class="text-4xl font-bold mb-3 text-gray-800" style="font-family: Black Han Sans">실험 참여하기</h2>
+            <p class="text-gray-400 font-medium">학번과 이름을 입력하고 정원으로 입장하세요.</p>
         </div>
         <div class="space-y-4">
             <input type="text" id="login-id" placeholder="학번 (예: 1601)" class="input-field">
             <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" class="input-field">
-            <button onclick="login()" id="login-btn" class="btn-main w-full mt-6">실험실 입장</button>
+            <button onclick="login()" id="login-btn" class="btn-primary-ghibli w-full mt-8 py-5 text-lg">연구실 입장하기</button>
         </div>
     </div>
   </div>
 
   <!-- RANKING OVERLAY -->
   <div id="rank-overlay" class="overlay hidden">
-    <div class="modal w-full max-w-lg">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold" style="font-family: Black Han Sans">명예의 전당 (TOP 100)</h2>
-            <button onclick="closeRank()" class="text-slate-500 hover:text-white">✕</button>
+    <div class="modal w-full max-w-xl">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800" style="font-family: Black Han Sans">🏆 명예의 전당 (TOP 100)</h2>
+            <button onclick="closeRank()" class="text-gray-400 hover:text-gray-900 transition">✕</button>
         </div>
         <div class="ranking-list" id="rank-list">
             <!-- rank items -->
         </div>
-        <button onclick="closeRank()" class="btn-main w-full">닫기</button>
+        <button onclick="closeRank()" class="btn-ghibli w-full py-4">닫기</button>
     </div>
   </div>
 
@@ -404,11 +429,9 @@
       btn.disabled = true; btn.textContent = '불러오는 중...';
 
       userId = idInput; userName = nameInput;
-      console.log('🔑 Login Attempt:', { userId, userName });
       localStorage.setItem('algebra_tiles_id', userId);
       localStorage.setItem('algebra_tiles_name', userName);
 
-      // Fetch existing record
       if (sbGame) {
         try {
             const { data, error } = await sbGame
@@ -420,18 +443,12 @@
             
             if (data && !error) { 
                 currentTotalScore = data.score;
-                console.log('✅ Previous record found:', currentTotalScore);
-            }
-            else { 
+            } else { 
                 currentTotalScore = 0; 
-                console.log('ℹ️ New user or no record found. Error:', error?.message);
             }
         } catch (e) {
-            console.error('❌ Login fetch error:', e);
             currentTotalScore = 0;
         }
-      } else {
-        console.warn('⚠️ Supabase Game client is not initialized. Score sync will not work.');
       }
 
       document.getElementById('user-display').textContent = `${userId} ${userName}`;
@@ -440,40 +457,27 @@
     }
 
     async function syncScore() {
-      if (!sbGame || !userId) {
-        console.warn('⚠️ Cannot sync score: Missing client or user info.');
-        return;
-      }
-      
-      console.log('🔄 Syncing score:', currentTotalScore);
-      
+      if (!sbGame || !userId) return;
       try {
-          // Fetch-then-Update (Upsert pattern fallback for safety)
-          const { data: existing, error: fetchError } = await sbGame
+          const { data: existing } = await sbGame
             .from('algebra_tiles_rank')
             .select('id')
             .eq('mode', userId)
             .eq('name', userName)
-            .maybeSingle(); // maybeSingle() is safer as it doesnt throw error for 0 rows
+            .maybeSingle();
 
           if (existing) {
-            const { error: updError } = await sbGame.from('algebra_tiles_rank').update({ score: currentTotalScore }).eq('id', existing.id);
-            if (updError) console.error('❌ Update failed:', updError.message);
-            else console.log('✅ Score updated successfully.');
+            await sbGame.from('algebra_tiles_rank').update({ score: currentTotalScore }).eq('id', existing.id);
           } else {
-            const { error: insError } = await sbGame.from('algebra_tiles_rank').insert({ mode: userId, name: userName, score: currentTotalScore });
-            if (insError) console.error('❌ Insert failed:', insError.message);
-            else console.log('✅ New record created.');
+            await sbGame.from('algebra_tiles_rank').insert({ mode: userId, name: userName, score: currentTotalScore });
           }
-      } catch (e) {
-          console.error('❌ syncScore system error:', e);
-      }
+      } catch (e) {}
     }
 
     async function showRanking() {
       document.getElementById('rank-overlay').classList.remove('hidden');
       const list = document.getElementById('rank-list');
-      list.innerHTML = '<p class="text-center py-10 animate-pulse text-slate-500">데이터를 불러오는 중입니다...</p>';
+      list.innerHTML = '<p class="text-center py-10 animate-pulse text-gray-400">명예의 전당을 불러오는 중...</p>';
 
       if (sbGame) {
         const { data, error } = await sbGame
@@ -483,26 +487,23 @@
           .limit(100);
         
         if (data && !error) {
-          console.log('✅ Rankings loaded:', data.length, 'records');
           list.innerHTML = data.map((r, i) => `
             <div class="rank-item ${i < 3 ? 'top' : ''}">
-                <div class="flex items-center gap-3">
-                    <span class="w-6 font-bold ${i===0?'text-yellow-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-500'}">${i+1}</span>
-                    <span class="text-slate-300 text-xs">${r.mode}</span>
-                    <span class="font-bold">${r.name}</span>
+                <div class="flex items-center gap-4">
+                    <span class="w-8 font-black text-lg ${i===0?'text-yellow-600':i===1?'text-slate-400':i===2?'text-orange-600':'text-slate-300'}">${i+1}</span>
+                    <span class="text-slate-400 text-xs font-bold font-mono">${r.mode}</span>
+                    <span class="font-extrabold text-gray-700">${r.name}</span>
                 </div>
-                <span class="font-bold text-cyan-400">${r.score}</span>
+                <span class="font-black text-emerald-600 text-lg">${r.score}</span>
             </div>
           `).join('');
         } else {
-          console.error('❌ Ranking load failed:', error?.message);
-          list.innerHTML = `<p class="text-center py-10 text-red-400">데이터 로드 실패: ${error?.message || '알 수 없는 오류'}</p>`;
+          list.innerHTML = `<p class="text-center py-10 text-red-400 italic">데이터 로드 실패: ${error?.message || '관리자에게 문의하세요.'}</p>`;
         }
       }
     }
     function closeRank() { document.getElementById('rank-overlay').classList.add('hidden'); }
 
-    // Check pre-existing session
     window.onload = () => {
         const savedId = localStorage.getItem('algebra_tiles_id');
         const savedName = localStorage.getItem('algebra_tiles_name');
@@ -524,10 +525,10 @@
       if(c!==0){ let cs=''+c; if(c>0&&p.length) cs='+'+c; p.push(cs); }
       return p.join(' ')||'0';
     }
-    function normalize(s){ return s.replace(/\s+/g,'').replace(/−/g,'-').replace(/\+\-/g,'-').replace(/^\+/,''); }
+    function normalize(s){ return s.trim().replace(/\s+/g,'').replace(/−/g,'-').replace(/\+\-/g,'-').replace(/^\+/,''); }
 
     function tileSizeClass(type){ return type==='x'?'tile-x':type==='y'?'tile-y':'tile-1'; }
-    function tileH(type){ return type==='x'?66:type==='y'?52:38; }
+    function tileH(type){ return type==='x'?72:type==='y'?58:44; }
     function tileColorClass(type,sign){
       if(type==='x') return sign>0?'tile-pos-x':'tile-neg-x';
       if(type==='y') return sign>0?'tile-pos-y':'tile-neg-y';
@@ -570,7 +571,6 @@
       if(currentTab==='add-sub') genProblem(); else genDistProblem();
     }
 
-    // Tab switching
     document.getElementById('tab-add-sub').addEventListener('click',()=>{
       if(currentTab==='add-sub') return; currentTab='add-sub';
       document.getElementById('tab-add-sub').classList.add('active'); document.getElementById('tab-distribute').classList.remove('active');
@@ -614,7 +614,7 @@
 
     function renderProblem(){
       const op=isAddition?'+':'−';
-      document.getElementById('problem-text').innerHTML=`(${exprStr(exprA.x,exprA.y,exprA.c)}) <span class="text-cyan-400 font-black mx-2">${op}</span> (${exprStr(exprB.x,exprB.y,exprB.c)})`;
+      document.getElementById('problem-text').innerHTML=`(${exprStr(exprA.x,exprA.y,exprA.c)}) <span class="text-pink-500 font-black mx-3">${op}</span> (${exprStr(exprB.x,exprB.y,exprB.c)})`;
     }
 
     function updatePhaseUI(){
@@ -624,22 +624,22 @@
       document.getElementById('build-section').classList.toggle('phase-hidden',!isBuild);
       document.getElementById('workspace-section').classList.toggle('phase-hidden',!isCancel);
       document.getElementById('answer-section').classList.toggle('phase-hidden',!isCancel);
-      if(phase==='build-a'){ document.getElementById('build-label').innerHTML=`식 <span class="px-2 py-0.5 rounded bg-cyan-900/40 text-cyan-400">A</span> 를 만드세요: <b>${exprStr(exprA.x,exprA.y,exprA.c)}</b>`; }
-      else if(phase==='build-b'){ document.getElementById('build-label').innerHTML=`식 <span class="px-2 py-0.5 rounded bg-violet-900/40 text-violet-400">B</span> 를 만드세요: <b>${exprStr(exprB.x,exprB.y,exprB.c)}</b>`; }
+      if(phase==='build-a'){ document.getElementById('build-label').innerHTML=`식 <span class="px-2 py-0.5 rounded-lg bg-pink-100 text-pink-600">A</span> 를 만드세요: <b>${exprStr(exprA.x,exprA.y,exprA.c)}</b>`; }
+      else if(phase==='build-b'){ document.getElementById('build-label').innerHTML=`식 <span class="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-600">B</span> 를 만드세요: <b>${exprStr(exprB.x,exprB.y,exprB.c)}</b>`; }
     }
 
     function layoutZone(zoneId,type){
       const container=document.getElementById(zoneId);
       const tiles=[...container.querySelectorAll('.tile:not(.cancel)')];
-      const w=38,h=tileH(type),gap=8,pad=10;
-      const cw=container.clientWidth||200;
+      const w=44,h=tileH(type),gap=10,pad=12;
+      const cw=container.clientWidth||240;
       const cols=Math.max(1,Math.floor((cw-pad)/(w+gap)));
       tiles.forEach((el,i)=>{
         el.style.left=(pad+(i%cols)*(w+gap))+'px';
         el.style.top=(pad+Math.floor(i/cols)*(h+gap))+'px';
       });
       const rows=Math.ceil(tiles.length/cols)||1;
-      container.style.minHeight=Math.max(120,(pad*2+rows*(h+gap)))+'px';
+      container.style.minHeight=Math.max(140,(pad*2+rows*(h+gap)))+'px';
     }
 
     function addBuildTile(type,sign){
@@ -658,11 +658,11 @@
       const target=phase==='build-a'?exprA:exprB;
       const fb=document.getElementById('build-feedback');
       if(x===target.x&&y===target.y&&c===target.c){
-        fb.textContent='✅ 완벽합니다!'; fb.className='text-center font-bold text-sm text-cyan-400';
+        fb.textContent='✨ 완벽합니다!'; fb.className='text-center font-bold text-emerald-500';
         setTimeout(()=>transferToWorkspace(),600);
       } else {
-        fb.textContent=`❌ 개수가 맞지 않아요. (현재: ${exprStr(x,y,c)})`;
-        fb.className='text-center font-bold text-sm text-rose-400';
+        fb.textContent=`😰 개수가 맞지 않아요. (현재: ${exprStr(x,y,c)})`;
+        fb.className='text-center font-bold text-rose-500';
       }
     }
 
@@ -678,7 +678,7 @@
         phase='cancel'; updatePhaseUI();
         if(flipSigns){
           const msg=document.getElementById('flip-msg');
-          msg.textContent='뺄셈이므로 식 B의 부호가 모두 반전됩니다!';
+          msg.textContent='뺄셈 연산이므로 식 B의 부호가 모두 반전됩니다!';
           msg.classList.remove('phase-hidden');
           setTimeout(()=>msg.classList.add('phase-hidden'),3000);
         }
@@ -730,7 +730,7 @@
             const mx=br.left+br.width/2-cr.left,my=br.top+br.height/2-cr.top;
             el.classList.add('cancel'); match.el.classList.add('cancel');
             const z=document.createElement('div'); z.className='zero-float'; z.textContent='0';
-            z.style.left=(mx-14)+'px'; z.style.top=(my-14)+'px'; container.appendChild(z);
+            z.style.left=(mx-18)+'px'; z.style.top=(my-18)+'px'; container.appendChild(z);
             setTimeout(()=>z.remove(),800);
             zeroPairs++; document.getElementById('zero-count').textContent=zeroPairs;
             setTimeout(()=>{ el.remove(); match.el.remove(); layoutZone(match.type==='x'?'x-zone':match.type==='y'?'y-zone':'const-zone',match.type); },500);
@@ -747,15 +747,15 @@
         let correct=normalize(exprStr(rx,ry,rc));
         let user=normalize(document.getElementById('answer-input').value);
         const fb=document.getElementById('feedback-text');
-        if(user===correct){fb.textContent='🎉 정답입니다! (+1점)';fb.style.color='#14b8a6'; solved=true;}
-        else{fb.textContent='❌ 다시 한번 확인해 보세요.';fb.style.color='#f43f5e';}
+        if(user===correct){fb.textContent='🌿 참 잘했어요! (+1점)';fb.style.color='#059669'; solved=true;}
+        else{fb.textContent='⚠️ 다시 생각해보세요.';fb.style.color='#e11d48';}
       } else {
         const rx=distA*distExpr.x, ry=distA*distExpr.y, rc=distA*distExpr.c;
         const correct=normalize(exprStr(rx,ry,rc));
         const user=normalize(document.getElementById('dist-answer-input').value);
         const fb=document.getElementById('dist-feedback-text');
-        if(user===correct){fb.textContent='🎉 정답입니다! (+1점)';fb.style.color='#14b8a6'; solved=true;}
-        else{fb.textContent='❌ 계산 결과를 확인해 보세요.';fb.style.color='#f43f5e';}
+        if(user===correct){fb.textContent='🎨 정확합니다! (+1점)';fb.style.color='#7c3aed'; solved=true;}
+        else{fb.textContent='💭 다시 계산해볼까요?';fb.style.color='#e11d48';}
       }
       if(solved){
         currentTotalScore++;
@@ -791,7 +791,7 @@
     }
     function renderDistProblem(){
       const aStr=distA===1?'':distA===-1?'-':''+distA;
-      document.getElementById('dist-problem-text').innerHTML=`<span class="text-violet-400 font-black">${aStr}</span>(${exprStr(distExpr.x,distExpr.y,distExpr.c)})`;
+      document.getElementById('dist-problem-text').innerHTML=`<span class="text-violet-500 font-extrabold mr-1">${aStr}</span>(${exprStr(distExpr.x,distExpr.y,distExpr.c)})`;
     }
     function updateDistPhaseUI(){
       document.getElementById('dist-build-section').classList.toggle('phase-hidden',distPhase!=='build');
@@ -799,10 +799,10 @@
       document.getElementById('dist-flip-section').classList.toggle('phase-hidden',!['flip','result'].includes(distPhase));
       document.getElementById('dist-answer-section').classList.toggle('phase-hidden',distPhase!=='result');
       const nextBtn=document.getElementById('dist-next-step-btn');
-      if(distPhase==='clone'){ nextBtn.classList.remove('phase-hidden'); nextBtn.textContent=distA<0?'다음: 부호 반전':'최종 계산'; }
-      else if(distPhase==='flip'){ nextBtn.classList.remove('phase-hidden'); nextBtn.textContent='최종 계산'; }
+      if(distPhase==='clone'){ nextBtn.classList.remove('phase-hidden'); nextBtn.textContent=distA<0?'🔍 부호 반전 단계로 이동':'✨ 최종 결과 계산하기'; }
+      else if(distPhase==='flip'){ nextBtn.classList.remove('phase-hidden'); nextBtn.textContent='✨ 최종 결과 계산하기'; }
       else nextBtn.classList.add('phase-hidden');
-      if(distPhase==='build') document.getElementById('dist-build-label').innerHTML=`괄호 안의 식을 만드세요: <b>${exprStr(distExpr.x,distExpr.y,distExpr.c)}</b>`;
+      if(distPhase==='build') document.getElementById('dist-build-label').innerHTML=`괄호 안의 식을 만드세요: <b class="text-violet-600">${exprStr(distExpr.x,distExpr.y,distExpr.c)}</b>`;
     }
     function distAddTile(type,sign){
       const el=document.createElement('div'); el.className=`tile ${tileSizeClass(type)} ${tileColorClass(type,sign)} slide-down no-drag`; el.textContent=tileLabel(type,sign);
@@ -816,16 +816,16 @@
       let x=0,y=0,c=0; for(const t of distBuildStack){ if(t.type==='x')x+=t.sign; else if(t.type==='y')y+=t.sign; else c+=t.sign; }
       const fb=document.getElementById('dist-build-feedback');
       if(x===distExpr.x&&y===distExpr.y&&c===distExpr.c){
-        fb.textContent='✅ 잘 만들었습니다!'; fb.className='text-center font-bold text-sm text-cyan-400';
+        fb.textContent='🌈 괄호 안의 식 완성!'; fb.className='text-center font-bold text-emerald-500';
         setTimeout(()=>{ distPhase='clone'; showClones(); updateDistPhaseUI(); },600);
-      } else { fb.textContent='❌ 개수가 일치하지 않습니다.'; fb.className='text-center font-bold text-sm text-rose-400'; }
+      } else { fb.textContent='❌ 막대 개수를 확인해 보세요.'; fb.className='text-center font-bold text-rose-500'; }
     };
     function showClones(){
       const area=document.getElementById('dist-clone-area'); area.innerHTML=''; const absA=Math.abs(distA);
-      document.getElementById('dist-clone-label').textContent=`|${distA}| = ${absA}배만큼 복제합니다.`;
+      document.getElementById('dist-clone-label').innerHTML=`|${distA}| = <span class="bg-indigo-100 px-2 rounded-md">${absA}배</span> 만큼 복제합니다.`;
       for(let i=0;i<absA;i++){
-        const group=document.createElement('div'); group.className='clone-group'; group.style.animation=`slideDown 0.4s ease ${i*0.3}s both`;
-        group.innerHTML=`<div class="clone-group-label">복제본 #${i+1}</div><div class="flex flex-wrap gap-1 items-center" id="clone-wrap-${i}"></div>`;
+        const group=document.createElement('div'); group.className='clone-group'; group.style.animation=`slideDown 0.4s ease ${i*0.2}s both`;
+        group.innerHTML=`<div class="clone-group-label">복제 그룹 #${i+1}</div><div class="flex flex-wrap gap-2 items-center" id="clone-wrap-${i}"></div>`;
         area.appendChild(group);
         const wrap=document.getElementById(`clone-wrap-${i}`);
         const add=(t,cnt)=>{ for(let j=0;j<Math.abs(cnt);j++){ const el=document.createElement('div'); el.className=`tile ${tileSizeClass(t)} ${tileColorClass(t,cnt>0?1:-1)} relative !static`; el.textContent=tileLabel(t,cnt>0?1:-1); wrap.appendChild(el); } };
@@ -834,11 +834,11 @@
     }
     function showFlip(){
       const area=document.getElementById('dist-flip-area'); area.innerHTML=''; const absA=Math.abs(distA);
-      const msg=document.getElementById('dist-flip-msg'); msg.textContent='식 외부의 부호가 음수(−)이므로 모든 막대의 부호를 반전시킵니다!';
+      const msg=document.getElementById('dist-flip-msg'); msg.textContent='앞의 숫자가 음수(−)이므로 모든 복제된 막대의 부호를 반전합니다!';
       msg.classList.remove('phase-hidden');
       for(let i=0;i<absA;i++){
-        const group=document.createElement('div'); group.className='clone-group';
-        group.innerHTML=`<div class="clone-group-label" style="color:#f59e0b">복제본 #${i+1} (부호 반전)</div><div class="flex flex-wrap gap-1 items-center" id="flip-wrap-${i}"></div>`;
+        const group=document.createElement('div'); group.className='clone-group border-orange-200';
+        group.innerHTML=`<div class="clone-group-label" style="color:#d97706">반전 그룹 #${i+1}</div><div class="flex flex-wrap gap-2 items-center" id="flip-wrap-${i}"></div>`;
         area.appendChild(group);
         const wrap=document.getElementById(`flip-wrap-${i}`);
         const add=(t,cnt)=>{ for(let j=0;j<Math.abs(cnt);j++){ const s=cnt>0?-1:1; const el=document.createElement('div'); el.className=`tile ${tileSizeClass(t)} ${tileColorClass(t,s)} flip-in relative !static`; el.textContent=tileLabel(t,s); wrap.appendChild(el); } };
