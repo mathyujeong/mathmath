@@ -113,9 +113,30 @@
                             <label>Beat Speed</label>
                             <input type="range" id="beat-speed" min="1" max="5" step="0.5" value="2.5">
                         </div>
-                        <div class="status-badge">Animation: Active</div>
+                        <div class="status-badge" id="heart-status">Animation: Active</div>
                     </div>
                     <canvas id="heart-canvas"></canvas>
+                </div>
+
+                <!-- Butterfly Curve (Temple H. Fay) -->
+                <div id="butterfly-lab-container" class="glass-lab gallery-item">
+                    <div class="lab-header-panel">
+                        <div class="formula-box blur-glass">
+                            <span class="formula">r = e<sup>cosθ</sup> - 2cos(4θ) + sin<sup>5</sup>(θ/12)</span>
+                        </div>
+                    </div>
+                    <div class="lab-controls-panel blur-glass">
+                        <div class="control-group">
+                            <label>Size</label>
+                            <input type="range" id="butterfly-size" min="0.5" max="2" step="0.1" value="1">
+                        </div>
+                        <div class="control-group">
+                            <label>Draw Speed</label>
+                            <input type="range" id="butterfly-speed" min="1" max="10" step="1" value="5">
+                        </div>
+                        <div class="status-badge" id="butterfly-status">Drawing...</div>
+                    </div>
+                    <canvas id="butterfly-canvas"></canvas>
                 </div>
             </div>
         </div>
@@ -138,6 +159,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/app.js"></script>
     <script src="js/heart-lab.js"></script>
+    <script src="js/butterfly-lab.js"></script>
     <script>
         // Program Activation Logic for Portal
         const env = window._ENV_ || {};
