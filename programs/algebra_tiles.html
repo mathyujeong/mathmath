@@ -251,15 +251,15 @@
      <p class="font-black text-center text-emerald-600 text-lg" id="build-label"></p>
      <div class="grid gap-6" id="build-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div id="build-x-col">
-       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">X-Zone</p>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">x막대</p>
        <div id="build-x-zone" class="workspace-zone"></div>
       </div>
       <div id="build-y-col">
-       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">Y-Zone</p>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">y막대</p>
        <div id="build-y-zone" class="workspace-zone"></div>
       </div>
       <div>
-       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">CONST</p>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">상수항</p>
        <div id="build-c-zone" class="workspace-zone"></div>
       </div>
      </div>
@@ -283,12 +283,15 @@
      <div id="flip-msg" class="phase-hidden flip-msg"></div>
      <div class="grid gap-6" id="ws-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div id="ws-x-col">
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">x막대</p>
        <div id="x-zone" class="workspace-zone shadow-inner"></div>
       </div>
       <div id="ws-y-col">
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">y막대</p>
        <div id="y-zone" class="workspace-zone shadow-inner"></div>
       </div>
       <div>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">상수항</p>
        <div id="const-zone" class="workspace-zone shadow-inner"></div>
       </div>
      </div>
@@ -327,9 +330,18 @@
         <button type="button" class="palette-tile-btn tile-neg-1" style="width:54px;height:54px;" data-ptype="c" data-psign="-1">−1</button>
      </div>
      <div class="grid gap-6" id="dist-build-grid" style="grid-template-columns: repeat(3, 1fr);">
-      <div id="dist-build-x-col"><div id="dist-build-x-zone" class="workspace-zone"></div></div>
-      <div id="dist-build-y-col"><div id="dist-build-y-zone" class="workspace-zone"></div></div>
-      <div><div id="dist-build-c-zone" class="workspace-zone"></div></div>
+      <div id="dist-build-x-col">
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">x막대</p>
+       <div id="dist-build-x-zone" class="workspace-zone"></div>
+      </div>
+      <div id="dist-build-y-col">
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">y막대</p>
+       <div id="dist-build-y-zone" class="workspace-zone"></div>
+      </div>
+      <div>
+       <p class="text-[11px] font-black mb-3 text-center text-slate-300 uppercase italic">상수항</p>
+       <div id="dist-build-c-zone" class="workspace-zone"></div>
+      </div>
      </div>
      <p id="dist-build-feedback" class="text-center font-bold h-6"></p>
      <div class="flex flex-wrap gap-3 justify-center">
@@ -384,13 +396,13 @@
             <div class="w-20 h-20 bg-ghibli-mint rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-sm border-4 border-white">
                 <span class="text-4xl">🌱</span>
             </div>
-            <h2 class="text-4xl font-bold mb-3 text-gray-800" style="font-family: Black Han Sans">실험 참여하기</h2>
-            <p class="text-gray-400 font-medium">학번과 이름을 입력하고 정원으로 입장하세요.</p>
+            <h2 class="text-3xl font-bold mb-3 text-gray-800" style="font-family: Black Han Sans">대수막대 일차식 학습</h2>
+            <p class="text-gray-400 font-medium">학번과 이름을 입력하고 입장하세요.</p>
         </div>
         <div class="space-y-4">
             <input type="text" id="login-id" placeholder="학번 (예: 1601)" class="input-field">
             <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" class="input-field">
-            <button onclick="login()" id="login-btn" class="btn-primary-ghibli w-full mt-8 py-5 text-lg">연구실 입장하기</button>
+            <button onclick="login()" id="login-btn" class="btn-primary-ghibli w-full mt-8 py-5 text-lg">입장하기</button>
         </div>
     </div>
   </div>
