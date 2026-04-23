@@ -398,23 +398,35 @@
         <button id="practice-clear-btn" class="text-[10px] font-black text-rose-400 border-2 border-rose-50 px-3 py-1 rounded-full hover:bg-rose-50 transition">전체 비우기</button>
       </div>
       
-      <div id="practice-zone" class="workspace-zone shadow-inner" style="min-height: 400px; padding: 20px;">
-        <!-- tiles will be added here -->
-      </div>
+      <div id="practice-zone" class="workspace-zone shadow-inner relative overflow-hidden bg-white/50" style="min-height: 600px; padding: 0;">
+        <div class="absolute top-4 left-4 pointer-events-none">
+          <p class="font-black text-gray-300 uppercase tracking-tighter text-[10px] italic">자유 배치 연구소 (Practice Lab)</p>
+        </div>
+        
+        <!-- Action Zones (Inside the draggable area) -->
+        <div class="absolute bottom-6 left-6 right-6 flex gap-6 h-28 pointer-events-none z-0">
+          <div id="zone-clone" class="flex-1 rounded-3xl border-4 border-dashed border-sky-100 flex flex-col items-center justify-center bg-sky-50/50 transition-all duration-300 group pointer-events-auto">
+            <div class="w-12 h-12 bg-sky-100 rounded-full flex items-center justify-center mb-2 group-hover:scale-125 transition-transform">
+              <span class="text-2xl">✨</span>
+            </div>
+            <span class="text-xs font-black text-sky-500 uppercase tracking-widest">복제 (Clone)</span>
+          </div>
+          <div id="zone-flip" class="flex-1 rounded-3xl border-4 border-dashed border-orange-100 flex flex-col items-center justify-center bg-orange-50/50 transition-all duration-300 group pointer-events-auto">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2 group-hover:scale-125 transition-transform">
+              <span class="text-2xl">↔️</span>
+            </div>
+            <span class="text-xs font-black text-orange-500 uppercase tracking-widest">반전 (Flip)</span>
+          </div>
+          <div id="zone-trash" class="flex-1 rounded-3xl border-4 border-dashed border-rose-100 flex flex-col items-center justify-center bg-rose-50/50 transition-all duration-300 group pointer-events-auto">
+            <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mb-2 group-hover:scale-125 transition-transform">
+              <span class="text-2xl">🗑️</span>
+            </div>
+            <span class="text-xs font-black text-rose-500 uppercase tracking-widest">삭제 (Trash)</span>
+          </div>
+        </div>
 
-      <!-- Action Zones -->
-      <div class="flex gap-4">
-        <div id="zone-clone" class="flex-1 h-20 rounded-2xl border-2 border-dashed border-sky-200 flex flex-col items-center justify-center bg-sky-50/30 hover:bg-sky-50 transition group">
-          <span class="text-xl group-hover:scale-125 transition">✨</span>
-          <span class="text-[11px] font-black text-sky-400">복제 구역</span>
-        </div>
-        <div id="zone-flip" class="flex-1 h-20 rounded-2xl border-2 border-dashed border-orange-200 flex flex-col items-center justify-center bg-orange-50/30 hover:bg-orange-50 transition group">
-          <span class="text-xl group-hover:scale-125 transition">↔️</span>
-          <span class="text-[11px] font-black text-orange-400">부호 반전</span>
-        </div>
-        <div id="zone-trash" class="flex-1 h-20 rounded-2xl border-2 border-dashed border-rose-200 flex flex-col items-center justify-center bg-rose-50/30 hover:bg-rose-50 transition group">
-          <span class="text-xl group-hover:scale-125 transition">🗑️</span>
-          <span class="text-[11px] font-black text-rose-400">삭제 구역</span>
+        <div id="practice-tiles-container" class="absolute inset-0 z-10 pointer-events-none">
+          <!-- tiles will be added here -->
         </div>
       </div>
     </div>
@@ -920,23 +932,22 @@
     document.getElementById('dist-new-problem-btn').onclick=genDistProblem;
     document.getElementById('dist-undo-btn').onclick=()=>{ if(!distBuildStack.length)return; const t=distBuildStack.pop(); t.el.remove(); layoutZone(t.type==='x'?'dist-build-x-zone':t.type==='y'?'dist-build-y-zone':'dist-build-c-zone',t.type); };
     document.getElementById('dist-clear-btn').onclick=()=>{ distBuildStack.forEach(t=>t.el.remove()); distBuildStack=[]; ['dist-build-x-zone','dist-build-y-zone','dist-build-c-zone'].forEach(id=>document.getElementById(id).innerHTML=''); };
-    
+
     // ==================== TAB 3: 연습판 CORE ====================
     let practiceTiles = [];
     function addPracticeTile(type, sign, x, y) {
       const id = tileIdCounter++;
       const el = document.createElement('div');
-      el.className = `tile ${tileSizeClass(type)} ${tileColorClass(type, sign)} slide-down`;
+      el.className = `tile ${tileSizeClass(type)} ${tileColorClass(type, sign)} slide-down !pointer-events-auto`;
       el.textContent = tileLabel(type, sign);
       el.dataset.tileId = id;
       
-      const zone = document.getElementById('practice-zone');
-      zone.appendChild(el);
+      const container = document.getElementById('practice-tiles-container');
+      container.appendChild(el);
       
-      // Default position if not provided
       if (x === undefined || y === undefined) {
-        el.style.left = '20px';
-        el.style.top = '20px';
+        el.style.left = (40 + Math.random() * 100) + 'px';
+        el.style.top = (40 + Math.random() * 100) + 'px';
       } else {
         el.style.left = x + 'px';
         el.style.top = y + 'px';
@@ -969,62 +980,64 @@
           const cr = zone.getBoundingClientRect();
           let nx = e.clientX - cr.left - dragOffset.x;
           let ny = e.clientY - cr.top - dragOffset.y;
-          
-          // Constrain to container
           nx = Math.max(0, Math.min(nx, cr.width - el.offsetWidth));
           ny = Math.max(0, Math.min(ny, cr.height - el.offsetHeight));
-          
-          el.style.left = nx + 'px';
-          el.style.top = ny + 'px';
+          el.style.left = nx + 'px'; el.style.top = ny + 'px';
+
+          const cx = e.clientX, cy = e.clientY;
+          ['zone-clone', 'zone-flip', 'zone-trash'].forEach(zid => {
+            const zrect = document.getElementById(zid).getBoundingClientRect();
+            const isOver = cx > zrect.left && cx < zrect.right && cy > zrect.top && cy < zrect.bottom;
+            const zEl = document.getElementById(zid);
+            if (isOver) {
+              zEl.style.borderColor = zid === 'zone-clone' ? '#0ea5e9' : zid === 'zone-flip' ? '#f59e0b' : '#f43f5e';
+              zEl.style.transform = 'scale(1.05)'; zEl.style.backgroundColor = 'white';
+            } else {
+              zEl.style.borderColor = ''; zEl.style.transform = ''; zEl.style.backgroundColor = '';
+            }
+          });
         }
       });
 
       el.addEventListener('pointerup', e => {
         if (!el.hasPointerCapture(e.pointerId)) return;
         el.style.zIndex = '10';
+        // Reset all zones highlight
+        ['zone-clone', 'zone-flip', 'zone-trash'].forEach(zid => {
+          const zEl = document.getElementById(zid);
+          zEl.style.borderColor = ''; zEl.style.transform = ''; zEl.style.backgroundColor = '';
+        });
+
+        // Use event coordinates for more intuitive drop detection
+        const cx = e.clientX;
+        const cy = e.clientY;
         
-        const rect = el.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        
-        // Check Action Zones
         const zoneTrash = document.getElementById('zone-trash').getBoundingClientRect();
         const zoneClone = document.getElementById('zone-clone').getBoundingClientRect();
         const zoneFlip = document.getElementById('zone-flip').getBoundingClientRect();
         
         if (cx > zoneTrash.left && cx < zoneTrash.right && cy > zoneTrash.top && cy < zoneTrash.bottom) {
-          removePracticeTile(tObj);
-          return;
+          removePracticeTile(tObj); return;
         }
-        
         if (cx > zoneClone.left && cx < zoneClone.right && cy > zoneClone.top && cy < zoneClone.bottom) {
-          // Clone: Return original to start, create new slightly offset
-          addPracticeTile(tObj.type, tObj.sign, dragStartPos.x + 20, dragStartPos.y + 20);
-          el.style.left = dragStartPos.x + 'px';
-          el.style.top = dragStartPos.y + 'px';
-          return;
+          addPracticeTile(tObj.type, tObj.sign, dragStartPos.x + 20, dragStartPos.y + 40);
+          el.style.left = dragStartPos.x + 'px'; el.style.top = dragStartPos.y + 'px';
+          el.classList.add('flipped'); setTimeout(() => el.classList.remove('flipped'), 500); return;
         }
-        
         if (cx > zoneFlip.left && cx < zoneFlip.right && cy > zoneFlip.top && cy < zoneFlip.bottom) {
-          // Flip: change sign in place
           tObj.sign = -tObj.sign;
-          el.className = `tile ${tileSizeClass(tObj.type)} ${tileColorClass(tObj.type, tObj.sign)} flip-in`;
+          el.className = `tile ${tileSizeClass(tObj.type)} ${tileColorClass(tObj.type, tObj.sign)} flip-in !pointer-events-auto`;
           el.textContent = tileLabel(tObj.type, tObj.sign);
-          el.style.left = dragStartPos.x + 'px';
-          el.style.top = dragStartPos.y + 'px';
-          return;
+          el.style.left = dragStartPos.x + 'px'; el.style.top = dragStartPos.y + 'px'; return;
         }
         
-        // Check Overlap with other practice tiles (Consistent behavior)
-        let match = null;
-        let bd = Infinity;
+        let match = null, bd = Infinity;
         for (const t of practiceTiles) {
           if (t === tObj || t.cancelled || t.type !== tObj.type || t.sign === tObj.sign) continue;
           const r = t.el.getBoundingClientRect();
           const d = Math.hypot(cx - (r.left + r.width / 2), cy - (r.top + r.height / 2));
           if (d < 50 && d < bd) { match = t; bd = d; }
         }
-        
         if (match) {
           tObj.cancelled = true; match.cancelled = true;
           const br = match.el.getBoundingClientRect(); 
@@ -1035,10 +1048,7 @@
           const z = document.createElement('div'); z.className = 'zero-float'; z.textContent = '0';
           z.style.left = (mx - 18) + 'px'; z.style.top = (my - 18) + 'px'; zone.appendChild(z);
           setTimeout(() => z.remove(), 800);
-          setTimeout(() => { 
-            removePracticeTile(tObj, true); 
-            removePracticeTile(match, true); 
-          }, 500);
+          setTimeout(() => { removePracticeTile(tObj, true); removePracticeTile(match, true); }, 500);
         }
       });
     }
@@ -1046,12 +1056,9 @@
     function removePracticeTile(tObj, silent=false) {
       if (tObj.el && tObj.el.parentNode) {
         if (!silent) {
-          tObj.el.style.transform = 'scale(0) rotate(15deg)';
-          tObj.el.style.opacity = '0';
+          tObj.el.style.transform = 'scale(0) rotate(15deg)'; tObj.el.style.opacity = '0';
           setTimeout(() => tObj.el.remove(), 300);
-        } else {
-          tObj.el.remove();
-        }
+        } else { tObj.el.remove(); }
       }
       practiceTiles = practiceTiles.filter(t => t !== tObj);
     }
