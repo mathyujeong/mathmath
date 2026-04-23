@@ -168,6 +168,23 @@
     .ranking-list { max-height: 400px; overflow-y: auto; margin: 24px 0; padding-right: 12px; }
     .rank-item { display: flex; justify-content: space-between; padding: 14px 20px; border-radius: 16px; background: #f9fafb; margin-bottom: 10px; border: 2px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
     .rank-item.top { background: var(--ghibli-mint); border-color: #fff; }
+
+    /* Virtual Keypad */
+    .v-keypad {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-top: 20px; width: 100%; max-width: 320px; margin-left: auto; margin-right: auto;
+    }
+    .v-key {
+      padding: 16px; border-radius: 14px; border: 2px solid rgba(0,0,0,0.05);
+      background: white; font-weight: 900; color: #475569; font-size: 1.1rem;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.05); transition: all 0.1s;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;
+    }
+    .v-key:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.05); }
+    .v-key.var-key { background: #f0fdfa; color: #0d9488; }
+    .v-key.op-key { background: #fff7ed; color: #ea580c; }
+    .v-key.del-key { background: #fef2f2; color: #dc2626; }
+    .v-key.submit-key { grid-column: span 3; background: #34d399; color: white; box-shadow: 0 4px 0 #059669; border: none; margin-top: 5px; font-size: 1.2rem; }
   </style>
  </head>
  <body>
@@ -300,11 +317,18 @@
 
     <div id="answer-section" class="glass-card p-8 space-y-5 phase-hidden bg-emerald-50/30">
      <p class="font-bold text-gray-600 text-center text-lg">최종 결과를 입력하세요</p>
-     <div class="flex gap-4 max-w-sm mx-auto">
-        <input id="answer-input" type="text" placeholder="예: 2x + 3" class="input-field flex-1 mt-0"> 
-        <button id="check-btn" class="btn-primary-ghibli mt-0 px-10">제출</button>
+     <div class="max-w-xs mx-auto">
+        <input id="answer-input" type="text" placeholder="여기에 입력하세요" readonly class="input-field text-center text-2xl font-black bg-white/80 border-ghibli-mint shadow-inner"> 
+        <div class="v-keypad">
+          <div class="v-key" onclick="kp('1')">1</div><div class="v-key" onclick="kp('2')">2</div><div class="v-key" onclick="kp('3')">3</div>
+          <div class="v-key" onclick="kp('4')">4</div><div class="v-key" onclick="kp('5')">5</div><div class="v-key" onclick="kp('6')">6</div>
+          <div class="v-key" onclick="kp('7')">7</div><div class="v-key" onclick="kp('8')">8</div><div class="v-key" onclick="kp('9')">9</div>
+          <div class="v-key op-key" onclick="kp('+')">+</div><div class="v-key" onclick="kp('0')">0</div><div class="v-key op-key" onclick="kp('-')">−</div>
+          <div class="v-key var-key key-x" onclick="kp('x')">x</div><div class="v-key var-key key-y" onclick="kp('y')">y</div><div class="v-key del-key" onclick="kp('del')">⌫</div>
+          <button id="check-btn" class="v-key submit-key">정답 확인</button>
+        </div>
      </div>
-     <p id="feedback-text" class="text-center font-black text-xl h-10"></p>
+     <p id="feedback-text" class="text-center font-black text-xl h-10 mt-4"></p>
     </div>
 
     <div class="flex flex-wrap gap-5 justify-center py-6">
@@ -365,11 +389,18 @@
 
     <div id="dist-answer-section" class="glass-card p-8 space-y-6 phase-hidden bg-violet-50/30">
      <p class="font-bold text-violet-700 text-center text-lg">최종 합계 결과를 입력하세요</p>
-     <div class="flex gap-4 max-w-sm mx-auto">
-        <input id="dist-answer-input" type="text" placeholder="예: 4x - 6" class="input-field flex-1 mt-0"> 
-        <button id="dist-check-btn" class="btn-primary-ghibli bg-violet-400 text-white border-violet-500 mt-0 px-10">제출</button>
+     <div class="max-w-xs mx-auto">
+        <input id="dist-answer-input" type="text" placeholder="여기에 입력하세요" readonly class="input-field text-center text-2xl font-black bg-white/80 border-violet-400 shadow-inner"> 
+        <div class="v-keypad">
+          <div class="v-key" onclick="kp('1')">1</div><div class="v-key" onclick="kp('2')">2</div><div class="v-key" onclick="kp('3')">3</div>
+          <div class="v-key" onclick="kp('4')">4</div><div class="v-key" onclick="kp('5')">5</div><div class="v-key" onclick="kp('6')">6</div>
+          <div class="v-key" onclick="kp('7')">7</div><div class="v-key" onclick="kp('8')">8</div><div class="v-key" onclick="kp('9')">9</div>
+          <div class="v-key op-key" onclick="kp('+')">+</div><div class="v-key" onclick="kp('0')">0</div><div class="v-key op-key" onclick="kp('-')">−</div>
+          <div class="v-key var-key key-x" onclick="kp('x')">x</div><div class="v-key var-key key-y" onclick="kp('y')">y</div><div class="v-key del-key" onclick="kp('del')">⌫</div>
+          <button id="dist-check-btn" class="v-key submit-key" style="background:#8b5cf6; box-shadow: 0 4px 0 #6d28d9;">정답 확인</button>
+        </div>
      </div>
-     <p id="dist-feedback-text" class="text-center font-black text-xl h-10"></p>
+     <p id="dist-feedback-text" class="text-center font-black text-xl h-10 mt-4"></p>
     </div>
 
     <div class="flex flex-wrap gap-5 justify-center py-6">
@@ -629,6 +660,9 @@
 
       document.querySelectorAll('.practice-palette-x').forEach(b=>{ b.style.display=hasX?'':'none'; });
       document.querySelectorAll('.practice-palette-y').forEach(b=>{ b.style.display=hasY?'':'none'; });
+
+      document.querySelectorAll('.key-x').forEach(b=>{ b.style.display=hasX?'':'none'; });
+      document.querySelectorAll('.key-y').forEach(b=>{ b.style.display=hasY?'':'none'; });
     }
 
     function setVarMode(m){
@@ -1110,6 +1144,21 @@
       practiceTiles.forEach(t => t.el.remove());
       practiceTiles = [];
     };
+
+    function kp(val) {
+      const input = currentTab === 'add-sub' ? document.getElementById('answer-input') : document.getElementById('dist-answer-input');
+      let cur = input.value;
+      if (val === 'del') {
+        input.value = cur.slice(0, -1).trim();
+      } else {
+        // Add spaces around + and - for readability, but only if they're not the first character
+        if ((val === '+' || val === '-') && cur.length > 0) {
+          input.value = cur + ' ' + val + ' ';
+        } else {
+          input.value = cur + val;
+        }
+      }
+    }
 
     // Init
     genProblem();
