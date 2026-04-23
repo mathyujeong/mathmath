@@ -197,6 +197,7 @@
    <div class="flex gap-3 justify-center">
     <button id="tab-add-sub" class="tab-btn-custom active px-8 py-3.5 rounded-2xl font-black border-2 shadow-sm">덧셈·뺄셈</button> 
     <button id="tab-distribute" class="tab-btn-custom px-8 py-3.5 rounded-2xl font-black border-2 shadow-sm">분배법칙</button>
+    <button id="tab-practice" class="tab-btn-custom px-8 py-3.5 rounded-2xl font-black border-2 shadow-sm">연습판</button>
    </div>
 
    <!-- Legend -->
@@ -374,6 +375,48 @@
     <div class="flex flex-wrap gap-5 justify-center py-6">
         <button id="dist-next-step-btn" class="btn-primary-ghibli bg-ghibli-pink text-pink-900 border-pink-300 phase-hidden px-14">다음 과정 진행 &rarr;</button> 
         <button id="dist-new-problem-btn" class="btn-ghibli">🆕 다음 문제</button>
+    </div>
+   </div>
+
+   <!-- ============ TAB 3: 연습판 ============ -->
+   <div id="tab3-content" class="phase-hidden space-y-8">
+    <div class="glass-card p-6 space-y-5">
+     <p class="font-black text-center text-gray-500 text-sm uppercase tracking-widest">연습판 팔레트</p>
+     <div class="flex flex-wrap gap-5 justify-center" id="practice-palette-btns">
+        <button type="button" class="palette-tile-btn practice-palette-x tile-pos-x" style="width:54px;height:74px;" data-ptype="x" data-psign="1">+x</button> 
+        <button type="button" class="palette-tile-btn practice-palette-x tile-neg-x" style="width:54px;height:74px;" data-ptype="x" data-psign="-1">−x</button> 
+        <button type="button" class="palette-tile-btn practice-palette-y tile-pos-y" style="width:54px;height:64px;" data-ptype="y" data-psign="1">+y</button> 
+        <button type="button" class="palette-tile-btn practice-palette-y tile-neg-y" style="width:54px;height:64px;" data-ptype="y" data-psign="-1">−y</button> 
+        <button type="button" class="palette-tile-btn tile-pos-1" style="width:54px;height:54px;" data-ptype="c" data-psign="1">+1</button> 
+        <button type="button" class="palette-tile-btn tile-neg-1" style="width:54px;height:54px;" data-ptype="c" data-psign="-1">−1</button>
+     </div>
+    </div>
+
+    <div class="glass-card p-8 space-y-6 relative border-ghibli-olive/30">
+      <div class="flex justify-between items-center px-2">
+        <p class="font-black text-gray-400 uppercase tracking-tighter text-xs italic">자유 배치 구역</p>
+        <button id="practice-clear-btn" class="text-[10px] font-black text-rose-400 border-2 border-rose-50 px-3 py-1 rounded-full hover:bg-rose-50 transition">전체 비우기</button>
+      </div>
+      
+      <div id="practice-zone" class="workspace-zone shadow-inner" style="min-height: 400px; padding: 20px;">
+        <!-- tiles will be added here -->
+      </div>
+
+      <!-- Action Zones -->
+      <div class="flex gap-4">
+        <div id="zone-clone" class="flex-1 h-20 rounded-2xl border-2 border-dashed border-sky-200 flex flex-col items-center justify-center bg-sky-50/30 hover:bg-sky-50 transition group">
+          <span class="text-xl group-hover:scale-125 transition">✨</span>
+          <span class="text-[11px] font-black text-sky-400">복제 구역</span>
+        </div>
+        <div id="zone-flip" class="flex-1 h-20 rounded-2xl border-2 border-dashed border-orange-200 flex flex-col items-center justify-center bg-orange-50/30 hover:bg-orange-50 transition group">
+          <span class="text-xl group-hover:scale-125 transition">↔️</span>
+          <span class="text-[11px] font-black text-orange-400">부호 반전</span>
+        </div>
+        <div id="zone-trash" class="flex-1 h-20 rounded-2xl border-2 border-dashed border-rose-200 flex flex-col items-center justify-center bg-rose-50/30 hover:bg-rose-50 transition group">
+          <span class="text-xl group-hover:scale-125 transition">🗑️</span>
+          <span class="text-[11px] font-black text-rose-400">삭제 구역</span>
+        </div>
+      </div>
     </div>
    </div>
   </div>
@@ -571,6 +614,9 @@
       document.getElementById('dist-build-y-col').style.display=hasY?'':'none';
       const cols2=hasX&&hasY?3:2;
       document.getElementById('dist-build-grid').style.gridTemplateColumns=`repeat(${cols2}, 1fr)`;
+
+      document.querySelectorAll('.practice-palette-x').forEach(b=>{ b.style.display=hasX?'':'none'; });
+      document.querySelectorAll('.practice-palette-y').forEach(b=>{ b.style.display=hasY?'':'none'; });
     }
 
     function setVarMode(m){
@@ -580,20 +626,28 @@
         const active=id==='var-'+m+'-btn';
         el.classList.toggle('active',active);
       });
-      if(currentTab==='add-sub') genProblem(); else genDistProblem();
+      if(currentTab==='add-sub') genProblem(); 
+      else if(currentTab==='distribute') genDistProblem();
+      else updateVarVisibility();
     }
 
     document.getElementById('tab-add-sub').addEventListener('click',()=>{
       if(currentTab==='add-sub') return; currentTab='add-sub';
-      document.getElementById('tab-add-sub').classList.add('active'); document.getElementById('tab-distribute').classList.remove('active');
-      document.getElementById('tab1-content').classList.remove('phase-hidden'); document.getElementById('tab2-content').classList.add('phase-hidden');
+      document.getElementById('tab-add-sub').classList.add('active'); document.getElementById('tab-distribute').classList.remove('active'); document.getElementById('tab-practice').classList.remove('active');
+      document.getElementById('tab1-content').classList.remove('phase-hidden'); document.getElementById('tab2-content').classList.add('phase-hidden'); document.getElementById('tab3-content').classList.add('phase-hidden');
       genProblem();
     });
     document.getElementById('tab-distribute').addEventListener('click',()=>{
       if(currentTab==='distribute') return; currentTab='distribute';
-      document.getElementById('tab-distribute').classList.add('active'); document.getElementById('tab-add-sub').classList.remove('active');
-      document.getElementById('tab2-content').classList.remove('phase-hidden'); document.getElementById('tab1-content').classList.add('phase-hidden');
+      document.getElementById('tab-distribute').classList.add('active'); document.getElementById('tab-add-sub').classList.remove('active'); document.getElementById('tab-practice').classList.remove('active');
+      document.getElementById('tab2-content').classList.remove('phase-hidden'); document.getElementById('tab1-content').classList.add('phase-hidden'); document.getElementById('tab3-content').classList.add('phase-hidden');
       genDistProblem();
+    });
+    document.getElementById('tab-practice').addEventListener('click',()=>{
+      if(currentTab==='practice') return; currentTab='practice';
+      document.getElementById('tab-practice').classList.add('active'); document.getElementById('tab-add-sub').classList.remove('active'); document.getElementById('tab-distribute').classList.remove('active');
+      document.getElementById('tab3-content').classList.remove('phase-hidden'); document.getElementById('tab1-content').classList.add('phase-hidden'); document.getElementById('tab2-content').classList.add('phase-hidden');
+      updateVarVisibility();
     });
 
     document.getElementById('var-x-btn').addEventListener('click',()=>setVarMode('x'));
@@ -866,6 +920,149 @@
     document.getElementById('dist-new-problem-btn').onclick=genDistProblem;
     document.getElementById('dist-undo-btn').onclick=()=>{ if(!distBuildStack.length)return; const t=distBuildStack.pop(); t.el.remove(); layoutZone(t.type==='x'?'dist-build-x-zone':t.type==='y'?'dist-build-y-zone':'dist-build-c-zone',t.type); };
     document.getElementById('dist-clear-btn').onclick=()=>{ distBuildStack.forEach(t=>t.el.remove()); distBuildStack=[]; ['dist-build-x-zone','dist-build-y-zone','dist-build-c-zone'].forEach(id=>document.getElementById(id).innerHTML=''); };
+    
+    // ==================== TAB 3: 연습판 CORE ====================
+    let practiceTiles = [];
+    function addPracticeTile(type, sign, x, y) {
+      const id = tileIdCounter++;
+      const el = document.createElement('div');
+      el.className = `tile ${tileSizeClass(type)} ${tileColorClass(type, sign)} slide-down`;
+      el.textContent = tileLabel(type, sign);
+      el.dataset.tileId = id;
+      
+      const zone = document.getElementById('practice-zone');
+      zone.appendChild(el);
+      
+      // Default position if not provided
+      if (x === undefined || y === undefined) {
+        el.style.left = '20px';
+        el.style.top = '20px';
+      } else {
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+      }
+      
+      const tObj = { id, el, type, sign, cancelled: false, isPractice: true };
+      practiceTiles.push(tObj);
+      setupPracticeDrag(el, tObj);
+    }
+
+    function setupPracticeDrag(el, tObj) {
+      let dragOffset = { x: 0, y: 0 };
+      let dragStartPos = { x: 0, y: 0 };
+      
+      el.addEventListener('pointerdown', e => {
+        if (tObj.cancelled) return;
+        e.preventDefault();
+        el.setPointerCapture(e.pointerId);
+        const rect = el.getBoundingClientRect();
+        dragOffset.x = e.clientX - rect.left;
+        dragOffset.y = e.clientY - rect.top;
+        dragStartPos.x = parseFloat(el.style.left);
+        dragStartPos.y = parseFloat(el.style.top);
+        el.style.zIndex = '100';
+      });
+
+      el.addEventListener('pointermove', e => {
+        if (el.hasPointerCapture(e.pointerId)) {
+          const zone = document.getElementById('practice-zone');
+          const cr = zone.getBoundingClientRect();
+          let nx = e.clientX - cr.left - dragOffset.x;
+          let ny = e.clientY - cr.top - dragOffset.y;
+          
+          // Constrain to container
+          nx = Math.max(0, Math.min(nx, cr.width - el.offsetWidth));
+          ny = Math.max(0, Math.min(ny, cr.height - el.offsetHeight));
+          
+          el.style.left = nx + 'px';
+          el.style.top = ny + 'px';
+        }
+      });
+
+      el.addEventListener('pointerup', e => {
+        if (!el.hasPointerCapture(e.pointerId)) return;
+        el.style.zIndex = '10';
+        
+        const rect = el.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        
+        // Check Action Zones
+        const zoneTrash = document.getElementById('zone-trash').getBoundingClientRect();
+        const zoneClone = document.getElementById('zone-clone').getBoundingClientRect();
+        const zoneFlip = document.getElementById('zone-flip').getBoundingClientRect();
+        
+        if (cx > zoneTrash.left && cx < zoneTrash.right && cy > zoneTrash.top && cy < zoneTrash.bottom) {
+          removePracticeTile(tObj);
+          return;
+        }
+        
+        if (cx > zoneClone.left && cx < zoneClone.right && cy > zoneClone.top && cy < zoneClone.bottom) {
+          // Clone: Return original to start, create new slightly offset
+          addPracticeTile(tObj.type, tObj.sign, dragStartPos.x + 20, dragStartPos.y + 20);
+          el.style.left = dragStartPos.x + 'px';
+          el.style.top = dragStartPos.y + 'px';
+          return;
+        }
+        
+        if (cx > zoneFlip.left && cx < zoneFlip.right && cy > zoneFlip.top && cy < zoneFlip.bottom) {
+          // Flip: change sign in place
+          tObj.sign = -tObj.sign;
+          el.className = `tile ${tileSizeClass(tObj.type)} ${tileColorClass(tObj.type, tObj.sign)} flip-in`;
+          el.textContent = tileLabel(tObj.type, tObj.sign);
+          el.style.left = dragStartPos.x + 'px';
+          el.style.top = dragStartPos.y + 'px';
+          return;
+        }
+        
+        // Check Overlap with other practice tiles (Consistent behavior)
+        let match = null;
+        let bd = Infinity;
+        for (const t of practiceTiles) {
+          if (t === tObj || t.cancelled || t.type !== tObj.type || t.sign === tObj.sign) continue;
+          const r = t.el.getBoundingClientRect();
+          const d = Math.hypot(cx - (r.left + r.width / 2), cy - (r.top + r.height / 2));
+          if (d < 50 && d < bd) { match = t; bd = d; }
+        }
+        
+        if (match) {
+          tObj.cancelled = true; match.cancelled = true;
+          const br = match.el.getBoundingClientRect(); 
+          const zone = document.getElementById('practice-zone');
+          const cr = zone.getBoundingClientRect();
+          const mx = br.left + br.width / 2 - cr.left, my = br.top + br.height / 2 - cr.top;
+          el.classList.add('cancel'); match.el.classList.add('cancel');
+          const z = document.createElement('div'); z.className = 'zero-float'; z.textContent = '0';
+          z.style.left = (mx - 18) + 'px'; z.style.top = (my - 18) + 'px'; zone.appendChild(z);
+          setTimeout(() => z.remove(), 800);
+          setTimeout(() => { 
+            removePracticeTile(tObj, true); 
+            removePracticeTile(match, true); 
+          }, 500);
+        }
+      });
+    }
+
+    function removePracticeTile(tObj, silent=false) {
+      if (tObj.el && tObj.el.parentNode) {
+        if (!silent) {
+          tObj.el.style.transform = 'scale(0) rotate(15deg)';
+          tObj.el.style.opacity = '0';
+          setTimeout(() => tObj.el.remove(), 300);
+        } else {
+          tObj.el.remove();
+        }
+      }
+      practiceTiles = practiceTiles.filter(t => t !== tObj);
+    }
+
+    document.querySelectorAll('#practice-palette-btns .palette-tile-btn').forEach(btn => {
+      btn.addEventListener('click', () => addPracticeTile(btn.dataset.ptype === 'c' ? 'c' : btn.dataset.ptype, parseInt(btn.dataset.psign)));
+    });
+    document.getElementById('practice-clear-btn').onclick = () => {
+      practiceTiles.forEach(t => t.el.remove());
+      practiceTiles = [];
+    };
 
     // Init
     genProblem();
