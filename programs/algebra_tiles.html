@@ -32,7 +32,7 @@
     /* Algebra Tile Styles - Bright & Vibrant */
     .tile {
       display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 12px; font-weight: 800; color: #fff;
+      border-radius: 2px; font-weight: 800; color: #fff;
       box-shadow: var(--tile-shadow);
       user-select: none; position: absolute; cursor: grab;
       touch-action: none; z-index: 10;
@@ -103,7 +103,7 @@
 
     .palette-tile-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 14px; font-weight: 800; color: #fff; cursor: pointer;
+      border-radius: 4px; font-weight: 800; color: #fff; cursor: pointer;
       border: 2px solid rgba(255,255,255,0.4); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
@@ -1030,13 +1030,21 @@
           el.textContent = tileLabel(tObj.type, tObj.sign);
           el.style.left = dragStartPos.x + 'px'; el.style.top = dragStartPos.y + 'px'; return;
         }
+
+        // Apply Snapping
+        applySnapping(el, tObj);
+        
+        // Re-calculate CX/CY after snap
+        const newRect = el.getBoundingClientRect();
+        const ncx = newRect.left + newRect.width / 2;
+        const ncy = newRect.top + newRect.height / 2;
         
         let match = null, bd = Infinity;
         for (const t of practiceTiles) {
           if (t === tObj || t.cancelled || t.type !== tObj.type || t.sign === tObj.sign) continue;
           const r = t.el.getBoundingClientRect();
-          const d = Math.hypot(cx - (r.left + r.width / 2), cy - (r.top + r.height / 2));
-          if (d < 50 && d < bd) { match = t; bd = d; }
+          const d = Math.hypot(ncx - (r.left + r.width / 2), ncy - (r.top + r.height / 2));
+          if (d < 40 && d < bd) { match = t; bd = d; }
         }
         if (match) {
           tObj.cancelled = true; match.cancelled = true;
@@ -1051,6 +1059,38 @@
           setTimeout(() => { removePracticeTile(tObj, true); removePracticeTile(match, true); }, 500);
         }
       });
+    }
+
+    function applySnapping(el, tObj) {
+      const threshold = 18;
+      const myX = parseFloat(el.style.left);
+      const myY = parseFloat(el.style.top);
+      const myW = el.offsetWidth;
+      const myH = el.offsetHeight;
+      let finalX = myX, finalY = myY;
+
+      for (const t of practiceTiles) {
+        if (t === tObj || t.cancelled) continue;
+        const oEl = t.el;
+        const oX = parseFloat(oEl.style.left);
+        const oY = parseFloat(oEl.style.top);
+        const oW = oEl.offsetWidth;
+        const oH = oEl.offsetHeight;
+
+        // Snap X
+        if (Math.abs(myX - oX) < threshold) finalX = oX;
+        else if (Math.abs(myX - (oX + oW)) < threshold) finalX = oX + oW;
+        else if (Math.abs((myX + myW) - oX) < threshold) finalX = oX - myW;
+        else if (Math.abs((myX + myW) - (oX + oW)) < threshold) finalX = oX + oW - myW;
+
+        // Snap Y
+        if (Math.abs(myY - oY) < threshold) finalY = oY;
+        else if (Math.abs(myY - (oY + oH)) < threshold) finalY = oY + oH;
+        else if (Math.abs((myY + myH) - oY) < threshold) finalY = oY - myH;
+        else if (Math.abs((myY + myH) - (oY + oH)) < threshold) finalY = oY + oH - myH;
+      }
+      el.style.left = finalX + 'px';
+      el.style.top = finalY + 'px';
     }
 
     function removePracticeTile(tObj, silent=false) {
