@@ -180,11 +180,16 @@
       box-shadow: 0 4px 0 rgba(0,0,0,0.05); transition: all 0.1s;
       display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;
     }
+    .v-key:hover { background: #f8fafc; border-color: rgba(0,0,0,0.1); }
     .v-key:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.05); }
     .v-key.var-key { background: #f0fdfa; color: #0d9488; }
+    .v-key.var-key:hover { background: #ccfbf1; }
     .v-key.op-key { background: #fff7ed; color: #ea580c; }
+    .v-key.op-key:hover { background: #ffedd5; }
     .v-key.del-key { background: #fef2f2; color: #dc2626; }
+    .v-key.del-key:hover { background: #fee2e2; }
     .v-key.submit-key { grid-column: span 3; background: #34d399; color: white; box-shadow: 0 4px 0 #059669; border: none; margin-top: 5px; font-size: 1.2rem; }
+    .v-key.submit-key:hover { background: #10b981; }
   </style>
  </head>
  <body>
@@ -1149,11 +1154,10 @@
       const input = currentTab === 'add-sub' ? document.getElementById('answer-input') : document.getElementById('dist-answer-input');
       let cur = input.value;
       if (val === 'del') {
-        input.value = cur.slice(0, -1).trim();
+        input.value = cur.trimEnd().slice(0, -1).trimEnd();
       } else {
-        // Add spaces around + and - for readability, but only if they're not the first character
         if ((val === '+' || val === '-') && cur.length > 0) {
-          input.value = cur + ' ' + val + ' ';
+          input.value = cur.trimEnd() + ' ' + val + ' ';
         } else {
           input.value = cur + val;
         }
