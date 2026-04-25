@@ -215,7 +215,7 @@
                             <!-- Left Plate -->
                             <div id="left-plate-group" class="balance-plate absolute left-0 top-0 flex flex-col items-center">
                                 <div class="w-0.5 h-16 bg-gray-300 origin-top" id="left-string"></div>
-                                <div class="w-44 min-h-[80px] max-h-[300px] glass-panel rounded-b-[40px] border-t-4 border-indigo-400 p-2.5 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="left-items-box">
+                                <div class="w-32 lg:w-44 min-h-[80px] max-h-[300px] glass-panel rounded-b-[40px] border-t-4 border-indigo-400 p-2.5 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="left-items-box">
                                     <!-- Items here -->
                                 </div>
                             </div>
@@ -223,7 +223,7 @@
                             <!-- Right Plate -->
                             <div id="right-plate-group" class="balance-plate absolute right-0 top-0 flex flex-col items-center">
                                 <div class="w-0.5 h-16 bg-gray-300 origin-top" id="right-string"></div>
-                                <div class="w-44 min-h-[80px] max-h-[300px] glass-panel rounded-b-[40px] border-t-4 border-amber-400 p-2.5 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="right-items-box">
+                                <div class="w-32 lg:w-44 min-h-[80px] max-h-[300px] glass-panel rounded-b-[40px] border-t-4 border-amber-400 p-2.5 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="right-items-box">
                                     <!-- Items here -->
                                 </div>
                             </div>
@@ -596,14 +596,32 @@
         async function saveScore() {
             if (!sbGame || !userId) return;
             try {
-                // Score = 100 - steps, Min 10
-                const score = Math.max(10, 100 - history.length);
-                await sbGame.from('algebra_balance_rank').insert({ 
-                    mode: userId, 
-                    name: userName, 
-                    score: score
-                });
-            } catch (e) {}
+                const currentProblemScore = Math.max(10, 100 - history.length);
+                
+                // Check if user already has a record for accumulation
+                const { data, error } = await sbGame
+                    .from('algebra_balance_rank')
+                    .select('score, id')
+                    .eq('mode', userId)
+                    .eq('name', userName)
+                    .maybeSingle(); // Use maybeSingle to avoid 406 errors if not found
+
+                if (data) {
+                    // Update existing: add new score to previous sum
+                    await sbGame.from('algebra_balance_rank')
+                        .update({ score: data.score + currentProblemScore })
+                        .eq('id', data.id);
+                } else {
+                    // First time: insert new record
+                    await sbGame.from('algebra_balance_rank').insert({ 
+                        mode: userId, 
+                        name: userName, 
+                        score: currentProblemScore
+                    });
+                }
+            } catch (e) {
+                console.error("Score save failed:", e);
+            }
         }
 
         function closeSuccess() { /* No longer used modal */ }
