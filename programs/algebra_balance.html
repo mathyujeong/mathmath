@@ -72,14 +72,45 @@
 
         /* Algebra Tiles */
         .tile-x {
-            width: 28px; height: 40px; border-radius: 4px; border-bottom: 2px solid rgba(0,0,0,0.15);
-            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 40px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 14px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
         }
+        
         .tile-unit {
-            width: 24px; height: 24px; border-radius: 50%; border-bottom: 2px solid rgba(0,0,0,0.15);
-            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px;
-            box-shadow: 0 4px 4px rgba(0,0,0,0.1);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 12px;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            flex-shrink: 0;
+        }
+
+        /* Dense mode for many items */
+        .dense-tiles .tile-x {
+            width: 30px;
+            height: 42px;
+            font-size: 10px;
+            border-radius: 8px;
+        }
+        .dense-tiles .tile-unit {
+            width: 24px;
+            height: 24px;
+            font-size: 9px;
+            border-radius: 6px;
         }
 
         .tile-pos-x { background-color: #818cf8; color: white; }
@@ -169,30 +200,30 @@
                 </div>
 
                 <!-- Balance Visual Section -->
-                <div class="relative min-h-[400px] flex flex-col items-center justify-center bg-white/30 rounded-[50px] border-2 border-white/50 shadow-inner overflow-hidden">
+                <div class="relative min-h-[500px] flex flex-col items-center justify-center bg-white/30 rounded-[50px] border-2 border-white/50 shadow-inner overflow-hidden">
                     <div class="absolute bottom-0 w-full h-1 bg-gradient-to-r from-transparent via-gray-100 to-transparent"></div>
                     
                     <!-- Support Structure -->
-                    <div class="absolute bottom-12 w-4 h-48 bg-gradient-to-t from-gray-200 to-gray-50 rounded-full z-0"></div>
-                    <div class="absolute bottom-10 w-24 h-6 bg-gray-200 rounded-full z-0 opacity-50"></div>
+                    <div class="absolute bottom-10 w-4 h-60 bg-gradient-to-t from-gray-200 to-gray-50 rounded-full z-0"></div>
+                    <div class="absolute bottom-8 w-24 h-6 bg-gray-200 rounded-full z-0 opacity-50"></div>
                     
                     <!-- Rotating Beam Container -->
-                    <div id="balance-beam-container" class="balance-container relative w-full h-full flex items-center justify-center pt-20">
+                    <div id="balance-beam-container" class="balance-container relative w-full h-full flex items-center justify-center pt-8">
                         <div id="main-beam" class="balance-beam relative w-[85%] h-2.5 bg-gray-700 rounded-full shadow-lg z-20">
                             <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-gray-800 rounded-full border-2 border-white shadow-md"></div>
                             
                             <!-- Left Plate -->
                             <div id="left-plate-group" class="balance-plate absolute left-0 top-0 flex flex-col items-center">
-                                <div class="w-0.5 h-20 bg-gray-300 origin-top" id="left-string"></div>
-                                <div class="w-44 min-h-[100px] max-h-[250px] glass-panel rounded-b-[40px] border-t-4 border-indigo-400 p-3 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="left-items-box">
+                                <div class="w-0.5 h-16 bg-gray-300 origin-top" id="left-string"></div>
+                                <div class="w-44 min-h-[80px] max-h-[300px] glass-panel rounded-b-[40px] border-t-4 border-indigo-400 p-2.5 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="left-items-box">
                                     <!-- Items here -->
                                 </div>
                             </div>
 
                             <!-- Right Plate -->
                             <div id="right-plate-group" class="balance-plate absolute right-0 top-0 flex flex-col items-center">
-                                <div class="w-0.5 h-20 bg-gray-300 origin-top" id="right-string"></div>
-                                <div class="w-44 min-h-[100px] max-h-[250px] glass-panel rounded-b-[40px] border-t-4 border-amber-400 p-3 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="right-items-box">
+                                <div class="w-0.5 h-16 bg-gray-300 origin-top" id="right-string"></div>
+                                <div class="w-44 min-h-[80px] max-h-[300px] glass-panel rounded-b-[40px] border-t-4 border-amber-400 p-2.5 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="right-items-box">
                                     <!-- Items here -->
                                 </div>
                             </div>
@@ -657,8 +688,18 @@
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             
-            // Render X tiles
             const absX = Math.floor(Math.abs(xCount));
+            const absC = Math.floor(Math.abs(cCount));
+            const total = absX + absC;
+
+            // Apply dense mode if many items
+            if (total > 12) {
+                container.classList.add('dense-tiles');
+            } else {
+                container.classList.remove('dense-tiles');
+            }
+            
+            // Render X tiles
             const xSign = xCount > 0 ? 1 : -1;
             for (let i = 0; i < Math.min(absX, 20); i++) {
                 const el = document.createElement('div');
@@ -668,13 +709,12 @@
             }
             if (absX > 20) {
                 const plus = document.createElement('div');
-                plus.className = "text-[10px] font-black text-gray-400";
+                plus.className = "text-[10px] font-black text-gray-400 p-1";
                 plus.textContent = `+${absX-20}`;
                 container.appendChild(plus);
             }
 
             // Render Unit tiles
-            const absC = Math.floor(Math.abs(cCount));
             const cSign = cCount > 0 ? 1 : -1;
             for (let i = 0; i < Math.min(absC, 40); i++) {
                 const el = document.createElement('div');
@@ -684,7 +724,7 @@
             }
             if (absC > 40) {
                 const plus = document.createElement('div');
-                plus.className = "text-[10px] font-black text-gray-400";
+                plus.className = "text-[10px] font-black text-gray-400 p-1";
                 plus.textContent = `+${absC-40}`;
                 container.appendChild(plus);
             }
