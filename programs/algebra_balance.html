@@ -309,12 +309,6 @@
         </div>
     </div>
 
-    <script>
-        // ==================== STATE & SUPABASE ====================
-        let sbGame = null;
-        let userId = '', userName = '';
-        const env = window._ENV_ || {};
-
     <!-- RANKING OVERLAY -->
     <div id="ranking-overlay" class="overlay hidden">
         <div class="modal max-w-lg !p-8">
@@ -362,8 +356,6 @@
                 document.getElementById('login-id').value = savedId;
                 document.getElementById('login-name').value = savedName;
                 document.getElementById('user-display').textContent = `${savedId} ${savedName}`;
-                // Let user see overlay first if they want, or auto-hide. 
-                // In previous versions it was auto-login if saved.
                 document.getElementById('login-overlay').classList.add('hidden');
                 handleNewProblem();
             }
