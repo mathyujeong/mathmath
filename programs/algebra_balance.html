@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>유정쌤의 대수저울 - 수학 실험실</title>
+    <link rel="icon" href="../assets/favicon.png?v=2" type="image/png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        title: ['"Black Han Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    colors: {
+                        ghibli: {
+                            bg: '#fdfbf7',
+                            pink: '#ffd6e0',
+                            mint: '#bdf1d5',
+                            peach: '#ffdfba',
+                            lavender: '#e2d5f8',
+                            olive: '#dff1a3',
+                            indigo: '#818cf8',
+                            amber: '#fbbf24',
+                            rose: '#fb7185',
+                            emerald: '#34d399'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- CDN Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/program-guard.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body { background-color: #fdfbf7; color: #4b5563; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Balance Scale Components */
+        .balance-container {
+            perspective: 1000px;
+        }
+
+        .balance-beam {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+
+        .balance-plate {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: top center;
+        }
+
+        /* Algebra Tiles */
+        .tile-x {
+            width: 32px; height: 48px; border-radius: 4px; border-bottom: 3px solid rgba(0,0,0,0.15);
+            display: flex; items-center; justify-content: center; font-weight: 900; font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .tile-unit {
+            width: 28px; height: 28px; border-radius: 50%; border-bottom: 3px solid rgba(0,0,0,0.15);
+            display: flex; items-center; justify-content: center; font-weight: 900; font-size: 12px;
+            box-shadow: 0 4px 4px rgba(0,0,0,0.1);
+        }
+
+        .tile-pos-x { background-color: #818cf8; color: white; }
+        .tile-neg-x { background-color: #fb7185; color: white; }
+        .tile-pos-unit { background-color: #fbbf24; color: #92400e; }
+        .tile-neg-unit { background-color: #ef4444; color: white; }
+
+        /* Animation */
+        .vibrate-once { animation: vibrate 0.3s linear; }
+        @keyframes vibrate {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.05) rotate(2deg); }
+            75% { transform: scale(1.05) rotate(-2deg); }
+            100% { transform: scale(1); }
+        }
+
+        /* Scrollbar */
+        .scroll-area::-webkit-scrollbar { width: 5px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+
+        /* Virtual Keypad */
+        .v-key {
+            background: white; border: 2px solid #f3f4f6; border-radius: 12px;
+            font-weight: 800; font-size: 1.1rem; color: #4b5563; padding: 12px;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.05); transition: all 0.1s;
+            display: flex; items-center; justify-content: center; cursor: pointer;
+        }
+        .v-key:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+        .v-key:hover { background: #f9fafb; border-color: #e2d5f8; }
+
+        /* Login Overlay */
+        .overlay { position: fixed; inset: 0; background: rgba(253,251,247,0.85); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: #ffffff; padding: 3rem; border-radius: 32px; border: 2px solid #f3f4f6; width: 90%; max-width: 500px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); }
+        .input-field { width: 100%; padding: 16px; border-radius: 18px; border: 2px solid #f3f4f6; background: #f9fafb; color: #1f2937; margin-top: 10px; outline: none; transition: all 0.2s; text-align: center; font-weight: 800; }
+        .input-field:focus { border-color: #bdf1d5; background: #fff; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans">
+    
+    <!-- Navbar -->
+    <nav class="flex items-center justify-between px-6 py-4 fixed top-0 w-full z-50 pointer-events-none">
+        <div class="pointer-events-auto">
+            <button onclick="location.href='../index.html'" class="flex items-center gap-2 text-gray-400 hover:text-gray-700 transition">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="font-bold">실험실로 돌아가기</span>
+            </button>
+        </div>
+        <div class="font-title text-2xl text-gray-700 tracking-wider hidden md:block">
+            ⚖️ ALGEBRA BALANCE
+        </div>
+        <div class="pointer-events-auto flex items-center gap-4">
+            <div class="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/70 rounded-full border border-gray-100 shadow-sm">
+                <span class="text-[10px] font-black text-slate-300 uppercase italic">Researcher</span>
+                <span id="user-display" class="text-xs font-extrabold text-indigo-500">---</span>
+            </div>
+            <button onclick="handleNewProblem()" class="flex items-center gap-1.5 bg-gray-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-700 transition active:scale-95 shadow-lg">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 새 문제
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 pt-24 pb-12">
+        
+        <header class="text-center mb-8">
+            <div class="inline-block px-4 py-1 rounded-full bg-ghibli-lavender text-violet-700 text-[10px] font-black uppercase tracking-widest mb-2">Equation Lab</div>
+            <h1 class="font-title text-4xl text-gray-800 mb-2">유정쌤의 대수저울</h1>
+            <p class="text-gray-500 font-medium">수평을 유지하며 미지수 X의 무게를 밝혀 보아요!</p>
+        </header>
+
+        <!-- Display Panel: Current Equation -->
+        <div id="equation-display" class="glass-panel p-6 rounded-[40px] mb-8 text-center transition-all duration-500 border-b-4">
+            <div class="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] mb-2" id="equation-status-label">Equation State</div>
+            <div class="flex items-center justify-center gap-6 text-3xl font-mono font-bold text-gray-800 tracking-tighter" id="equation-text">
+                <span id="eq-left">?x + ?</span>
+                <span id="eq-op" class="text-gray-400">?</span>
+                <span id="eq-right">?x + ?</span>
+            </div>
+        </div>
+
+        <!-- Balance Visual Section -->
+        <div class="relative min-h-[400px] mb-12 flex flex-col items-center justify-center bg-white/30 rounded-[60px] border-2 border-white/50 shadow-inner overflow-hidden">
+            <div class="absolute bottom-0 w-full h-1 bg-gradient-to-r from-transparent via-gray-100 to-transparent"></div>
+            
+            <!-- Support Structure -->
+            <div class="absolute bottom-16 w-4 h-48 bg-gradient-to-t from-gray-200 to-gray-50 rounded-full z-0"></div>
+            <div class="absolute bottom-12 w-24 h-6 bg-gray-200 rounded-full z-0 opacity-50"></div>
+            
+            <!-- Rotating Beam Container -->
+            <div id="balance-beam-container" class="balance-container relative w-full h-full flex items-center justify-center pt-24">
+                <div id="main-beam" class="balance-beam relative w-[80%] h-2.5 bg-gray-700 rounded-full shadow-lg z-20">
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-gray-800 rounded-full border-2 border-white shadow-md"></div>
+                    
+                    <!-- Left Plate -->
+                    <div id="left-plate-group" class="balance-plate absolute left-0 top-0 flex flex-col items-center">
+                        <div class="w-0.5 h-24 bg-gray-300 origin-top" id="left-string"></div>
+                        <div class="w-40 min-h-[80px] max-h-48 glass-panel rounded-b-[30px] border-t-4 border-indigo-400 p-3 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="left-items-box">
+                            <!-- Items here -->
+                        </div>
+                    </div>
+
+                    <!-- Right Plate -->
+                    <div id="right-plate-group" class="balance-plate absolute right-0 top-0 flex flex-col items-center">
+                        <div class="w-0.5 h-24 bg-gray-300 origin-top" id="right-string"></div>
+                        <div class="w-40 min-h-[80px] max-h-48 glass-panel rounded-b-[30px] border-t-4 border-amber-400 p-3 flex flex-wrap items-start justify-center gap-1 overflow-y-auto scroll-area" id="right-items-box">
+                            <!-- Items here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stability Indicator Badge -->
+            <div id="stability-badge" class="absolute bottom-8 px-4 py-2 rounded-2xl bg-white shadow-sm border border-gray-100 text-[10px] font-black text-gray-400 uppercase flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-400" id="stability-dot"></div>
+                <span id="stability-text">Balanced</span>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <!-- Numerical Input -->
+            <div class="glass-panel p-8 rounded-[40px] flex flex-col gap-6">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-end">
+                        <span class="text-[10px] font-black text-slate-300 uppercase italic">Input Value</span>
+                        <div class="flex items-center gap-1 text-emerald-500 font-bold text-xs" id="correct-hint" style="display:none">
+                            <i data-lucide="check" class="w-3 h-3"></i><span>Correct Action!</span>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="input-val" value="1" readonly class="w-full bg-slate-100/50 border-2 border-gray-50 rounded-2xl p-5 text-4xl font-mono font-bold text-center text-gray-800 shadow-inner focus:outline-none">
+                        <div class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 text-sm font-black">?</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="v-key" onclick="kp('1')">1</div><div class="v-key" onclick="kp('2')">2</div><div class="v-key" onclick="kp('3')">3</div>
+                        <div class="v-key" onclick="kp('4')">4</div><div class="v-key" onclick="kp('5')">5</div><div class="v-key" onclick="kp('6')">6</div>
+                        <div class="v-key" onclick="kp('7')">7</div><div class="v-key" onclick="kp('8')">8</div><div class="v-key" onclick="kp('9')">9</div>
+                        <div class="v-key" onclick="kp('/')">/</div><div class="v-key" onclick="kp('0')">0</div><div class="v-key text-rose-400" onclick="kp('del')"><i data-lucide="delete" class="w-5 h-5"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="glass-panel p-8 rounded-[40px] flex flex-col gap-8 justify-center">
+                <div class="space-y-4">
+                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Algebraic Operations (양변 연산)</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="applyOp('both', 'add', 'const')" class="btn-ghibli bg-gray-800 text-white p-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg hover:bg-gray-700 active:scale-95 transition">
+                            <i data-lucide="plus" class="w-4 h-4 text-emerald-400"></i>
+                            <span class="text-[11px] font-bold">양변 + 숫자</span>
+                        </button>
+                        <button onclick="applyOp('both', 'sub', 'const')" class="btn-ghibli bg-gray-800 text-white p-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg hover:bg-gray-700 active:scale-95 transition">
+                            <i data-lucide="minus" class="w-4 h-4 text-rose-400"></i>
+                            <span class="text-[11px] font-bold">양변 - 숫자</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="applyOp('both', 'add', 'x')" class="btn-ghibli bg-indigo-500 text-white p-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg hover:bg-indigo-600 active:scale-95 transition">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span class="text-[11px] font-bold">양변 + X</span>
+                        </button>
+                        <button onclick="applyOp('both', 'sub', 'x')" class="btn-ghibli bg-indigo-500 text-white p-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg hover:bg-indigo-600 active:scale-95 transition">
+                            <i data-lucide="minus" class="w-4 h-4"></i>
+                            <span class="text-[11px] font-bold">양변 - X</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="applyOp('both', 'mul', 'const')" class="btn-ghibli bg-amber-400 text-amber-900 border-amber-300 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:bg-amber-500 active:scale-95 transition">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                            <span class="text-[11px] font-bold">양변 ×</span>
+                        </button>
+                        <button onclick="applyOp('both', 'div', 'const')" class="btn-ghibli bg-emerald-500 text-white p-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:bg-emerald-600 active:scale-95 transition">
+                            <i data-lucide="divide" class="w-4 h-4"></i>
+                            <span class="text-[11px] font-bold">양변 ÷</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <button onclick="resetToInitial()" class="flex items-center justify-center gap-2 text-gray-400 hover:text-rose-400 font-bold text-xs transition duration-300">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    <span>전체 초기화 (Reset)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- History Log Section -->
+        <div class="glass-panel p-8 rounded-[40px]">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Solution History</h3>
+                <span id="step-count" class="text-[10px] font-bold bg-gray-100 px-2.5 py-1 rounded-full text-gray-500">Steps: 0</span>
+            </div>
+            <div id="history-log" class="flex flex-col gap-2 min-h-24">
+                <div class="text-center py-6 text-gray-300 italic text-sm">연산을 시작하면 여기에 기록됩니다.</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SUCCESS OVERLAY -->
+    <div id="success-overlay" class="overlay hidden">
+        <div class="modal text-center animate-once">
+            <div class="mb-8">
+                <div class="w-24 h-24 bg-ghibli-mint rounded-[40px] mx-auto flex items-center justify-center mb-6 shadow-sm border-4 border-white animate-bounce">
+                    <span class="text-5xl">🏆</span>
+                </div>
+                <h2 class="text-3xl font-black mb-3 text-gray-800">해결 완료!</h2>
+                <p class="text-gray-500 font-medium">등식의 성질을 완벽하게 이용하셨네요.<br>총 <span id="final-steps" class="font-bold text-emerald-500">0</span>번의 연산으로 X를 찾았습니다!</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="closeSuccess()" class="bg-gray-100 text-gray-600 font-bold py-5 rounded-2xl hover:bg-gray-200 transition">랭킹 확인</button>
+                <button onclick="handleNewProblem()" class="bg-ghibli-mint text-emerald-800 font-bold py-5 rounded-2xl shadow-[0_5px_0_#93c5fd] hover:translate-y-[2px] transition-all">다음 문제 &rarr;</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" class="overlay">
+        <div class="modal text-center">
+            <div class="mb-8">
+                <div class="w-20 h-20 bg-ghibli-lavender rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-sm border-4 border-white">
+                    <span class="text-4xl">⚖️</span>
+                </div>
+                <h2 class="text-3xl font-bold mb-3 text-gray-800">유정쌤의 대수저울</h2>
+                <p class="text-gray-400 font-medium tracking-tight">학번과 이름을 입력하고 연구를 시작하세요.</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="login-id" placeholder="학번 (예: 1601)" class="input-field">
+                <input type="text" id="login-name" placeholder="이름 (예: 홍길동)" class="input-field">
+                <button onclick="login()" id="login-btn" class="w-full bg-ghibli-lavender text-violet-700 font-bold py-5 text-lg rounded-2xl shadow-[0_5px_0_#c4b5fd] hover:translate-y-[2px] transition-all mt-6">연구소 입장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== STATE & SUPABASE ====================
+        let sbGame = null;
+        let userId = '', userName = '';
+        const env = window._ENV_ || {};
+
+        if (env.SUPABASE_URL_GAME && env.SUPABASE_KEY_GAME) {
+            sbGame = supabase.createClient(env.SUPABASE_URL_GAME, env.SUPABASE_KEY_GAME);
+        }
+
+        async function login() {
+            const idInput = document.getElementById('login-id').value.trim();
+            const nameInput = document.getElementById('login-name').value.trim();
+            if (!idInput || !nameInput) { alert('학번과 이름을 입력해 주세요!'); return; }
+
+            userId = idInput; userName = nameInput;
+            localStorage.setItem('algebra_balance_id', userId);
+            localStorage.setItem('algebra_balance_name', userName);
+            
+            document.getElementById('user-display').textContent = `${userId} ${userName}`;
+            document.getElementById('login-overlay').classList.add('hidden');
+            handleNewProblem();
+        }
+
+        window.onload = () => {
+            lucide.createIcons();
+            const savedId = localStorage.getItem('algebra_balance_id');
+            const savedName = localStorage.getItem('algebra_balance_name');
+            if (savedId && savedName) {
+                document.getElementById('login-id').value = savedId;
+                document.getElementById('login-name').value = savedName;
+            }
+        };
+
+        // ==================== GAME LOGIC ====================
+        let initialProblem = { leftX: 3, leftConst: 2, rightX: 1, rightConst: 8 };
+        let equation = { ...initialProblem };
+        let history = [];
+        let trueXWeight = 3;
+        let isSolved = false;
+
+        function generateProblem() {
+            const isComplex = Math.random() > 0.4;
+            let leftX, leftConst, rightX, rightConst;
+            
+            const answer = Math.floor(Math.random() * 5) + 1; // Always integer answer for simplicity
+            
+            if (!isComplex) {
+                leftX = Math.floor(Math.random() * 3) + 2; 
+                leftConst = Math.floor(Math.random() * 8) + 1;
+                rightX = 0;
+                rightConst = leftX * answer + leftConst;
+            } else {
+                const c = Math.floor(Math.random() * 2) + 1;
+                const diff = Math.floor(Math.random() * 3) + 1;
+                rightX = c;
+                leftX = c + diff;
+                leftConst = Math.floor(Math.random() * 5) + 1;
+                rightConst = (leftX - rightX) * answer + leftConst;
+            }
+            return { leftX, leftConst, rightX, rightConst };
+        }
+
+        function handleNewProblem() {
+            initialProblem = generateProblem();
+            resetToInitial();
+            closeSuccess();
+        }
+
+        function resetToInitial() {
+            equation = { ...initialProblem };
+            history = [];
+            
+            // Calculate true weight of X for physical balance simulation
+            const netX = equation.leftX - equation.rightX;
+            const netConst = equation.rightConst - equation.leftConst;
+            trueXWeight = netX !== 0 ? netConst / netX : 5;
+            
+            isSolved = false;
+            updateUI();
+        }
+
+        function kp(val) {
+            const current = document.getElementById('input-val').value;
+            if (val === 'del') {
+                document.getElementById('input-val').value = current.length > 1 ? current.slice(0, -1) : '0';
+            } else if (val === '/' || val === '.') {
+                if (!current.includes(val)) document.getElementById('input-val').value += val;
+            } else {
+                document.getElementById('input-val').value = current === '0' ? val : current + val;
+            }
+        }
+
+        function parseInput(valStr) {
+            try {
+                if (valStr.includes('/')) {
+                    const parts = valStr.split('/');
+                    return parseFloat(parts[0]) / parseFloat(parts[1]);
+                }
+                return parseFloat(valStr);
+            } catch (e) { return NaN; }
+        }
+
+        function applyOp(side, op, targetType) {
+            if (isSolved) return;
+            const valStr = document.getElementById('input-val').value;
+            const val = parseInput(valStr);
+            if (isNaN(val) || val === 0 && op === 'div') { alert('올바른 값을 입력하세요!'); return; }
+
+            const sideText = side === 'both' ? "양변" : (side === 'left' ? "좌변" : "우변");
+            const opSym = { add: '+', sub: '-', mul: '×', div: '÷' }[op];
+            const termStr = targetType === 'x' ? `${valStr}x` : valStr;
+
+            const newEq = { ...equation };
+            const modify = (target) => {
+                if (targetType === 'const') {
+                    if (op === 'add') newEq[`${target}Const`] += val;
+                    if (op === 'sub') newEq[`${target}Const`] -= val;
+                    if (op === 'mul') { newEq[`${target}X`] *= val; newEq[`${target}Const`] *= val; }
+                    if (op === 'div') { newEq[`${target}X`] /= val; newEq[`${target}Const`] /= val; }
+                } else {
+                    if (op === 'add') newEq[`${target}X`] += val;
+                    if (op === 'sub') newEq[`${target}X`] -= val;
+                }
+            };
+
+            if (side === 'both' || side === 'left') modify('left');
+            if (side === 'both' || side === 'right') modify('right');
+
+            equation = newEq;
+            history.unshift(`${sideText}에 ${termStr}을(를) ${opSym}함`);
+            updateUI();
+            checkSolved();
+            
+            // Visual vibrate feedback
+            document.getElementById('balance-beam-container').classList.remove('vibrate-once');
+            void document.getElementById('balance-beam-container').offsetWidth;
+            document.getElementById('balance-beam-container').classList.add('vibrate-once');
+        }
+
+        function checkSolved() {
+            const threshold = 0.01;
+            const isLeftX = Math.abs(equation.leftX - 1) < threshold && Math.abs(equation.leftConst) < threshold && Math.abs(equation.rightX) < threshold;
+            const isRightX = Math.abs(equation.rightX - 1) < threshold && Math.abs(equation.rightConst) < threshold && Math.abs(equation.leftX) < threshold;
+            
+            if (isLeftX || isRightX) {
+                isSolved = true;
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                document.getElementById('final-steps').textContent = history.length;
+                setTimeout(() => {
+                    document.getElementById('success-overlay').classList.remove('hidden');
+                    saveScore();
+                }, 1000);
+            }
+        }
+
+        async function saveScore() {
+            if (!sbGame || !userId) return;
+            try {
+                const score = 100 - history.length; // Simple score logic
+                await sbGame.from('algebra_balance_rank').insert({ 
+                    mode: userId, 
+                    name: userName, 
+                    score: Math.max(0, score) 
+                });
+            } catch (e) {}
+        }
+
+        function closeSuccess() { document.getElementById('success-overlay').classList.add('hidden'); }
+
+        // ==================== RENDERING ====================
+        function formatVal(v) {
+            if (Math.abs(v) < 0.01) return "0";
+            if (Number.isInteger(v)) return v.toString();
+            // Try fraction conversion
+            const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+            const den = 100;
+            const num = Math.round(v * den);
+            const common = Math.abs(gcd(num, den));
+            if (den / common === 1) return (num / common).toString();
+            return `${num / common}/${den / common}`;
+        }
+
+        function renderExpression(x, c) {
+            let parts = [];
+            if (Math.abs(x) > 0.01) {
+                if (Math.abs(x - 1) < 0.01) parts.push("x");
+                else if (Math.abs(x + 1) < 0.01) parts.push("-x");
+                else parts.push(`${formatVal(x)}x`);
+            }
+            if (Math.abs(c) > 0.01) {
+                let cv = formatVal(c);
+                if (parts.length > 0 && c > 0) parts.push("+ " + cv);
+                else if (parts.length > 0 && c < 0) parts.push("- " + cv.replace('-', ''));
+                else parts.push(cv);
+            }
+            if (parts.length === 0) return "0";
+            return parts.join(" ");
+        }
+
+        function updateUI() {
+            // Textual Update
+            document.getElementById('eq-left').textContent = renderExpression(equation.leftX, equation.leftConst);
+            document.getElementById('eq-right').textContent = renderExpression(equation.rightX, equation.rightConst);
+            
+            const leftW = equation.leftX * trueXWeight + equation.leftConst;
+            const rightW = equation.rightX * trueXWeight + equation.rightConst;
+            const diff = leftW - rightW;
+            const balanced = Math.abs(diff) < 0.01;
+            
+            document.getElementById('eq-op').textContent = balanced ? "=" : "≠";
+            document.getElementById('eq-op').className = balanced ? "text-emerald-500 scale-125 transition-all" : "text-rose-400 scale-110";
+            document.getElementById('equation-display').style.borderColor = balanced ? "#34d399" : "#fb7185";
+            document.getElementById('equation-status-label').textContent = balanced ? "Balanced (평형)" : "Imbalanced (불균형)";
+            document.getElementById('equation-status-label').className = balanced ? "text-emerald-400 font-black tracking-[0.2em] mb-2" : "text-rose-300 font-black tracking-[0.2em] mb-2";
+
+            // Visual Scale Update
+            const maxTilt = 15;
+            const tilt = Math.max(-maxTilt, Math.min(maxTilt, -diff * 3));
+            document.getElementById('main-beam').style.transform = `rotate(${tilt}deg)`;
+            document.getElementById('left-plate-group').style.transform = `rotate(${-tilt}deg)`;
+            document.getElementById('right-plate-group').style.transform = `rotate(${-tilt}deg)`;
+            
+            // Stability indicator
+            document.getElementById('stability-dot').className = balanced ? "w-2 h-2 rounded-full bg-emerald-400" : "w-2 h-2 rounded-full bg-rose-400 animate-pulse";
+            document.getElementById('stability-text').textContent = balanced ? "Stable" : "Inconsistent";
+
+            // Items Rendering
+            renderItems('left-items-box', equation.leftX, equation.leftConst);
+            renderItems('right-items-box', equation.rightX, equation.rightConst);
+
+            // History Update
+            const historyArea = document.getElementById('history-log');
+            if (history.length === 0) {
+                historyArea.innerHTML = '<div class="text-center py-6 text-gray-300 italic text-sm">연산을 시작하면 여기에 기록됩니다.</div>';
+            } else {
+                historyArea.innerHTML = history.map((h, i) => `
+                    <div class="flex items-center gap-4 bg-slate-50/50 p-3 rounded-2xl border border-gray-100 ${i === 0 ? 'animate-bounce-short' : ''}">
+                        <span class="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[8px] font-black text-gray-300 border">${history.length - i}</span>
+                        <span class="text-xs font-bold text-gray-600">${h}</span>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('step-count').textContent = `Steps: ${history.length}`;
+        }
+
+        function renderItems(containerId, xCount, cCount) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            // Render X tiles
+            const absX = Math.floor(Math.abs(xCount));
+            const xSign = xCount > 0 ? 1 : -1;
+            for (let i = 0; i < Math.min(absX, 20); i++) {
+                const el = document.createElement('div');
+                el.className = `tile-x ${xSign > 0 ? 'tile-pos-x' : 'tile-neg-x'}`;
+                el.textContent = xSign > 0 ? 'X' : '-X';
+                container.appendChild(el);
+            }
+            if (absX > 20) {
+                const plus = document.createElement('div');
+                plus.className = "text-[10px] font-black text-gray-400";
+                plus.textContent = `+${absX-20}`;
+                container.appendChild(plus);
+            }
+
+            // Render Unit tiles
+            const absC = Math.floor(Math.abs(cCount));
+            const cSign = cCount > 0 ? 1 : -1;
+            for (let i = 0; i < Math.min(absC, 40); i++) {
+                const el = document.createElement('div');
+                el.className = `tile-unit ${cSign > 0 ? 'tile-pos-unit' : 'tile-neg-unit'}`;
+                el.textContent = cSign > 0 ? '1' : '-1';
+                container.appendChild(el);
+            }
+            if (absC > 40) {
+                const plus = document.createElement('div');
+                plus.className = "text-[10px] font-black text-gray-400";
+                plus.textContent = `+${absC-40}`;
+                container.appendChild(plus);
+            }
+        }
+    </script>
+</body>
+</html>

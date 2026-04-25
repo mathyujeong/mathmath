@@ -100,6 +100,7 @@
                     <button onclick="loadRankings('transformer_rank')" class="px-4 py-2 rounded-xl bg-white border border-orange-200 text-gray-700 font-bold hover:bg-orange-50 transition-all text-xs">⚙️ 변환기</button>
                     <button onclick="loadRankings('omok_rank')" class="px-4 py-2 rounded-xl bg-white border border-teal-200 text-gray-700 font-bold hover:bg-teal-50 transition-all text-xs">🎯 오목</button>
                     <button onclick="loadRankings('algebra_tiles_rank')" class="px-4 py-2 rounded-xl bg-white border border-blue-200 text-gray-700 font-bold hover:bg-blue-50 transition-all text-xs">🟦 대수막대</button>
+                    <button onclick="loadRankings('algebra_balance_rank')" class="px-4 py-2 rounded-xl bg-white border border-indigo-200 text-gray-700 font-bold hover:bg-indigo-50 transition-all text-xs">⚖️ 대수저울</button>
                 </div>
                 
                 <div class="relative flex-1 max-w-sm">
@@ -359,7 +360,7 @@
         }
 
         // 메인 페이지와 동일한 순서 유지
-        const PROGRAM_ORDER = ['sieve', 'game', 'zombie_escape', 'math_dice', 'transformer', 'omok'];
+        const PROGRAM_ORDER = ['sieve', 'game', 'zombie_escape', 'math_dice', 'transformer', 'omok', 'algebra_tiles', 'algebra_balance'];
 
         async function loadPrograms() {
             const { data, error } = await sb
@@ -436,7 +437,8 @@
                 'omok': '🎯',
                 'transformer': '⚙️',
                 'zombie_escape': '🐺',
-                'algebra_tiles': '🟦'
+                'algebra_tiles': '🟦',
+                'algebra_balance': '⚖️'
             };
             return icons[id] || '⭐';
         }
