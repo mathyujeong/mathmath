@@ -353,6 +353,8 @@
             const savedId = localStorage.getItem('algebra_balance_id');
             const savedName = localStorage.getItem('algebra_balance_name');
             if (savedId && savedName) {
+                userId = savedId;
+                userName = savedName;
                 document.getElementById('login-id').value = savedId;
                 document.getElementById('login-name').value = savedName;
                 document.getElementById('user-display').textContent = `${savedId} ${savedName}`;
@@ -548,6 +550,7 @@
 
             if (isActuallySolved && isBalanced) {
                 isSolved = true;
+                saveScore();
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 setTimeout(() => {
                     if(confirm(`정답을 맞혔습니다! (연산 ${history.length}회)\n현재 결과 상태를 더 확인하시겠습니까?\n[취소]를 누르면 다음 문제로 넘어갑니다.`)) {
@@ -555,7 +558,6 @@
                     } else {
                         handleNewProblem();
                     }
-                    saveScore();
                 }, 1000);
             }
         }
