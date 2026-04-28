@@ -138,7 +138,6 @@
     <script>
         // 변수를 미리 선언 (초기화 에러 방지)
         let sb = null;
-        let sbGame = null;
 
         const env = window._ENV_;
         const envLoadedAt = window._ENV_LOADED_AT;
@@ -159,22 +158,17 @@
         } else {
             const SUPABASE_URL = env.SUPABASE_URL_MAIN;
             const SUPABASE_KEY = env.SUPABASE_KEY_MAIN;
-            const GAME_URL = env.SUPABASE_URL_GAME;
-            const GAME_KEY = env.SUPABASE_KEY_GAME;
 
             const missing = [];
             if (!SUPABASE_URL) missing.push('URL_MAIN');
             if (!SUPABASE_KEY) missing.push('KEY_MAIN');
-            if (!GAME_URL) missing.push('URL_GAME');
-            if (!GAME_KEY) missing.push('KEY_GAME');
 
             if (missing.length > 0) {
                 showDiagMessage(`<b>일부 환경변수 누락:</b> [${missing.join(', ')}]<br>Vercel 설정 페이지에서 해당 이름들이 정확한지 확인해 주세요.`);
             } else {
                 try {
                     sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                    sbGame = supabase.createClient(GAME_URL, GAME_KEY);
-                    console.log('Supabase clients initialized at', envLoadedAt);
+                    console.log('Supabase client initialized at', envLoadedAt);
                 } catch (e) {
                     showDiagMessage(`초기화 코드 오류: ${e.message}`);
                 }
@@ -269,7 +263,7 @@
             const tbody = document.getElementById('ranking-table-body');
             tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center animate-pulse">불러오는 중...</td></tr>';
 
-            let query = sbGame.from(tableName).select('*');
+            let query = sb.from(tableName).select('*');
             
             // 테이블별 최적 정렬 기준 설정
             if (tableName === 'primenumber') {
@@ -342,7 +336,7 @@
             if (secret === null) return; // 취소
             if (!secret) { alert('비밀번호를 입력해야 합니다.'); return; }
 
-            const { data, error } = await sbGame.rpc('delete_ranking_record', {
+            const { data, error } = await sb.rpc('delete_ranking_record', {
                 p_table: tableName,
                 p_id: id,
                 p_secret: secret

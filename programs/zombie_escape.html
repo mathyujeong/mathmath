@@ -312,9 +312,9 @@
     // 0. SUPABASE CONFIG
     // ==========================================
     const env = window._ENV_ || {};
-    const SUPABASE_URL = env.SUPABASE_URL_GAME || '__SUPABASE_URL_GAME__';
-    const SUPABASE_KEY = env.SUPABASE_KEY_GAME || '__SUPABASE_KEY_GAME__';
-    const sbClient = (window.supabase && SUPABASE_URL !== '__SUPABASE_URL_GAME__') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    const SUPABASE_URL = env.SUPABASE_URL_MAIN || '__SUPABASE_URL_MAIN__';
+    const SUPABASE_KEY = env.SUPABASE_KEY_MAIN || '__SUPABASE_KEY_MAIN__';
+    const sbClient = (window.supabase && SUPABASE_URL !== '__SUPABASE_URL_MAIN__') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
     // ==========================================
     // 1. UTILS & MATH ENGINE

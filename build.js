@@ -14,8 +14,6 @@ console.log('--- 🛡️ Vercel 빌드 보조 스크립트 (Public 폴더 배포
 const envData = {
     SUPABASE_URL_MAIN: process.env.SUPABASE_URL_MAIN,
     SUPABASE_KEY_MAIN: process.env.SUPABASE_KEY_MAIN,
-    SUPABASE_URL_GAME: process.env.SUPABASE_URL_GAME,
-    SUPABASE_KEY_GAME: process.env.SUPABASE_KEY_GAME,
 };
 
 console.log('[1] 환경변수 점검:');

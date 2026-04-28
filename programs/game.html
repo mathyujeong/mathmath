@@ -242,10 +242,10 @@
   </div>
   <script>
 const env = window._ENV_ || {};
-const SUPABASE_URL = env.SUPABASE_URL_GAME || '__SUPABASE_URL_GAME__';
-const SUPABASE_KEY = env.SUPABASE_KEY_GAME || '__SUPABASE_KEY_GAME__';
+const SUPABASE_URL = env.SUPABASE_URL_MAIN || '__SUPABASE_URL_MAIN__';
+const SUPABASE_KEY = env.SUPABASE_KEY_MAIN || '__SUPABASE_KEY_MAIN__';
 // ReferenceError 방지를 위해 선언 방식 변경 및 안전하게 초기화
-const supabaseClient = (window.supabase && SUPABASE_URL !== '__SUPABASE_URL_GAME__') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabaseClient = (window.supabase && SUPABASE_URL !== '__SUPABASE_URL_MAIN__') ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 // ===================== GAME STATE =====================
 const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31];

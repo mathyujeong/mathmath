@@ -200,8 +200,8 @@
         // SUPABASE SETUP (Integration with existing dashboard)
         let sbGame = null;
         const env = window._ENV_ || {};
-        if (env.SUPABASE_URL_GAME && env.SUPABASE_KEY_GAME) {
-            sbGame = supabase.createClient(env.SUPABASE_URL_GAME, env.SUPABASE_KEY_GAME);
+        if (env.SUPABASE_URL_MAIN && env.SUPABASE_KEY_MAIN) {
+            sbGame = supabase.createClient(env.SUPABASE_URL_MAIN, env.SUPABASE_KEY_MAIN);
         }
 
         function startGame(m) {
