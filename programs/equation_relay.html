@@ -139,16 +139,23 @@
 
         <!-- [SCREEN 2] TEACHER DASHBOARD -->
         <section id="screen-teacher" class="w-full max-w-7xl hidden flex flex-col gap-6">
-            <div class="flex justify-between items-end mb-4 px-2">
-                <div>
-                    <h2 id="display-room-name" class="font-title text-3xl text-indigo-600">1학년 1반 배틀 룸</h2>
+            <div class="flex flex-col items-center mb-8 px-2 text-center">
+                <div class="mb-2">
+                    <h2 id="display-room-name" class="font-title text-4xl text-indigo-600">1학년 1반 배틀 룸</h2>
                     <p class="text-slate-400 font-bold tracking-widest text-sm uppercase">Real-time Team Monitoring</p>
                 </div>
-                <div class="flex gap-2">
-                    <button id="btn-start" onclick="toggleGame()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 flex items-center gap-2">
-                        <i data-lucide="play" class="w-5 h-5 fill-current"></i><span>배틀 시작</span>
+                
+                <!-- 대형 타이머 (전자칠판용) -->
+                <div class="my-6 glass-panel px-12 py-6 rounded-[2rem] border-4 border-indigo-100 shadow-2xl">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Battle Time</div>
+                    <div id="teacher-timer" class="font-number text-8xl font-black text-indigo-600 tabular-nums">02:00</div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="btn-start" onclick="toggleGame()" class="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl hover:bg-indigo-700 flex items-center gap-3 transition-all active:scale-95 text-xl">
+                        <i data-lucide="play" class="w-6 h-6 fill-current"></i><span>배틀 시작</span>
                     </button>
-                    <button onclick="resetRoom()" class="px-6 py-3 bg-slate-200 text-slate-600 rounded-xl font-bold">초기화</button>
+                    <button onclick="resetRoom()" class="px-8 py-4 bg-slate-200 text-slate-600 rounded-2xl font-bold text-xl active:scale-95 transition-all">초기화</button>
                 </div>
             </div>
             <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
@@ -350,11 +357,20 @@
         async function initStudent() {
             STATE.room = document.getElementById('sel-class').value;
             document.getElementById('display-my-team').textContent = `${STATE.team}팀`;
-            subscribeToRoom(); switchScreen('screen-student');
+            
+            // 1. 방 상태 즉시 확인 (선생님이 이미 시작했을 경우 대비)
+            const { data: roomData } = await sb.from('relay_rooms').select('*').eq('id', STATE.room).single();
+            if (roomData && roomData.status === 'playing') {
+                startBattle();
+            }
+
+            subscribeToRoom(); 
+            switchScreen('screen-student');
         }
 
         function subscribeToRoom() {
-            STATE.roomSub = sb.channel('room-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'relay_rooms', filter: `id=eq.${STATE.room}` }, payload => {
+            if (STATE.roomSub) sb.removeChannel(STATE.roomSub);
+            STATE.roomSub = sb.channel('room-sync').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'relay_rooms', filter: `id=eq.${STATE.room}` }, payload => {
                 const room = payload.new;
                 if (room.status === 'playing' && STATE.status !== 'playing') startBattle();
                 else if (room.status === 'waiting') stopBattle();
@@ -362,19 +378,39 @@
         }
 
         function startBattle() {
-            STATE.status = 'playing'; STATE.timer = 120; updateStatusBadge('playing'); newProblem();
+            if (STATE.status === 'playing') return;
+            STATE.status = 'playing'; STATE.timer = 120; updateStatusBadge('playing');
+            if (STATE.role === 'student') newProblem();
+            
+            clearInterval(STATE.timerInterval);
             STATE.timerInterval = setInterval(() => {
                 STATE.timer--;
                 const min = Math.floor(STATE.timer / 60).toString().padStart(2, '0'), sec = (STATE.timer % 60).toString().padStart(2, '0');
-                document.getElementById('game-timer').textContent = `${min}:${sec}`;
-                if (STATE.timer <= 0) { clearInterval(STATE.timerInterval); startSwitching(); }
+                const timeStr = `${min}:${sec}`;
+                
+                // 학생 & 선생님 타이머 동시 업데이트
+                if (document.getElementById('game-timer')) document.getElementById('game-timer').textContent = timeStr;
+                if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').textContent = timeStr;
+
+                if (STATE.timer <= 0) { 
+                    clearInterval(STATE.timerInterval); 
+                    if (STATE.role === 'student') startSwitching(); 
+                }
             }, 1000);
         }
 
         function stopBattle() {
             STATE.status = 'waiting'; clearInterval(STATE.timerInterval); clearInterval(STATE.switchInterval);
-            document.getElementById('switch-overlay').classList.add('hidden');
-            updateStatusBadge('waiting'); switchScreen('screen-lobby'); location.reload(); 
+            if (document.getElementById('switch-overlay')) document.getElementById('switch-overlay').classList.add('hidden');
+            updateStatusBadge('waiting'); 
+            
+            if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').textContent = "02:00";
+            if (document.getElementById('game-timer')) document.getElementById('game-timer').textContent = "02:00";
+
+            if (STATE.role === 'student') {
+                alert("배틀이 종료되었습니다.");
+                location.reload(); 
+            }
         }
 
         function startSwitching() {
