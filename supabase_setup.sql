@@ -105,3 +105,33 @@ CREATE POLICY "algebra_balance_rank_insert" ON algebra_balance_rank
 
 CREATE POLICY "algebra_balance_rank_update" ON algebra_balance_rank
   FOR UPDATE USING (true) WITH CHECK (true);
+
+-- ■ rooms (오목 게임 방 정보)
+ALTER TABLE rooms ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "rooms_select" ON rooms
+  FOR SELECT USING (true);
+
+CREATE POLICY "rooms_insert" ON rooms
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "rooms_update" ON rooms
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "rooms_delete" ON rooms
+  FOR DELETE USING (true);
+
+-- ■ scores (게임 점수 기록)
+ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "scores_select" ON scores
+  FOR SELECT USING (true);
+
+CREATE POLICY "scores_insert" ON scores
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "scores_update" ON scores
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE POLICY "scores_delete" ON scores
+  FOR DELETE USING (true);

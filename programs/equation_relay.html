@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일차방정식 릴레이 배틀 - 유정쌤의 실험실</title>
+    <link rel="icon" href="../assets/favicon.png?v=2" type="image/png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans KR"', 'sans-serif'],
+                        title: ['"Black Han Sans"', 'sans-serif'],
+                        number: ['"Orbitron"', 'sans-serif']
+                    },
+                    colors: {
+                        relay: {
+                            bg: '#f8fafc',
+                            primary: '#4f46e5',
+                            secondary: '#ec4899',
+                            accent: '#f59e0b',
+                            card: 'rgba(255, 255, 255, 0.9)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+        .math-text { font-family: 'serif'; font-style: italic; font-weight: bold; }
+        .equation-box { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+        
+        @keyframes pulse-bg {
+            0%, 100% { background-color: rgba(79, 70, 229, 0.9); }
+            50% { background-color: rgba(236, 72, 153, 0.9); }
+        }
+        .switching-overlay {
+            animation: pulse-bg 2s infinite;
+        }
+        
+        .btn-hover { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-hover:active { transform: translateY(0); }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-50 text-slate-800 overflow-hidden font-sans">
+
+    <!-- Navbar -->
+    <nav class="flex items-center justify-between px-6 py-4 fixed top-0 w-full z-50 glass-panel border-b">
+        <button onclick="location.href='../index.html'" class="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition font-bold">
+            <i data-lucide="home" class="w-5 h-5"></i>
+            <span>연구실</span>
+        </button>
+        <div class="font-title text-2xl text-indigo-600 tracking-tighter flex items-center gap-2">
+            <i data-lucide="zap" class="fill-indigo-600 text-indigo-600"></i>
+            EQUATION RELAY
+        </div>
+        <div id="status-badge" class="px-3 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Ready
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main id="app" class="flex-1 w-full mx-auto p-4 pt-24 relative overflow-hidden flex flex-col items-center">
+        
+        <!-- [SCREEN 1] LOBBY -->
+        <section id="screen-lobby" class="w-full max-w-lg flex flex-col gap-6 py-10">
+            <div class="glass-panel p-8 rounded-3xl text-center shadow-2xl">
+                <h1 class="font-title text-4xl mb-2 text-slate-800">일차방정식 릴레이</h1>
+                <p class="text-slate-500 mb-8 font-medium">팀원들과 협력하여 문제를 빠르게 해결하세요! ⏱️</p>
+
+                <div class="space-y-6">
+                    <div class="text-left">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Class Select</label>
+                        <select id="sel-class" class="w-full p-4 rounded-2xl border-2 border-slate-100 bg-white focus:outline-none focus:border-indigo-400 font-bold text-lg shadow-sm">
+                            <option value="1-1">1학년 1반</option>
+                            <option value="1-2">1학년 2반</option>
+                            <option value="1-3">1학년 3반</option>
+                            <option value="1-4">1학년 4반</option>
+                            <option value="1-5">1학년 5반</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="showRoleSetup('teacher')" class="btn-hover glass-panel p-6 rounded-2xl flex flex-col items-center gap-3 border-2 hover:border-indigo-200">
+                            <div class="p-4 bg-indigo-50 rounded-xl text-indigo-500"><i data-lucide="graduation-cap" class="w-8 h-8"></i></div>
+                            <span class="font-bold text-slate-700">선생님</span>
+                        </button>
+                        <button onclick="showRoleSetup('student')" class="btn-hover glass-panel p-6 rounded-2xl flex flex-col items-center gap-3 border-2 hover:border-pink-200">
+                            <div class="p-4 bg-pink-50 rounded-xl text-pink-500"><i data-lucide="users" class="w-8 h-8"></i></div>
+                            <span class="font-bold text-slate-700">학생 (팀)</span>
+                        </button>
+                    </div>
+
+                    <div id="setup-teacher" class="hidden animate-in slide-in-from-top-4">
+                        <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 mb-4">
+                            <label class="block text-left text-xs font-bold text-indigo-400 uppercase mb-3">Team Count</label>
+                            <div class="grid grid-cols-5 gap-2">
+                                <button onclick="setTeamCount(3)" class="team-cnt-btn p-3 rounded-xl bg-white border font-bold text-indigo-600 transition hover:bg-indigo-600 hover:text-white">3</button>
+                                <button onclick="setTeamCount(4)" class="team-cnt-btn p-3 rounded-xl bg-indigo-600 text-white font-bold transition">4</button>
+                                <button onclick="setTeamCount(5)" class="team-cnt-btn p-3 rounded-xl bg-white border font-bold text-indigo-600 transition hover:bg-indigo-600 hover:text-white">5</button>
+                                <button onclick="setTeamCount(6)" class="team-cnt-btn p-3 rounded-xl bg-white border font-bold text-indigo-600 transition hover:bg-indigo-600 hover:text-white">6</button>
+                                <button onclick="setTeamCount(7)" class="team-cnt-btn p-3 rounded-xl bg-white border font-bold text-indigo-600 transition hover:bg-indigo-600 hover:text-white">7</button>
+                            </div>
+                        </div>
+                        <button onclick="initTeacher()" class="w-full bg-indigo-600 text-white p-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg">배틀 룸 개설하기</button>
+                    </div>
+
+                    <div id="setup-student" class="hidden animate-in slide-in-from-top-4">
+                        <div class="bg-pink-50/50 p-6 rounded-2xl border border-pink-100 mb-4">
+                            <label class="block text-left text-xs font-bold text-pink-400 uppercase mb-3">Select Your Team</label>
+                            <div id="team-selector" class="grid grid-cols-4 gap-2">
+                                <span class="col-span-4 text-xs text-slate-400">선생님이 방을 열면 팀을 선택할 수 있습니다.</span>
+                            </div>
+                        </div>
+                        <button id="btn-join" disabled onclick="initStudent()" class="w-full bg-pink-600 text-white p-4 rounded-2xl font-bold text-lg disabled:opacity-30 shadow-lg">참여하기</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- [SCREEN 2] TEACHER DASHBOARD -->
+        <section id="screen-teacher" class="w-full max-w-7xl hidden flex flex-col gap-6">
+            <div class="flex justify-between items-end mb-4 px-2">
+                <div>
+                    <h2 id="display-room-name" class="font-title text-3xl text-indigo-600">1학년 1반 배틀 룸</h2>
+                    <p class="text-slate-400 font-bold tracking-widest text-sm uppercase">Real-time Team Monitoring</p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-start" onclick="toggleGame()" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 flex items-center gap-2">
+                        <i data-lucide="play" class="w-5 h-5 fill-current"></i><span>배틀 시작</span>
+                    </button>
+                    <button onclick="resetRoom()" class="px-6 py-3 bg-slate-200 text-slate-600 rounded-xl font-bold">초기화</button>
+                </div>
+            </div>
+            <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </section>
+
+        <!-- [SCREEN 3] STUDENT PLAY -->
+        <section id="screen-student" class="w-full max-w-2xl hidden flex flex-col gap-6">
+            <div class="glass-panel p-4 rounded-2xl flex justify-between items-center px-6 border-2 border-indigo-50 shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span id="display-my-team" class="font-title text-xl text-indigo-700 tracking-tight">Team 1</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] font-black text-slate-400 uppercase">Battle Time</span>
+                        <span id="game-timer" class="font-number text-2xl font-black text-indigo-600">02:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="problem-card" class="glass-panel p-10 rounded-[3rem] text-center flex flex-col gap-8 relative overflow-hidden border-2 border-indigo-100 shadow-2xl">
+                <div class="absolute top-6 left-6 flex gap-2">
+                    <span id="badge-level" class="px-3 py-1 bg-indigo-50 rounded-full text-[10px] font-black uppercase tracking-wider text-indigo-500">Normal</span>
+                    <span id="badge-score" class="px-3 py-1 bg-slate-800 text-white rounded-full text-[10px] font-black uppercase tracking-wider">+1 Point</span>
+                </div>
+                <button id="btn-upgrade" onclick="upgradeDifficulty()" class="absolute top-6 right-6 px-4 py-2 bg-amber-400 text-white rounded-xl text-xs font-black shadow-lg hover:bg-amber-500 flex items-center gap-1 active:scale-95 transition-all">
+                    <i data-lucide="zap" class="w-4 h-4 fill-current"></i><span>난이도 UP! (3점)</span>
+                </button>
+
+                <div class="py-12">
+                    <div id="equation-display" class="equation-box text-5xl md:text-7xl font-bold text-indigo-900 drop-shadow-sm select-none">2x + 4 = 12</div>
+                </div>
+
+                <div class="flex flex-col gap-4 max-w-sm mx-auto w-full">
+                    <div class="relative">
+                        <span class="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-bold text-indigo-300 italic">x = </span>
+                        <input id="input-answer" type="number" step="any" placeholder="?" class="w-full bg-slate-50 border-4 border-white p-6 pl-16 rounded-3xl text-4xl font-number font-bold focus:outline-none focus:border-indigo-400 text-indigo-600 placeholder-slate-200 shadow-inner transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="checkAnswer()" class="bg-indigo-600 text-white p-5 rounded-2xl font-bold text-xl hover:bg-indigo-700 shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                            <i data-lucide="check-circle-2"></i><span>확인</span>
+                        </button>
+                        <button onclick="passProblem()" class="bg-slate-100 text-slate-500 p-5 rounded-2xl font-bold text-xl hover:bg-slate-200 flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <i data-lucide="fast-forward"></i><span>패스</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="feedback-msg" class="h-6 font-bold text-sm transition-all duration-300 opacity-0">...</div>
+            </div>
+
+            <!-- 선수 교체 오버레이 -->
+            <div id="switch-overlay" class="fixed inset-0 z-[100] switching-overlay hidden flex-col items-center justify-center text-white p-10 text-center backdrop-blur-xl">
+                <i data-lucide="refresh-cw" class="w-24 h-24 mb-8 animate-spin"></i>
+                <h2 class="font-title text-7xl mb-6 tracking-tighter">선수 교체!</h2>
+                <p class="text-3xl font-bold opacity-80 mb-10 leading-relaxed">다음 주자가 태블릿을 이어받으세요.<br>준비가 되면 마음을 가다듬고 기다리세요.</p>
+                <div id="switch-timer" class="font-number text-9xl font-black tabular-nums">10</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // [1] SUPABASE CONFIG
+        const env = window._ENV_ || {};
+        const SUPABASE_URL = env.SUPABASE_URL_MAIN || '__SUPABASE_URL_MAIN__';
+        const SUPABASE_KEY = env.SUPABASE_KEY_MAIN || '__SUPABASE_KEY_MAIN__';
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let STATE = {
+            role: null, room: null, team: null, status: 'waiting', 
+            teamCount: 4, timer: 120, switchTimer: 10,
+            currentProblem: null, score: 0, level: 'normal',
+            roomSub: null, teamsSub: null, timerInterval: null, switchInterval: null
+        };
+
+        // [2] EQUATION ENGINE
+        const EquationEngine = {
+            generate(level = 'normal') {
+                if (level === 'normal') {
+                    const x = this.rand(-12, 12, true);
+                    const a = this.rand(2, 9);
+                    const b = this.rand(-20, 20, true);
+                    const c = a * x + b;
+                    return { equation: `${a}x ${b >= 0 ? '+' : '-'} ${Math.abs(b)} = ${c}`, answer: x, level: 'normal' };
+                } else {
+                    const type = Math.random();
+                    if (type < 0.5) {
+                        const x = this.rand(-10, 10, true);
+                        const a = this.rand(3, 9), c = this.rand(1, a - 1);
+                        const b = this.rand(-15, 15, true);
+                        const d = (a - c) * x + b;
+                        return { equation: `${a}x ${b >= 0 ? '+' : '-'} ${Math.abs(b)} = ${c}x ${d >= 0 ? '+' : '-'} ${Math.abs(d)}`, answer: x, level: 'hard' };
+                    } else {
+                        const x = this.rand(-5, 5, true);
+                        const a = (this.rand(1, 15) / 10).toFixed(1), b = (this.rand(-20, 20) / 10).toFixed(1);
+                        const c = (parseFloat(a) * x + parseFloat(b)).toFixed(1);
+                        return { equation: `${a}x ${parseFloat(b) >= 0 ? '+' : '-'} ${Math.abs(b)} = ${c}`, answer: parseFloat(x), level: 'hard' };
+                    }
+                }
+            },
+            rand(min, max, allowZero = false) {
+                let res = Math.floor(Math.random() * (max - min + 1)) + min;
+                if (!allowZero && res === 0) return this.rand(min, max);
+                return res;
+            }
+        };
+
+        // [3] UI CONTROL
+        function showRoleSetup(role) {
+            STATE.role = role;
+            document.getElementById('setup-teacher').classList.toggle('hidden', role !== 'teacher');
+            document.getElementById('setup-student').classList.toggle('hidden', role !== 'student');
+            if (role === 'student') fetchRoomInfo(); 
+        }
+
+        async function fetchRoomInfo() {
+            const roomId = document.getElementById('sel-class').value;
+            const { data } = await sb.from('relay_rooms').select('*').eq('id', roomId).single();
+            if (data) { STATE.teamCount = data.team_count; renderTeamButtons(data.team_count); }
+        }
+
+        function setTeamCount(n) {
+            STATE.teamCount = n;
+            document.querySelectorAll('.team-cnt-btn').forEach(btn => {
+                const active = parseInt(btn.textContent) === n;
+                btn.className = `team-cnt-btn p-3 rounded-xl font-bold transition-all ${active ? 'bg-indigo-600 text-white shadow-md' : 'bg-white border border-indigo-100 text-indigo-600 hover:bg-indigo-50'}`;
+            });
+        }
+
+        function renderTeamButtons(n) {
+            const container = document.getElementById('team-selector');
+            container.innerHTML = '';
+            for (let i = 1; i <= n; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = `${i}팀`;
+                btn.onclick = () => selectTeam(i, btn);
+                btn.className = `p-3 rounded-xl border-2 font-bold transition-all text-slate-500 border-slate-100 hover:border-pink-200`;
+                container.appendChild(btn);
+            }
+        }
+
+        function selectTeam(n, btn) {
+            STATE.team = n;
+            document.querySelectorAll('#team-selector button').forEach(b => b.className = `p-3 rounded-xl border-2 font-bold transition-all text-slate-500 border-slate-100`);
+            btn.className = `p-3 rounded-xl border-2 border-pink-500 bg-pink-50 text-pink-600 font-bold scale-105 shadow-md`;
+            document.getElementById('btn-join').disabled = false;
+        }
+
+        function switchScreen(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // [4] TEACHER LOGIC
+        async function initTeacher() {
+            STATE.room = document.getElementById('sel-class').value;
+            document.getElementById('display-room-name').textContent = `${STATE.room} 배틀 룸`;
+            await sb.from('relay_rooms').upsert({ id: STATE.room, status: 'waiting', team_count: STATE.teamCount });
+            await sb.from('relay_teams').delete().eq('room_id', STATE.room);
+            for(let i=1; i<=STATE.teamCount; i++) await sb.from('relay_teams').insert({ room_id: STATE.room, team_name: `${i}팀`, score: 0, status: 'ready' });
+            renderMonitorGrid(); subscribeToTeams(); switchScreen('screen-teacher'); updateStatusBadge('waiting');
+        }
+
+        function renderMonitorGrid() {
+            const grid = document.getElementById('monitor-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= STATE.teamCount; i++) {
+                grid.innerHTML += `
+                    <div id="card-team-${i}" class="glass-panel p-6 rounded-2xl flex flex-col gap-4 border-b-4 border-slate-200 transition-all duration-300">
+                        <div class="flex justify-between items-center"><span class="font-title text-indigo-400">${i}팀</span><span id="card-score-${i}" class="font-number text-slate-600 font-bold">0 pts</span></div>
+                        <div id="card-eq-${i}" class="bg-white/80 p-4 rounded-xl min-h-[100px] flex items-center justify-center font-bold text-xl text-indigo-900 border border-slate-100 shadow-sm">대기 중...</div>
+                        <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-widest"><span id="card-level-${i}" class="text-slate-400">-</span><span id="card-status-${i}" class="text-slate-300 italic">OFFLINE</span></div>
+                    </div>`;
+            }
+        }
+
+        async function toggleGame() {
+            const newStatus = STATE.status === 'waiting' ? 'playing' : 'waiting';
+            const { error } = await sb.from('relay_rooms').update({ status: newStatus }).eq('id', STATE.room);
+            if (!error) {
+                STATE.status = newStatus; updateStatusBadge(newStatus);
+                document.getElementById('btn-start').innerHTML = newStatus === 'playing' ? '<i data-lucide="square" class="w-5 h-5 fill-current"></i><span>배틀 중지</span>' : '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>배틀 시작</span>';
+                lucide.createIcons();
+            }
+        }
+
+        function subscribeToTeams() {
+            STATE.teamsSub = sb.channel('teams-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'relay_teams', filter: `room_id=eq.${STATE.room}` }, payload => {
+                const team = payload.new, teamIdx = team.team_name.replace('팀', '');
+                document.getElementById(`card-score-${teamIdx}`).textContent = `${team.score} pts`;
+                document.getElementById(`card-status-${teamIdx}`).textContent = team.status.toUpperCase();
+                document.getElementById(`card-status-${teamIdx}`).className = team.status === 'playing' ? 'text-green-500 font-black' : 'text-amber-500';
+                if (team.current_question) { document.getElementById(`card-eq-${teamIdx}`).textContent = team.current_question.equation; document.getElementById(`card-level-${teamIdx}`).textContent = team.current_question.level; }
+            }).subscribe();
+        }
+
+        // [5] STUDENT LOGIC
+        async function initStudent() {
+            STATE.room = document.getElementById('sel-class').value;
+            document.getElementById('display-my-team').textContent = `${STATE.team}팀`;
+            subscribeToRoom(); switchScreen('screen-student');
+        }
+
+        function subscribeToRoom() {
+            STATE.roomSub = sb.channel('room-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'relay_rooms', filter: `id=eq.${STATE.room}` }, payload => {
+                const room = payload.new;
+                if (room.status === 'playing' && STATE.status !== 'playing') startBattle();
+                else if (room.status === 'waiting') stopBattle();
+            }).subscribe();
+        }
+
+        function startBattle() {
+            STATE.status = 'playing'; STATE.timer = 120; updateStatusBadge('playing'); newProblem();
+            STATE.timerInterval = setInterval(() => {
+                STATE.timer--;
+                const min = Math.floor(STATE.timer / 60).toString().padStart(2, '0'), sec = (STATE.timer % 60).toString().padStart(2, '0');
+                document.getElementById('game-timer').textContent = `${min}:${sec}`;
+                if (STATE.timer <= 0) { clearInterval(STATE.timerInterval); startSwitching(); }
+            }, 1000);
+        }
+
+        function stopBattle() {
+            STATE.status = 'waiting'; clearInterval(STATE.timerInterval); clearInterval(STATE.switchInterval);
+            document.getElementById('switch-overlay').classList.add('hidden');
+            updateStatusBadge('waiting'); switchScreen('screen-lobby'); location.reload(); 
+        }
+
+        function startSwitching() {
+            STATE.status = 'switching'; STATE.switchTimer = 10;
+            document.getElementById('switch-overlay').classList.remove('hidden');
+            updateTeamStatus('switching');
+            STATE.switchInterval = setInterval(() => {
+                STATE.switchTimer--; document.getElementById('switch-timer').textContent = STATE.switchTimer;
+                if (STATE.switchTimer <= 0) { clearInterval(STATE.switchInterval); document.getElementById('switch-overlay').classList.add('hidden'); startBattle(); }
+            }, 1000);
+        }
+
+        async function updateTeamStatus(status) { await sb.from('relay_teams').update({ status: status }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`); }
+
+        async function newProblem() {
+            const prob = EquationEngine.generate(STATE.level); STATE.currentProblem = prob;
+            document.getElementById('equation-display').textContent = prob.equation;
+            document.getElementById('badge-level').textContent = prob.level;
+            document.getElementById('badge-score').textContent = `+${prob.level === 'normal' ? 1 : 3} Point`;
+            document.getElementById('input-answer').value = ''; document.getElementById('input-answer').focus();
+            await sb.from('relay_teams').update({ current_question: prob, status: 'playing' }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`);
+        }
+
+        async function checkAnswer() {
+            const input = parseFloat(document.getElementById('input-answer').value), feedback = document.getElementById('feedback-msg');
+            if (Math.abs(input - STATE.currentProblem.answer) < 0.01) {
+                STATE.score += (STATE.level === 'normal' ? 1 : 3);
+                feedback.textContent = "정답입니다! ✨"; feedback.className = "h-6 font-bold text-sm text-green-500 opacity-100";
+                confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 }, colors: ['#4f46e5', '#ec4899', '#f59e0b'] });
+                await sb.from('relay_teams').update({ score: STATE.score }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`);
+                setTimeout(() => { feedback.className = "h-6 font-bold text-sm opacity-0"; STATE.level = 'normal'; document.getElementById('btn-upgrade').classList.remove('hidden'); newProblem(); }, 800);
+            } else {
+                feedback.textContent = "틀렸어요! 다시 생각해보세요. 🤔"; feedback.className = "h-6 font-bold text-sm text-pink-500 opacity-100 animate-bounce";
+            }
+        }
+
+        function upgradeDifficulty() { STATE.level = 'hard'; document.getElementById('btn-upgrade').classList.add('hidden'); newProblem(); }
+        function passProblem() { if (confirm("다른 문제로 넘어가시겠습니까?")) newProblem(); }
+        function updateStatusBadge(status) {
+            const b = document.getElementById('status-badge'); b.textContent = status;
+            const colors = { 'waiting': 'bg-slate-100 text-slate-500', 'playing': 'bg-green-100 text-green-600', 'switching': 'bg-amber-100 text-amber-600' };
+            b.className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${colors[status] || 'bg-slate-100'}`;
+        }
+    </script>
+</body>
+</html>
