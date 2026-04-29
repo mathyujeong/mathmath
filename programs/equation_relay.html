@@ -377,10 +377,19 @@
             STATE.room = document.getElementById('sel-class').value;
             document.getElementById('display-my-team').textContent = `${STATE.team}팀`;
             
-            // 1. 방 상태 즉시 확인 (선생님이 이미 시작했을 경우 대비)
-            const { data: roomData } = await sb.from('relay_rooms').select('*').eq('id', STATE.room).single();
-            if (roomData && roomData.status === 'playing') {
-                startBattle();
+            console.log("Initializing student for room:", STATE.room);
+
+            // 1. 방 상태 즉시 확인 (이미 시작되었을 경우 대비)
+            try {
+                const { data: roomData, error } = await sb.from('relay_rooms').select('*').eq('id', STATE.room).single();
+                if (error) throw error;
+                
+                if (roomData && roomData.status === 'playing') {
+                    console.log("Room already playing, starting battle...");
+                    startBattle();
+                }
+            } catch (err) {
+                console.error("Initial room check failed:", err);
             }
 
             subscribeToRoom(); 
@@ -389,17 +398,46 @@
 
         function subscribeToRoom() {
             if (STATE.roomSub) sb.removeChannel(STATE.roomSub);
-            STATE.roomSub = sb.channel('room-sync').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'relay_rooms', filter: `id=eq.${STATE.room}` }, payload => {
-                const room = payload.new;
-                if (room.status === 'playing' && STATE.status !== 'playing') startBattle();
-                else if (room.status === 'waiting') stopBattle();
-            }).subscribe();
+            
+            // 필터링 시 따옴표를 명시적으로 넣거나, 필터 없이 전체를 받고 JS에서 거르는 방식으로 더 안전하게 변경
+            STATE.roomSub = sb.channel('room-sync')
+                .on('postgres_changes', { 
+                    event: 'UPDATE', 
+                    schema: 'public', 
+                    table: 'relay_rooms'
+                    // 필터를 제거하고 내부 로직에서 체크하는 것이 가장 확실함
+                }, payload => {
+                    const room = payload.new;
+                    console.log("Realtime update received:", room);
+                    
+                    if (room.id !== STATE.room) return; // 내 반이 아니면 무시
+
+                    if (room.status === 'playing' && STATE.status !== 'playing') {
+                        startBattle();
+                    } else if (room.status === 'waiting') {
+                        stopBattle();
+                    }
+                })
+                .subscribe((status) => {
+                    console.log("Subscription Status:", status);
+                    if (status === 'CHANNEL_ERROR') {
+                        alert("실시간 연결에 실패했습니다. 새로고침 후 다시 시도해 주세요.");
+                    }
+                });
         }
 
         function startBattle() {
+            console.log("Attempting to start battle. Current status:", STATE.status);
             if (STATE.status === 'playing') return;
-            STATE.status = 'playing'; STATE.timer = 120; updateStatusBadge('playing');
-            if (STATE.role === 'student') newProblem();
+            
+            STATE.status = 'playing'; 
+            STATE.timer = 120; 
+            updateStatusBadge('playing');
+            
+            if (STATE.role === 'student') {
+                console.log("Generating first problem...");
+                newProblem();
+            }
             
             clearInterval(STATE.timerInterval);
             STATE.timerInterval = setInterval(() => {
@@ -407,7 +445,6 @@
                 const min = Math.floor(STATE.timer / 60).toString().padStart(2, '0'), sec = (STATE.timer % 60).toString().padStart(2, '0');
                 const timeStr = `${min}:${sec}`;
                 
-                // 학생 & 선생님 타이머 동시 업데이트
                 if (document.getElementById('game-timer')) document.getElementById('game-timer').textContent = timeStr;
                 if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').textContent = timeStr;
 
@@ -419,7 +456,11 @@
         }
 
         function stopBattle() {
-            STATE.status = 'waiting'; clearInterval(STATE.timerInterval); clearInterval(STATE.switchInterval);
+            console.log("Stopping battle...");
+            STATE.status = 'waiting'; 
+            clearInterval(STATE.timerInterval); 
+            clearInterval(STATE.switchInterval);
+            
             if (document.getElementById('switch-overlay')) document.getElementById('switch-overlay').classList.add('hidden');
             updateStatusBadge('waiting'); 
             
@@ -433,34 +474,72 @@
         }
 
         function startSwitching() {
-            STATE.status = 'switching'; STATE.switchTimer = 10;
+            STATE.status = 'switching'; 
+            STATE.switchTimer = 10;
             document.getElementById('switch-overlay').classList.remove('hidden');
             updateTeamStatus('switching');
+            
             STATE.switchInterval = setInterval(() => {
-                STATE.switchTimer--; document.getElementById('switch-timer').textContent = STATE.switchTimer;
-                if (STATE.switchTimer <= 0) { clearInterval(STATE.switchInterval); document.getElementById('switch-overlay').classList.add('hidden'); startBattle(); }
+                STATE.switchTimer--; 
+                document.getElementById('switch-timer').textContent = STATE.switchTimer;
+                if (STATE.switchTimer <= 0) { 
+                    clearInterval(STATE.switchInterval); 
+                    document.getElementById('switch-overlay').classList.add('hidden'); 
+                    startBattle(); 
+                }
             }, 1000);
         }
 
-        async function updateTeamStatus(status) { await sb.from('relay_teams').update({ status: status }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`); }
+        async function updateTeamStatus(status) { 
+            await sb.from('relay_teams').update({ status: status }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`); 
+        }
 
         async function newProblem() {
-            const prob = EquationEngine.generate(STATE.level); STATE.currentProblem = prob;
+            const prob = EquationEngine.generate(STATE.level); 
+            STATE.currentProblem = prob;
+            console.log("New problem generated:", prob);
+
             document.getElementById('equation-display').textContent = prob.equation;
             document.getElementById('badge-level').textContent = prob.level;
             document.getElementById('badge-score').textContent = `+${prob.level === 'normal' ? 1 : 3} Point`;
-            document.getElementById('input-answer').value = ''; document.getElementById('input-answer').focus();
-            await sb.from('relay_teams').update({ current_question: prob, status: 'playing' }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`);
+            document.getElementById('input-answer').value = ''; 
+            document.getElementById('input-answer').focus();
+            
+            try {
+                const { error } = await sb.from('relay_teams').update({ 
+                    current_question: prob, 
+                    status: 'playing' 
+                }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`);
+                if (error) throw error;
+            } catch (err) {
+                console.error("Failed to update team question info:", err);
+            }
         }
 
         async function checkAnswer() {
-            const input = parseFloat(document.getElementById('input-answer').value), feedback = document.getElementById('feedback-msg');
+            if (STATE.status !== 'playing') return; // 배틀 중이 아니면 무시
+
+            const inputVal = document.getElementById('input-answer').value;
+            if (inputVal === '') return;
+            
+            const input = parseFloat(inputVal);
+            const feedback = document.getElementById('feedback-msg');
+            
+            console.log("Checking answer:", input, "vs", STATE.currentProblem.answer);
+
             if (Math.abs(input - STATE.currentProblem.answer) < 0.01) {
                 STATE.score += (STATE.level === 'normal' ? 1 : 3);
                 feedback.textContent = "정답입니다! ✨"; feedback.className = "h-6 font-bold text-sm text-green-500 opacity-100";
                 confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 }, colors: ['#4f46e5', '#ec4899', '#f59e0b'] });
+                
                 await sb.from('relay_teams').update({ score: STATE.score }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`);
-                setTimeout(() => { feedback.className = "h-6 font-bold text-sm opacity-0"; STATE.level = 'normal'; document.getElementById('btn-upgrade').classList.remove('hidden'); newProblem(); }, 800);
+                
+                setTimeout(() => { 
+                    feedback.className = "h-6 font-bold text-sm opacity-0"; 
+                    STATE.level = 'normal'; 
+                    document.getElementById('btn-upgrade').classList.remove('hidden'); 
+                    newProblem(); 
+                }, 800);
             } else {
                 feedback.textContent = "틀렸어요! 다시 생각해보세요. 🤔"; feedback.className = "h-6 font-bold text-sm text-pink-500 opacity-100 animate-bounce";
             }
