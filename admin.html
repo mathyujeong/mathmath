@@ -354,7 +354,7 @@
         }
 
         // 메인 페이지와 동일한 순서 유지
-        const PROGRAM_ORDER = ['sieve', 'game', 'zombie_escape', 'math_dice', 'transformer', 'algebra_tiles', 'algebra_balance', 'omok'];
+        const PROGRAM_ORDER = ['sieve', 'game', 'zombie_escape', 'math_dice', 'equation_relay', 'transformer', 'algebra_tiles', 'algebra_balance', 'omok'];
 
         async function loadPrograms() {
             const { data, error } = await sb
@@ -398,7 +398,7 @@
                     <div class="flex items-center gap-4">
                         <span class="text-3xl">${getIcon(p.id)}</span>
                         <div>
-                            <h3 class="font-bold text-gray-700 text-lg">${p.display_name}</h3>
+                            <h3 class="font-bold text-gray-700 text-lg">${p.name || p.display_name}</h3>
                             <p class="text-sm text-gray-400">${p.id}.html</p>
                         </div>
                     </div>
@@ -428,6 +428,7 @@
                 'sieve': '🌿',
                 'game': '🛡️',
                 'math_dice': '🎲',
+                'equation_relay': '⚡',
                 'omok': '🎯',
                 'transformer': '⚙️',
                 'zombie_escape': '🐺',
