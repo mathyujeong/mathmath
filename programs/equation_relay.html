@@ -314,10 +314,16 @@
         async function initTeacher() {
             STATE.room = document.getElementById('sel-class').value;
             document.getElementById('display-room-name').textContent = `${STATE.room} 배틀 룸`;
+            
             await sb.from('relay_rooms').upsert({ id: STATE.room, status: 'waiting', team_count: STATE.teamCount });
             await sb.from('relay_teams').delete().eq('room_id', STATE.room);
             for(let i=1; i<=STATE.teamCount; i++) await sb.from('relay_teams').insert({ room_id: STATE.room, team_name: `${i}팀`, score: 0, status: 'ready' });
-            renderMonitorGrid(); subscribeToTeams(); switchScreen('screen-teacher'); updateStatusBadge('waiting');
+            
+            renderMonitorGrid(); 
+            subscribeToTeams();
+            subscribeToRoom(); // 선생님도 방 상태 변화 감지하도록 추가
+            switchScreen('screen-teacher'); 
+            updateStatusBadge('waiting');
         }
 
         function renderMonitorGrid() {
@@ -335,11 +341,24 @@
 
         async function toggleGame() {
             const newStatus = STATE.status === 'waiting' ? 'playing' : 'waiting';
+            
+            // 1. 서버 상태 업데이트
             const { error } = await sb.from('relay_rooms').update({ status: newStatus }).eq('id', STATE.room);
+            
             if (!error) {
-                STATE.status = newStatus; updateStatusBadge(newStatus);
+                // 2. 내 화면(선생님)에서도 즉시 로직 실행
+                if (newStatus === 'playing') {
+                    startBattle();
+                } else {
+                    stopBattle();
+                }
+                
+                updateStatusBadge(newStatus);
                 document.getElementById('btn-start').innerHTML = newStatus === 'playing' ? '<i data-lucide="square" class="w-5 h-5 fill-current"></i><span>배틀 중지</span>' : '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>배틀 시작</span>';
                 lucide.createIcons();
+            } else {
+                console.error("Game toggle error:", error);
+                alert("배틀 상태 변경에 실패했습니다.");
             }
         }
 
