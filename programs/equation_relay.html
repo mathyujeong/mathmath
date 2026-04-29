@@ -321,7 +321,7 @@
             
             renderMonitorGrid(); 
             subscribeToTeams();
-            subscribeToRoom(); // 선생님도 방 상태 변화 감지하도록 추가
+            subscribeToRoom(); 
             switchScreen('screen-teacher'); 
             updateStatusBadge('waiting');
         }
@@ -332,7 +332,13 @@
             for (let i = 1; i <= STATE.teamCount; i++) {
                 grid.innerHTML += `
                     <div id="card-team-${i}" class="glass-panel p-6 rounded-2xl flex flex-col gap-4 border-b-4 border-slate-200 transition-all duration-300">
-                        <div class="flex justify-between items-center"><span class="font-title text-indigo-400">${i}팀</span><span id="card-score-${i}" class="font-number text-slate-600 font-bold">0 pts</span></div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <div id="led-${i}" class="w-3 h-3 rounded-full bg-slate-300 shadow-inner transition-all duration-500"></div>
+                                <span class="font-title text-indigo-400">${i}팀</span>
+                            </div>
+                            <span id="card-score-${i}" class="font-number text-slate-600 font-bold">0 pts</span>
+                        </div>
                         <div id="card-eq-${i}" class="bg-white/80 p-4 rounded-xl min-h-[100px] flex items-center justify-center font-bold text-xl text-indigo-900 border border-slate-100 shadow-sm">대기 중...</div>
                         <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-widest"><span id="card-level-${i}" class="text-slate-400">-</span><span id="card-status-${i}" class="text-slate-300 italic">OFFLINE</span></div>
                     </div>`;
@@ -341,34 +347,52 @@
 
         async function toggleGame() {
             const newStatus = STATE.status === 'waiting' ? 'playing' : 'waiting';
-            
-            // 1. 서버 상태 업데이트
             const { error } = await sb.from('relay_rooms').update({ status: newStatus }).eq('id', STATE.room);
             
             if (!error) {
-                // 2. 내 화면(선생님)에서도 즉시 로직 실행
-                if (newStatus === 'playing') {
-                    startBattle();
-                } else {
-                    stopBattle();
-                }
+                if (newStatus === 'playing') startBattle();
+                else stopBattle();
                 
                 updateStatusBadge(newStatus);
                 document.getElementById('btn-start').innerHTML = newStatus === 'playing' ? '<i data-lucide="square" class="w-5 h-5 fill-current"></i><span>배틀 중지</span>' : '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>배틀 시작</span>';
                 lucide.createIcons();
-            } else {
-                console.error("Game toggle error:", error);
-                alert("배틀 상태 변경에 실패했습니다.");
             }
         }
 
         function subscribeToTeams() {
             STATE.teamsSub = sb.channel('teams-sync').on('postgres_changes', { event: '*', schema: 'public', table: 'relay_teams', filter: `room_id=eq.${STATE.room}` }, payload => {
                 const team = payload.new, teamIdx = team.team_name.replace('팀', '');
+                
                 document.getElementById(`card-score-${teamIdx}`).textContent = `${team.score} pts`;
                 document.getElementById(`card-status-${teamIdx}`).textContent = team.status.toUpperCase();
-                document.getElementById(`card-status-${teamIdx}`).className = team.status === 'playing' ? 'text-green-500 font-black' : 'text-amber-500';
-                if (team.current_question) { document.getElementById(`card-eq-${teamIdx}`).textContent = team.current_question.equation; document.getElementById(`card-level-${teamIdx}`).textContent = team.current_question.level; }
+                
+                // LED 및 텍스트 색상 업데이트
+                const led = document.getElementById(`led-${teamIdx}`);
+                const statusEl = document.getElementById(`card-status-${teamIdx}`);
+                const card = document.getElementById(`card-team-${teamIdx}`);
+
+                if (team.status === 'ready') {
+                    led.className = "w-3 h-3 rounded-full bg-slate-300 shadow-inner";
+                    statusEl.className = "text-slate-300 italic";
+                    card.style.borderColor = "#e2e8f0";
+                } else if (team.status === 'online') {
+                    led.className = "w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse";
+                    statusEl.className = "text-blue-500 font-black";
+                    card.style.borderColor = "#bfdbfe";
+                } else if (team.status === 'playing') {
+                    led.className = "w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse";
+                    statusEl.className = "text-green-500 font-black";
+                    card.style.borderColor = "#bbf7d0";
+                } else if (team.status === 'switching') {
+                    led.className = "w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-bounce";
+                    statusEl.className = "text-amber-500 font-black";
+                    card.style.borderColor = "#fef08a";
+                }
+
+                if (team.current_question) { 
+                    document.getElementById(`card-eq-${teamIdx}`).textContent = team.current_question.equation; 
+                    document.getElementById(`card-level-${teamIdx}`).textContent = team.current_question.level; 
+                }
             }).subscribe();
         }
 
@@ -377,17 +401,14 @@
             STATE.room = document.getElementById('sel-class').value;
             document.getElementById('display-my-team').textContent = `${STATE.team}팀`;
             
-            console.log("Initializing student for room:", STATE.room);
+            // 1. 접속 알림 (선생님 화면에 파란불 켜기)
+            await sb.from('relay_teams').update({ status: 'online' }).eq('room_id', STATE.room).eq('team_name', `${STATE.team}팀`);
 
-            // 1. 방 상태 즉시 확인 (이미 시작되었을 경우 대비)
+            // 2. 방 상태 즉시 확인 (이미 시작되었을 경우 대비)
             try {
                 const { data: roomData, error } = await sb.from('relay_rooms').select('*').eq('id', STATE.room).single();
                 if (error) throw error;
-                
-                if (roomData && roomData.status === 'playing') {
-                    console.log("Room already playing, starting battle...");
-                    startBattle();
-                }
+                if (roomData && roomData.status === 'playing') startBattle();
             } catch (err) {
                 console.error("Initial room check failed:", err);
             }
