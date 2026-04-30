@@ -169,6 +169,7 @@
 </head>
 <body class="h-full flex flex-col bg-slate-50 text-slate-800 font-sans">
     <audio id="bgm-tension" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
+    <audio id="bgm-switch" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"></audio>
 
     <!-- Navbar -->
     <nav class="flex items-center justify-between px-6 py-4 fixed top-0 w-full z-50 glass-panel border-b">
@@ -740,6 +741,8 @@
 
                     if (room.status === 'playing' && STATE.status !== 'playing') {
                         startBattle();
+                    } else if (room.status === 'switching' && STATE.status !== 'switching') {
+                        startSwitching();
                     } else if (room.status === 'waiting' || room.status === 'ended') {
                         stopBattle();
                     }
@@ -760,19 +763,26 @@
             STATE.timer = 120; 
             updateStatusBadge('playing');
             
+            // 음악 전환
+            const tensionBgm = document.getElementById('bgm-tension');
+            const switchBgm = document.getElementById('bgm-switch');
+            if (switchBgm) { switchBgm.pause(); switchBgm.currentTime = 0; }
+            if (tensionBgm) { 
+                tensionBgm.play().catch(e => console.log("BGM play failed:", e)); 
+            }
+
             if (STATE.role === 'teacher') {
                 document.getElementById('btn-start').classList.add('hidden');
                 document.getElementById('btn-finish').classList.remove('hidden');
-                document.getElementById('bgm-tension').play().catch(e => console.log("BGM play failed:", e));
             }
 
             if (STATE.role === 'student') {
                 console.log("Generating first problem...");
-                newProblem();
+                if (!STATE.currentProblem) newProblem(); // 이미 있으면 유지 (교체 단계에서 넘어왔을 때)
             }
             
             clearInterval(STATE.timerInterval);
-            STATE.timerInterval = setInterval(() => {
+            STATE.timerInterval = setInterval(async () => {
                 STATE.timer--;
                 const min = Math.floor(STATE.timer / 60).toString().padStart(2, '0'), sec = (STATE.timer % 60).toString().padStart(2, '0');
                 const timeStr = `${min}:${sec}`;
@@ -782,7 +792,10 @@
 
                 if (STATE.timer <= 0) { 
                     clearInterval(STATE.timerInterval); 
-                    if (STATE.role === 'student') startSwitching(); 
+                    if (STATE.role === 'teacher') {
+                        // 교사가 방 상태를 전환하여 전체 동기화
+                        await sb.from('relay_rooms').update({ status: 'switching' }).eq('id', STATE.room);
+                    }
                 }
             }, 1000);
         }
@@ -797,8 +810,11 @@
             updateStatusBadge('waiting'); 
             
             if (STATE.role === 'teacher') {
-                document.getElementById('bgm-tension').pause();
-                document.getElementById('bgm-tension').currentTime = 0;
+                const tensionBgm = document.getElementById('bgm-tension');
+                const switchBgm = document.getElementById('bgm-switch');
+                if (tensionBgm) { tensionBgm.pause(); tensionBgm.currentTime = 0; }
+                if (switchBgm) { switchBgm.pause(); switchBgm.currentTime = 0; }
+
                 document.getElementById('btn-start').classList.remove('hidden');
                 document.getElementById('btn-start').innerHTML = '<i data-lucide="play" class="w-6 h-6 fill-current"></i><span>배틀 시작</span>';
                 document.getElementById('btn-finish').classList.add('hidden');
@@ -815,18 +831,47 @@
         }
 
         function startSwitching() {
+            console.log("Starting switching phase...");
             STATE.status = 'switching'; 
             STATE.switchTimer = 10;
-            document.getElementById('switch-overlay').classList.remove('hidden');
-            updateTeamStatus('switching');
+            updateStatusBadge('switching');
+
+            // 음악 전환
+            const tensionBgm = document.getElementById('bgm-tension');
+            const switchBgm = document.getElementById('bgm-switch');
+            if (tensionBgm) tensionBgm.pause();
+            if (switchBgm) { 
+                switchBgm.currentTime = 0;
+                switchBgm.play().catch(e => console.log("Switch BGM play failed:", e)); 
+            }
+
+            // 학생 화면 오버레이 표시
+            if (STATE.role === 'student') {
+                document.getElementById('switch-overlay').classList.remove('hidden');
+                updateTeamStatus('switching');
+            }
             
-            STATE.switchInterval = setInterval(() => {
+            // 교사 화면 타이머 업데이트 준비
+            if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').classList.add('text-amber-500');
+
+            clearInterval(STATE.switchInterval);
+            STATE.switchInterval = setInterval(async () => {
                 STATE.switchTimer--; 
-                document.getElementById('switch-timer').textContent = STATE.switchTimer;
+                
+                const displayTime = `00:${STATE.switchTimer.toString().padStart(2, '0')}`;
+                if (document.getElementById('switch-timer')) document.getElementById('switch-timer').textContent = STATE.switchTimer;
+                if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').textContent = displayTime;
+
                 if (STATE.switchTimer <= 0) { 
                     clearInterval(STATE.switchInterval); 
-                    document.getElementById('switch-overlay').classList.add('hidden'); 
-                    startBattle(); 
+                    if (STATE.role === 'student') {
+                        document.getElementById('switch-overlay').classList.add('hidden'); 
+                    }
+                    if (STATE.role === 'teacher') {
+                        if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').classList.remove('text-amber-500');
+                        // 교사가 다시 playing으로 전환
+                        await sb.from('relay_rooms').update({ status: 'playing' }).eq('id', STATE.room);
+                    }
                 }
             }, 1000);
         }
