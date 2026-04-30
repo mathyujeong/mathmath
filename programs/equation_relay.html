@@ -151,9 +151,24 @@
         .key-btn.backspace {
             color: #ef4444;
         }
+
+        /* Result Screen Styles */
+        .rank-card {
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        .rank-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .podium-1 { background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; }
+        .podium-2 { background: linear-gradient(135deg, #94a3b8, #cbd5e1); color: white; }
+        .podium-3 { background: linear-gradient(135deg, #b45309, #d97706); color: white; }
     </style>
 </head>
 <body class="h-full flex flex-col bg-slate-50 text-slate-800 font-sans">
+    <audio id="bgm-tension" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3"></audio>
 
     <!-- Navbar -->
     <nav class="flex items-center justify-between px-6 py-4 fixed top-0 w-full z-50 glass-panel border-b">
@@ -247,10 +262,34 @@
                     <button id="btn-start" onclick="toggleGame()" class="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl hover:bg-indigo-700 flex items-center gap-3 transition-all active:scale-95 text-xl">
                         <i data-lucide="play" class="w-6 h-6 fill-current"></i><span>배틀 시작</span>
                     </button>
+                    <button id="btn-finish" onclick="finishBattle()" class="hidden px-8 py-4 bg-rose-600 text-white rounded-2xl font-bold shadow-xl hover:bg-rose-700 flex items-center gap-3 transition-all active:scale-95 text-xl">
+                        <i data-lucide="square" class="w-6 h-6 fill-current"></i><span>배틀 끝내기</span>
+                    </button>
+                    <button id="btn-results" onclick="showResults()" class="hidden px-8 py-4 bg-amber-500 text-white rounded-2xl font-bold shadow-xl hover:bg-amber-600 flex items-center gap-3 transition-all active:scale-95 text-xl">
+                        <i data-lucide="trophy" class="w-6 h-6 fill-current"></i><span>결과 확인하기</span>
+                    </button>
                     <button onclick="resetRoom()" class="px-8 py-4 bg-slate-200 text-slate-600 rounded-2xl font-bold text-xl active:scale-95 transition-all">초기화</button>
                 </div>
             </div>
             <div id="monitor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        </section>
+
+        <!-- [SCREEN 4] RESULT DASHBOARD -->
+        <section id="screen-result" class="w-full max-w-4xl hidden flex flex-col gap-8 py-10">
+            <div class="text-center space-y-4">
+                <h2 class="font-title text-6xl text-indigo-600 drop-shadow-md">🏆 배틀 결과 발표 🏆</h2>
+                <p class="text-slate-400 font-bold tracking-widest text-lg uppercase">Equation Relay Final Rankings</p>
+            </div>
+
+            <div id="ranking-list" class="flex flex-col gap-4">
+                <!-- Ranking items will be injected here -->
+            </div>
+
+            <div class="flex justify-center mt-8">
+                <button onclick="location.reload()" class="px-12 py-5 bg-indigo-600 text-white rounded-3xl font-bold text-2xl shadow-2xl hover:bg-indigo-700 transition-all active:scale-95 flex items-center gap-3">
+                    <i data-lucide="rotate-ccw" class="w-8 h-8"></i><span>다시하기</span>
+                </button>
+            </div>
         </section>
 
         <!-- [SCREEN 3] STUDENT PLAY -->
@@ -312,7 +351,7 @@
                         <button onclick="handleKey('4')" class="key-btn">4</button>
                         <button onclick="handleKey('5')" class="key-btn">5</button>
                         <button onclick="handleKey('6')" class="key-btn">6</button>
-                        <button onclick="handleKey('BACK')" class="key-btn backspace"><i data-lucide="backspace" class="w-6 h-6"></i></button>
+                        <button onclick="handleKey('BACK')" class="key-btn backspace"><i data-lucide="delete" class="w-6 h-6"></i></button>
                         
                         <button onclick="handleKey('7')" class="key-btn">7</button>
                         <button onclick="handleKey('8')" class="key-btn">8</button>
@@ -347,13 +386,23 @@
     </main>
 
     <script>
-        lucide.createIcons();
+        window.onerror = function(msg, url, line) {
+            console.error("GLOBAL ERROR: " + msg + " at " + url + ":" + line);
+            return false;
+        };
+
+        try { lucide.createIcons(); } catch (e) { console.error("Lucide icons failed:", e); }
 
         // [1] SUPABASE CONFIG
         const env = window._ENV_ || {};
         const SUPABASE_URL = env.SUPABASE_URL_MAIN || '__SUPABASE_URL_MAIN__';
         const SUPABASE_KEY = env.SUPABASE_KEY_MAIN || '__SUPABASE_KEY_MAIN__';
-        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let sb;
+        try {
+            sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {
+            console.error("Supabase init failed:", e);
+        }
 
         let STATE = {
             role: null, room: null, team: null, status: 'waiting', 
@@ -460,6 +509,7 @@
 
         // [3] UI CONTROL
         function showRoleSetup(role) {
+            console.log("Setting up role:", role);
             STATE.role = role;
             document.getElementById('setup-teacher').classList.toggle('hidden', role !== 'teacher');
             document.getElementById('setup-student').classList.toggle('hidden', role !== 'student');
@@ -544,13 +594,74 @@
             const { error } = await sb.from('relay_rooms').update({ status: newStatus }).eq('id', STATE.room);
             
             if (!error) {
-                if (newStatus === 'playing') startBattle();
-                else stopBattle();
-                
-                updateStatusBadge(newStatus);
-                document.getElementById('btn-start').innerHTML = newStatus === 'playing' ? '<i data-lucide="square" class="w-5 h-5 fill-current"></i><span>배틀 중지</span>' : '<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>배틀 시작</span>';
-                lucide.createIcons();
+                if (newStatus === 'playing') {
+                    startBattle();
+                } else {
+                    stopBattle();
+                }
             }
+        }
+
+        async function finishBattle() {
+            if (!confirm("배틀을 끝내시겠습니까? 모든 학생의 참가가 중단됩니다.")) return;
+            const { error } = await sb.from('relay_rooms').update({ status: 'ended' }).eq('id', STATE.room);
+            if (!error) {
+                stopBattle();
+                document.getElementById('btn-start').classList.add('hidden');
+                document.getElementById('btn-finish').classList.add('hidden');
+                document.getElementById('btn-results').classList.remove('hidden');
+                updateStatusBadge('ended');
+            }
+        }
+
+        async function showResults() {
+            switchScreen('screen-result');
+            const { data: teams, error } = await sb.from('relay_teams').select('*').eq('room_id', STATE.room).order('score', { ascending: false });
+            
+            if (error || !teams) return;
+
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = '';
+            
+            teams.forEach((team, idx) => {
+                const rank = idx + 1;
+                const delay = idx * 300;
+                let podiumClass = '';
+                if (rank === 1) podiumClass = 'podium-1 scale-105 shadow-amber-200 shadow-2xl';
+                else if (rank === 2) podiumClass = 'podium-2';
+                else if (rank === 3) podiumClass = 'podium-3';
+                else podiumClass = 'bg-white text-slate-800';
+
+                const item = document.createElement('div');
+                item.className = `rank-card glass-panel p-6 rounded-[2rem] flex justify-between items-center border-2 border-transparent ${podiumClass}`;
+                item.style.transitionDelay = `${delay}ms`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-6">
+                        <div class="font-number text-5xl font-black italic opacity-50 w-16">${rank}</div>
+                        <div class="flex flex-col">
+                            <span class="font-title text-3xl">${team.team_name}</span>
+                            <span class="text-xs font-black uppercase tracking-widest opacity-70">Team Performance</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="font-number text-5xl font-black">${team.score}</span>
+                        <span class="text-xs font-black uppercase tracking-widest opacity-70">Points</span>
+                    </div>
+                `;
+                list.appendChild(item);
+                
+                setTimeout(() => item.classList.add('show'), 100);
+            });
+
+            // Winner celebration
+            setTimeout(() => {
+                confetti({
+                    particleCount: 150,
+                    spread: 100,
+                    origin: { y: 0.6 },
+                    colors: ['#f59e0b', '#4f46e5', '#ec4899']
+                });
+            }, teams.length * 300 + 500);
         }
 
         function subscribeToTeams() {
@@ -629,7 +740,7 @@
 
                     if (room.status === 'playing' && STATE.status !== 'playing') {
                         startBattle();
-                    } else if (room.status === 'waiting') {
+                    } else if (room.status === 'waiting' || room.status === 'ended') {
                         stopBattle();
                     }
                 })
@@ -649,6 +760,12 @@
             STATE.timer = 120; 
             updateStatusBadge('playing');
             
+            if (STATE.role === 'teacher') {
+                document.getElementById('btn-start').classList.add('hidden');
+                document.getElementById('btn-finish').classList.remove('hidden');
+                document.getElementById('bgm-tension').play().catch(e => console.log("BGM play failed:", e));
+            }
+
             if (STATE.role === 'student') {
                 console.log("Generating first problem...");
                 newProblem();
@@ -679,6 +796,15 @@
             if (document.getElementById('switch-overlay')) document.getElementById('switch-overlay').classList.add('hidden');
             updateStatusBadge('waiting'); 
             
+            if (STATE.role === 'teacher') {
+                document.getElementById('bgm-tension').pause();
+                document.getElementById('bgm-tension').currentTime = 0;
+                document.getElementById('btn-start').classList.remove('hidden');
+                document.getElementById('btn-start').innerHTML = '<i data-lucide="play" class="w-6 h-6 fill-current"></i><span>배틀 시작</span>';
+                document.getElementById('btn-finish').classList.add('hidden');
+                lucide.createIcons();
+            }
+
             if (document.getElementById('teacher-timer')) document.getElementById('teacher-timer').textContent = "02:00";
             if (document.getElementById('game-timer')) document.getElementById('game-timer').textContent = "02:00";
 
@@ -777,7 +903,7 @@
         function passProblem() { if (confirm("다른 문제로 넘어가시겠습니까?")) newProblem(); }
         function updateStatusBadge(status) {
             const b = document.getElementById('status-badge'); b.textContent = status;
-            const colors = { 'waiting': 'bg-slate-100 text-slate-500', 'playing': 'bg-green-100 text-green-600', 'switching': 'bg-amber-100 text-amber-600' };
+            const colors = { 'waiting': 'bg-slate-100 text-slate-500', 'playing': 'bg-green-100 text-green-600', 'switching': 'bg-amber-100 text-amber-600', 'ended': 'bg-rose-100 text-rose-600' };
             b.className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${colors[status] || 'bg-slate-100'}`;
         }
     </script>
