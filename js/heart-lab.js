@@ -56,7 +56,7 @@ class HeartLab {
         this.canvas.width = this.width * dpr;
         this.canvas.height = this.height * dpr;
         
-        this.ctx.scale(dpr, dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         
         // 데스모스 느낌의 스케일 조정 (화면 크기에 비례)
         this.scale = Math.min(this.width, this.height) / 50;

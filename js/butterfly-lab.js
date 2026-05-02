@@ -53,10 +53,10 @@ class ButterflyLab {
         this.canvas.width = this.width * dpr;
         this.canvas.height = this.height * dpr;
         
-        this.ctx.scale(dpr, dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         
-        // 화면 크기에 맞게 스케일 조정 (곡선 범위가 약 -3 ~ 3 이므로 넉넉하게 조정)
-        this.scale = Math.min(this.width, this.height) / 10;
+        // 화면 크기에 맞게 스케일 조정 (곡선 범위가 약 -3 ~ 6 이므로 넉넉하게 조정)
+        this.scale = Math.min(this.width, this.height) / 14;
     }
 
     drawGrid() {
@@ -96,7 +96,7 @@ class ButterflyLab {
      * y = -cos(t) * r (캔버스 Y축 반전 보정)
      */
     getButterflyCoordinates(t, k) {
-        const r = Math.exp(Math.cos(t)) - 2 * Math.cos(4 * t) + Math.pow(Math.sin(t / 12), 5);
+        const r = Math.exp(Math.cos(t)) - 2 * Math.cos(4 * t) + Math.pow(Math.sin((2 * t - Math.PI) / 24), 5);
         const x = Math.sin(t) * r;
         const y = -Math.cos(t) * r; // 캔버스는 아래쪽이 +Y이므로 -를 곱해 수학적 위쪽으로 보정
         return {
