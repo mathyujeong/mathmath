@@ -223,6 +223,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         /* Canvas */
@@ -463,10 +464,13 @@
             const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
             const data = imageData.data;
             
-            // Remove white-ish backgrounds
+            // Aggressively remove white/light-gray backgrounds
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i], g = data[i+1], b = data[i+2];
-                if (r > 235 && g > 235 && b > 235) {
+                // Euclidean distance from pure white (255, 255, 255)
+                const distance = Math.sqrt(Math.pow(255-r, 2) + Math.pow(255-g, 2) + Math.pow(255-b, 2));
+                
+                if (distance < 120) { // High tolerance for non-pure white
                     data[i+3] = 0;
                 }
             }
@@ -742,11 +746,11 @@
 
         function drawMathematiciansOnFrame() {
             const mathPos = [
-                { name: 'pythagoras', x: -30, y: 300, w: 200, h: 200 },  // Left middle
-                { name: 'archimedes', x: 630, y: -30, w: 200, h: 200 },  // Top right
-                { name: 'gauss', x: 640, y: 350, w: 180, h: 180 },      // Right middle
-                { name: 'lovelace', x: -40, y: 800, w: 200, h: 200 },   // Bottom left
-                { name: 'turing', x: 640, y: 800, w: 200, h: 200 }      // Bottom right
+                { name: 'archimedes', x: 280, y: 480, w: 240, h: 240 },  // CENTER!
+                { name: 'pythagoras', x: -40, y: 250, w: 220, h: 220 },  // Left middle
+                { name: 'gauss', x: 620, y: 300, w: 200, h: 200 },      // Right middle
+                { name: 'lovelace', x: -50, y: 850, w: 220, h: 220 },   // Bottom left
+                { name: 'turing', x: 620, y: 850, w: 220, h: 220 }      // Bottom right
             ];
 
             mathPos.forEach(p => {
