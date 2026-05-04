@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>수학네컷 📸 | 유정쌤의 실험실</title>
+    <title>Math4Cut 📸 | 유정쌤의 실험실</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style>
         :root {
@@ -72,6 +72,8 @@
         /* Camera */
         .video-wrapper {
             width: 100%;
+            max-width: 380px;
+            margin: 0 auto;
             aspect-ratio: 3 / 4;
             background: #000;
             border-radius: 16px;
@@ -189,6 +191,9 @@
             overflow: hidden;
             border: 2px solid transparent;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .gallery-item.selected {
@@ -262,20 +267,29 @@
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            justify-content: flex-start;
         }
 
         .sticker-btn {
             background: #f8fafc;
             border: 1.5px solid #e2e8f0;
             border-radius: 12px;
-            width: 48px;
-            height: 48px;
+            width: 60px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.4rem;
             cursor: pointer;
             transition: all 0.2s;
+            overflow: hidden;
+            padding: 4px;
+        }
+
+        .sticker-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .sticker-btn:hover {
@@ -308,7 +322,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>📸 수학네컷 사진관</h1>
+        <h1>📸 Math4Cut 사진관</h1>
         <p>세상에 단 하나뿐인 수학 추억을 찍어보세요!</p>
     </div>
 
@@ -364,6 +378,27 @@
                 <h3 style="margin-top:0; margin-bottom: 0.5rem;">3. 스티커 도장 꾸미기 ✨</h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">스티커를 선택한 후, 사진 위를 터치하세요!</p>
                 
+                <div class="sticker-section">
+                    <div class="sticker-title">🧠 위대한 수학자들</div>
+                    <div class="sticker-list">
+                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/pythagoras.png">
+                            <img src="../assets/stickers/pythagoras.png" alt="Pythagoras">
+                        </div>
+                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/archimedes.png">
+                            <img src="../assets/stickers/archimedes.png" alt="Archimedes">
+                        </div>
+                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/gauss.png">
+                            <img src="../assets/stickers/gauss.png" alt="Gauss">
+                        </div>
+                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/lovelace.png">
+                            <img src="../assets/stickers/lovelace.png" alt="Lovelace">
+                        </div>
+                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/turing.png">
+                            <img src="../assets/stickers/turing.png" alt="Turing">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="sticker-section">
                     <div class="sticker-title">👴🏻 유정쌤과 친구들</div>
                     <div class="sticker-list">
@@ -617,7 +652,7 @@
             ctx.textAlign = "center";
             
             ctx.font = "bold 42px 'Inter', sans-serif";
-            ctx.fillText("MATH LAB 📸", CANVAS_W/2, 1080);
+            ctx.fillText("Math4Cut 📸", CANVAS_W/2, 1080);
             
             const now = new Date();
             const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
@@ -664,6 +699,11 @@
                     ctx.fillText("3", s.x, s.y - 15);
                     ctx.fillRect(s.x - 20, s.y - 2, 40, 3);
                     ctx.fillText("4", s.x, s.y + 25);
+                } else if (s.type === 'image') {
+                    // Character Stickers
+                    const img = new Image();
+                    img.src = s.content;
+                    ctx.drawImage(img, s.x - 50, s.y - 50, 100, 100);
                 }
                 ctx.restore();
             });
@@ -675,7 +715,7 @@
 
         downloadBtn.onclick = () => {
             const link = document.createElement('a');
-            link.download = `Math_4cut_${Date.now()}.png`;
+            link.download = `Math4Cut_${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
         };
