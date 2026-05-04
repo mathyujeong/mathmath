@@ -397,12 +397,16 @@
                 <div class="sticker-section">
                     <div class="sticker-title">📝 수학 수식 & 텍스트</div>
                     <div class="sticker-list">
-                        <div class="sticker-btn" data-type="formula" data-content="fraction">
-                            <div class="math-box"><span>3</span><hr style="width:100%; margin:1px 0"><span>4</span></div>
+                        <div class="sticker-btn" data-type="formula" data-content="5/4x+7">
+                            <div class="math-box" style="font-size: 0.65rem;">
+                                <span>5</span><hr style="width:100%; margin:1px 0"><span>4</span>
+                            </div>
+                            <span style="font-size: 0.75rem; margin-left: 2px;">x + 7</span>
                         </div>
-                        <div class="sticker-btn" data-type="text" data-content="수학천재" style="font-size: 0.75rem; font-weight: bold;">수학천재</div>
-                        <div class="sticker-btn" data-type="text" data-content="정답!" style="font-size: 0.75rem; font-weight: bold;">정답!</div>
-                        <div class="sticker-btn" data-type="text" data-content="a²+b²=c²" style="font-size: 0.65rem; font-weight: bold;">Pythagoras</div>
+                        <div class="sticker-btn" data-type="text" data-content="수학 할수있다!" style="font-size: 0.6rem; font-weight: bold;">수학 할수있다!</div>
+                        <div class="sticker-btn" data-type="text" data-content="아하 !" style="font-size: 0.75rem; font-weight: bold;">아하 !</div>
+                        <div class="sticker-btn" data-type="text" data-content="해냈다 !" style="font-size: 0.75rem; font-weight: bold;">해냈다 !</div>
+                        <div class="sticker-btn" data-type="text" data-content="마쟈 ~ ❤️" style="font-size: 0.75rem; font-weight: bold;">마쟈 ~ ❤️</div>
                     </div>
                 </div>
             </div>
@@ -724,19 +728,27 @@
                     ctx.textBaseline = "middle";
                     ctx.fillText(s.content, s.x, s.y);
                 } else if (s.type === 'formula') {
-                    // Draw a simple fraction box
+                    // Draw the 5/4x + 7 formula
                     ctx.fillStyle = "white";
                     ctx.beginPath();
-                    ctx.roundRect(s.x - 40, s.y - 40, 80, 80, 15);
+                    ctx.roundRect(s.x - 60, s.y - 35, 120, 70, 15);
                     ctx.fill();
                     ctx.strokeStyle = "#818cf8";
+                    ctx.lineWidth = 2;
                     ctx.stroke();
+
                     ctx.fillStyle = "#333";
+                    ctx.textAlign = "left";
                     ctx.font = "bold 24px serif";
-                    ctx.textAlign = "center";
-                    ctx.fillText("3", s.x, s.y - 15);
-                    ctx.fillRect(s.x - 20, s.y - 2, 40, 3);
-                    ctx.fillText("4", s.x, s.y + 25);
+                    
+                    // 5/4
+                    ctx.fillText("5", s.x - 45, s.y - 12);
+                    ctx.fillRect(s.x - 50, s.y - 2, 25, 2);
+                    ctx.fillText("4", s.x - 45, s.y + 22);
+                    
+                    // x + 7
+                    ctx.font = "bold 22px serif";
+                    ctx.fillText("x + 7", s.x - 15, s.y + 8);
                 } else if (s.type === 'image') {
                     // Character Stickers
                     const img = new Image();
