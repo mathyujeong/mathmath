@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>수학네컷 📸 | 유정쌤의 실험실</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        :root {
+            --primary: #f472b6;
+            --primary-light: #fbcfe8;
+            --secondary: #818cf8;
+            --accent: #a78bfa;
+            --bg-soft: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg-soft);
+            padding-top: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 95%;
+            margin: 0 auto;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding-bottom: 50px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Panels */
+        .left-panel, .right-panel {
+            flex: 1;
+            min-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Camera */
+        .video-wrapper {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror by default */
+        }
+
+        .video-overlay {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 0.8rem;
+            width: 100%;
+        }
+
+        .btn {
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            flex: 2;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(244, 114, 182, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(244, 114, 182, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-color);
+            flex: 1;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #e2e8f0;
+            color: var(--text-muted);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Color Picker */
+        .color-selector {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .color-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: 0.2s;
+        }
+
+        .color-dot.active {
+            border-color: var(--primary);
+            transform: scale(1.15);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Gallery */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .gallery-item {
+            aspect-ratio: 3 / 4;
+            border-radius: 8px;
+            background: #eee;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .gallery-item.selected {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+        }
+
+        .gallery-item.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--primary);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Canvas */
+        .canvas-container {
+            width: 100%;
+            background: #eee;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Stickers */
+        .sticker-panel {
+            background: #fff;
+            border-radius: 20px;
+            padding: 1.2rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .sticker-section {
+            margin-bottom: 1.2rem;
+        }
+
+        .sticker-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .sticker-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .sticker-btn {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sticker-btn:hover {
+            background: #fdf2f8;
+            border-color: var(--primary-light);
+        }
+
+        .sticker-btn.active {
+            background: #fdf2f8;
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        /* Math Formula Sticker */
+        .math-box {
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📸 수학네컷 사진관</h1>
+        <p>세상에 단 하나뿐인 수학 추억을 찍어보세요!</p>
+    </div>
+
+    <div class="container">
+        <!-- Left: Control & Preview -->
+        <div class="left-panel">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin:0">1. 배경 색상</h3>
+                    <div class="color-selector" id="colorPicker">
+                        <div class="color-dot active" style="background-color: #fce7f3;" data-color="#fce7f3"></div>
+                        <div class="color-dot" style="background-color: #dbeafe;" data-color="#dbeafe"></div>
+                        <div class="color-dot" style="background-color: #fef9c3;" data-color="#fef9c3"></div>
+                        <div class="color-dot" style="background-color: #1a1a1a;" data-color="#1a1a1a"></div>
+                        <div class="color-dot" style="background-color: #ffffff;" data-color="#ffffff"></div>
+                    </div>
+                </div>
+
+                <div class="video-wrapper">
+                    <video id="video" autoplay playsinline muted></video>
+                    <div class="video-overlay">미리보기 (거울 모드)</div>
+                </div>
+
+                <div class="btn-group" style="margin-top: 1rem;">
+                    <button id="switchCameraBtn" class="btn btn-secondary">🔄 카메라 전환</button>
+                </div>
+
+                <button id="captureBtn" class="btn btn-primary" style="margin-top: 1rem; width:100%">
+                    📸 사진 촬영 (<span id="photoCount">0</span>/6)
+                </button>
+
+                <div style="margin-top: 1.5rem;">
+                    <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem;">2. 사진 4장 선택하기 (<span id="selectCount">0</span>/4)</h4>
+                    <div class="gallery-grid" id="gallery">
+                        <!-- Captured photos will appear here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button id="resetBtn" class="btn btn-outline">🗑️ 전체 초기화</button>
+                <button id="undoBtn" class="btn btn-outline">↩️ 스티커 취소</button>
+            </div>
+            
+            <button id="downloadBtn" class="btn btn-primary" style="display:none; width: 100%; padding: 1.2rem; font-size: 1.2rem;">
+                💾 완성된 사진 저장하기
+            </button>
+        </div>
+
+        <!-- Right: Decoration & Canvas -->
+        <div class="right-panel">
+            <div class="card sticker-panel">
+                <h3 style="margin-top:0; margin-bottom: 0.5rem;">3. 스티커 도장 꾸미기 ✨</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">스티커를 선택한 후, 사진 위를 터치하세요!</p>
+                
+                <div class="sticker-section">
+                    <div class="sticker-title">👴🏻 유정쌤과 친구들</div>
+                    <div class="sticker-list">
+                        <div class="sticker-btn" data-type="emoji">👴🏻</div>
+                        <div class="sticker-btn" data-type="emoji">👩🏻🏫</div>
+                        <div class="sticker-btn" data-type="emoji">🍎</div>
+                        <div class="sticker-btn" data-type="emoji">🦉</div>
+                        <div class="sticker-btn" data-type="emoji">💡</div>
+                    </div>
+                </div>
+
+                <div class="sticker-section">
+                    <div class="sticker-title">📐 수학 기호 & 도구</div>
+                    <div class="sticker-list">
+                        <div class="sticker-btn" data-type="emoji">📐</div>
+                        <div class="sticker-btn" data-type="emoji">📏</div>
+                        <div class="sticker-btn" data-type="emoji">🧮</div>
+                        <div class="sticker-btn" data-type="emoji">♾️</div>
+                        <div class="sticker-btn" data-type="emoji">➕</div>
+                        <div class="sticker-btn" data-type="emoji">✖️</div>
+                        <div class="sticker-btn" data-type="emoji">π</div>
+                    </div>
+                </div>
+
+                <div class="sticker-section">
+                    <div class="sticker-title">📝 수학 수식 & 텍스트</div>
+                    <div class="sticker-list">
+                        <div class="sticker-btn" data-type="formula" data-content="fraction">
+                            <div class="math-box"><span>3</span><hr style="width:100%; margin:1px 0"><span>4</span></div>
+                        </div>
+                        <div class="sticker-btn" data-type="text" data-content="수학천재" style="font-size: 0.75rem; font-weight: bold;">수학천재</div>
+                        <div class="sticker-btn" data-type="text" data-content="정답!" style="font-size: 0.75rem; font-weight: bold;">정답!</div>
+                        <div class="sticker-btn" data-type="text" data-content="a²+b²=c²" style="font-size: 0.65rem; font-weight: bold;">Pythagoras</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="canvas" width="800" height="1200"></canvas>
+            </div>
+            <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+                인화 규격: 4x6 사이즈 (800x1200px)
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const captureBtn = document.getElementById('captureBtn');
+        const switchCameraBtn = document.getElementById('switchCameraBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const gallery = document.getElementById('gallery');
+        const colorDots = document.querySelectorAll('.color-dot');
+        const stickerBtns = document.querySelectorAll('.sticker-btn');
+
+        let currentStream = null;
+        let useFrontCamera = true;
+        let capturedPhotos = [];
+        let selectedPhotos = [];
+        let placedStickers = [];
+        let activeSticker = null;
+        let frameColor = '#fce7f3';
+
+        // 4x6 Layout Settings (2x2 Grid)
+        const CANVAS_W = 800;
+        const CANVAS_H = 1200;
+        const PHOTO_W = 345;
+        const PHOTO_H = 460;
+        const MARGIN = 35;
+        const POSITIONS = [
+            { x: MARGIN, y: MARGIN },
+            { x: CANVAS_W - PHOTO_W - MARGIN, y: MARGIN },
+            { x: MARGIN, y: MARGIN + PHOTO_H + MARGIN },
+            { x: CANVAS_W - PHOTO_W - MARGIN, y: MARGIN + PHOTO_H + MARGIN }
+        ];
+
+        // --- Camera Logic (Fixed) ---
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            const constraints = {
+                video: {
+                    facingMode: useFrontCamera ? "user" : "environment",
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                currentStream = stream;
+                
+                // Flip video for front camera mirror effect
+                video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+            } catch (err) {
+                console.error("Camera access failed:", err);
+                alert("카메라를 사용할 수 없습니다. 권한을 확인해주세요.");
+            }
+        }
+
+        switchCameraBtn.addEventListener('click', () => {
+            useFrontCamera = !useFrontCamera;
+            startCamera();
+        });
+
+        // --- Capture Logic ---
+        captureBtn.addEventListener('click', () => {
+            if (capturedPhotos.length >= 6) return;
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 600;
+            tempCanvas.height = 800;
+            const tCtx = tempCanvas.getContext('2d');
+
+            // Handle aspect ratio & mirror
+            const vW = video.videoWidth;
+            const vH = video.videoHeight;
+            const scale = Math.max(tempCanvas.width / vW, tempCanvas.height / vH);
+            const drawW = vW * scale;
+            const drawH = vH * scale;
+            const drawX = (tempCanvas.width - drawW) / 2;
+            const drawY = (tempCanvas.height - drawH) / 2;
+
+            tCtx.save();
+            if (useFrontCamera) {
+                tCtx.translate(tempCanvas.width, 0);
+                tCtx.scale(-1, 1);
+            }
+            tCtx.drawImage(video, 0, 0, vW, vH, drawX, drawY, drawW, drawH);
+            tCtx.restore();
+
+            capturedPhotos.push(tempCanvas.toDataURL('image/png'));
+            updateUI();
+        });
+
+        // --- UI Updates ---
+        function updateUI() {
+            document.getElementById('photoCount').innerText = capturedPhotos.length;
+            document.getElementById('selectCount').innerText = selectedPhotos.length;
+            
+            // Render Gallery
+            gallery.innerHTML = '';
+            capturedPhotos.forEach((src, idx) => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item' + (selectedPhotos.includes(idx) ? ' selected' : '');
+                const img = document.createElement('img');
+                img.src = src;
+                item.appendChild(img);
+                item.onclick = () => toggleSelect(idx);
+                gallery.appendChild(item);
+            });
+
+            if (capturedPhotos.length >= 6) captureBtn.disabled = true;
+            downloadBtn.style.display = (selectedPhotos.length === 4) ? 'block' : 'none';
+            
+            drawCanvas();
+        }
+
+        function toggleSelect(idx) {
+            const pos = selectedPhotos.indexOf(idx);
+            if (pos > -1) {
+                selectedPhotos.splice(pos, 1);
+            } else if (selectedPhotos.length < 4) {
+                selectedPhotos.push(idx);
+            }
+            updateUI();
+        }
+
+        // --- Color Picker ---
+        colorDots.forEach(dot => {
+            dot.onclick = () => {
+                colorDots.forEach(d => d.classList.remove('active'));
+                dot.classList.add('active');
+                frameColor = dot.dataset.color;
+                drawCanvas();
+            };
+        });
+
+        // --- Sticker Logic ---
+        stickerBtns.forEach(btn => {
+            btn.onclick = () => {
+                stickerBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeSticker = {
+                    type: btn.dataset.type,
+                    content: btn.dataset.content || btn.innerText.trim()
+                };
+            };
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (!activeSticker) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (CANVAS_W / rect.width);
+            const y = (e.clientY - rect.top) * (CANVAS_H / rect.height);
+
+            placedStickers.push({ ...activeSticker, x, y });
+            drawCanvas();
+        });
+
+        undoBtn.onclick = () => {
+            placedStickers.pop();
+            drawCanvas();
+        };
+
+        resetBtn.onclick = () => {
+            if (confirm("모든 사진과 꾸미기를 초기화할까요?")) {
+                capturedPhotos = [];
+                selectedPhotos = [];
+                placedStickers = [];
+                captureBtn.disabled = false;
+                updateUI();
+            }
+        };
+
+        // --- Canvas Drawing ---
+        async function drawCanvas() {
+            // 1. Background
+            ctx.fillStyle = frameColor;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+            // 2. Photos
+            for (let i = 0; i < 4; i++) {
+                const pos = POSITIONS[i];
+                if (selectedPhotos[i] !== undefined) {
+                    const img = new Image();
+                    img.src = capturedPhotos[selectedPhotos[i]];
+                    // Note: In real app, images might need onload handling, but since they are dataURLs from canvas, they are usually ready.
+                    ctx.drawImage(img, pos.x, pos.y, PHOTO_W, PHOTO_H);
+                } else {
+                    ctx.fillStyle = "rgba(255,255,255,0.3)";
+                    ctx.fillRect(pos.x, pos.y, PHOTO_W, PHOTO_H);
+                    ctx.fillStyle = frameColor === '#1a1a1a' ? "#555" : "#ddd";
+                    ctx.font = "bold 24px Pretendard";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`${i+1}번째 사진`, pos.x + PHOTO_W/2, pos.y + PHOTO_H/2);
+                }
+            }
+
+            // 3. Branding & Date
+            const isDark = (frameColor === '#1a1a1a');
+            ctx.fillStyle = isDark ? "#ffffff" : "#334155";
+            ctx.textAlign = "center";
+            
+            ctx.font = "bold 42px 'Inter', sans-serif";
+            ctx.fillText("MATH LAB 📸", CANVAS_W/2, 1080);
+            
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+            ctx.font = "500 20px 'Inter', sans-serif";
+            ctx.fillStyle = isDark ? "rgba(255,255,255,0.6)" : "rgba(51,65,85,0.6)";
+            ctx.fillText(`유정쌤의 실험실 | ${dateStr}`, CANVAS_W/2, 1120);
+
+            // 4. Stickers
+            placedStickers.forEach(s => {
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.1)";
+                ctx.shadowBlur = 10;
+                
+                if (s.type === 'emoji') {
+                    ctx.font = "60px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(s.content, s.x, s.y);
+                } else if (s.type === 'text') {
+                    ctx.font = "bold 28px Pretendard";
+                    const tw = ctx.measureText(s.content).width;
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.roundRect(s.x - tw/2 - 15, s.y - 25, tw + 30, 50, 15);
+                    ctx.fill();
+                    ctx.strokeStyle = varToHex('--primary') || "#f472b6";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = "#333";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(s.content, s.x, s.y);
+                } else if (s.type === 'formula') {
+                    // Draw a simple fraction box
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.roundRect(s.x - 40, s.y - 40, 80, 80, 15);
+                    ctx.fill();
+                    ctx.strokeStyle = "#818cf8";
+                    ctx.stroke();
+                    ctx.fillStyle = "#333";
+                    ctx.font = "bold 24px serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText("3", s.x, s.y - 15);
+                    ctx.fillRect(s.x - 20, s.y - 2, 40, 3);
+                    ctx.fillText("4", s.x, s.y + 25);
+                }
+                ctx.restore();
+            });
+        }
+
+        function varToHex(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
+        downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.download = `Math_4cut_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        };
+
+        // Start
+        startCamera();
+        updateUI();
+    </script>
+</body>
+</html>
