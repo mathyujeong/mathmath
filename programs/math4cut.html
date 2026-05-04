@@ -343,11 +343,12 @@
 
                 <div class="video-wrapper">
                     <video id="video" autoplay playsinline muted></video>
-                    <div class="video-overlay">미리보기 (거울 모드)</div>
+                    <div class="video-overlay" id="cameraLabel">미리보기 (전면 카메라)</div>
                 </div>
 
                 <div class="btn-group" style="margin-top: 1rem;">
-                    <button id="switchCameraBtn" class="btn btn-secondary">🔄 카메라 전환</button>
+                    <button id="switchCameraBtn" class="btn btn-secondary">📸 전면/후면 전환</button>
+                    <button id="mirrorBtn" class="btn btn-secondary">↔️ 좌우 반전</button>
                 </div>
 
                 <button id="captureBtn" class="btn btn-primary" style="margin-top: 1rem; width:100%">
@@ -460,6 +461,7 @@
 
         let currentStream = null;
         let useFrontCamera = true;
+        let isMirrored = true;
         let capturedPhotos = [];
         let selectedPhotos = [];
         let placedStickers = [];
@@ -498,8 +500,9 @@
                 video.srcObject = stream;
                 currentStream = stream;
                 
-                // Flip video for front camera mirror effect
-                video.style.transform = useFrontCamera ? "scaleX(-1)" : "scaleX(1)";
+                // Apply mirror effect
+                updateVideoTransform();
+                document.getElementById('cameraLabel').innerText = `미리보기 (${useFrontCamera ? '전면' : '후면'} 카메라)`;
             } catch (err) {
                 console.error("Camera access failed:", err);
                 alert("카메라를 사용할 수 없습니다. 권한을 확인해주세요.");
@@ -508,8 +511,19 @@
 
         switchCameraBtn.addEventListener('click', () => {
             useFrontCamera = !useFrontCamera;
+            // Auto-mirror for front, no mirror for back by default
+            isMirrored = useFrontCamera; 
             startCamera();
         });
+
+        document.getElementById('mirrorBtn').addEventListener('click', () => {
+            isMirrored = !isMirrored;
+            updateVideoTransform();
+        });
+
+        function updateVideoTransform() {
+            video.style.transform = isMirrored ? "scaleX(-1)" : "scaleX(1)";
+        }
 
         // --- Capture Logic ---
         captureBtn.addEventListener('click', () => {
@@ -530,7 +544,7 @@
             const drawY = (tempCanvas.height - drawH) / 2;
 
             tCtx.save();
-            if (useFrontCamera) {
+            if (isMirrored) {
                 tCtx.translate(tempCanvas.width, 0);
                 tCtx.scale(-1, 1);
             }
