@@ -464,14 +464,17 @@
             const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
             const data = imageData.data;
             
-            // Aggressively remove white/light-gray backgrounds
+            // Smoother background removal
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i], g = data[i+1], b = data[i+2];
-                // Euclidean distance from pure white (255, 255, 255)
                 const distance = Math.sqrt(Math.pow(255-r, 2) + Math.pow(255-g, 2) + Math.pow(255-b, 2));
                 
-                if (distance < 120) { // High tolerance for non-pure white
+                // If it's very bright/white, make it transparent
+                if (distance < 70) {
                     data[i+3] = 0;
+                } else if (distance < 100) {
+                    // Feather the edges slightly
+                    data[i+3] = (distance - 70) * (255 / 30);
                 }
             }
             tempCtx.putImageData(imageData, 0, 0);
@@ -746,16 +749,26 @@
 
         function drawMathematiciansOnFrame() {
             const mathPos = [
-                { name: 'archimedes', x: 280, y: 480, w: 240, h: 240 },  // CENTER!
-                { name: 'pythagoras', x: -40, y: 250, w: 220, h: 220 },  // Left middle
-                { name: 'gauss', x: 620, y: 300, w: 200, h: 200 },      // Right middle
-                { name: 'lovelace', x: -50, y: 850, w: 220, h: 220 },   // Bottom left
-                { name: 'turing', x: 620, y: 850, w: 220, h: 220 }      // Bottom right
+                { name: 'archimedes', x: 270, y: 470, w: 260, h: 260 },  // CENTER!
+                { name: 'pythagoras', x: -50, y: 250, w: 240, h: 240 }, 
+                { name: 'gauss', x: 610, y: 300, w: 220, h: 220 },      
+                { name: 'lovelace', x: -60, y: 850, w: 240, h: 240 },   
+                { name: 'turing', x: 610, y: 850, w: 240, h: 240 }      
             ];
 
             mathPos.forEach(p => {
                 const img = processedMathImages[p.name];
                 if (img) {
+                    ctx.save();
+                    // Create a thick white sticker outline
+                    ctx.shadowColor = "white";
+                    ctx.shadowBlur = 15;
+                    // Draw multiple times to solidify the white border
+                    ctx.drawImage(img, p.x, p.y, p.w, p.h);
+                    ctx.drawImage(img, p.x, p.y, p.w, p.h);
+                    ctx.drawImage(img, p.x, p.y, p.w, p.h);
+                    ctx.restore();
+                    // Final sharp draw on top
                     ctx.drawImage(img, p.x, p.y, p.w, p.h);
                 }
             });
