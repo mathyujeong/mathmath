@@ -380,38 +380,6 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">스티커를 선택한 후, 사진 위를 터치하세요!</p>
                 
                 <div class="sticker-section">
-                    <div class="sticker-title">🧠 위대한 수학자들</div>
-                    <div class="sticker-list">
-                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/pythagoras.png">
-                            <img src="../assets/stickers/pythagoras.png" alt="Pythagoras">
-                        </div>
-                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/archimedes.png">
-                            <img src="../assets/stickers/archimedes.png" alt="Archimedes">
-                        </div>
-                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/gauss.png">
-                            <img src="../assets/stickers/gauss.png" alt="Gauss">
-                        </div>
-                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/lovelace.png">
-                            <img src="../assets/stickers/lovelace.png" alt="Lovelace">
-                        </div>
-                        <div class="sticker-btn" data-type="image" data-content="../assets/stickers/turing.png">
-                            <img src="../assets/stickers/turing.png" alt="Turing">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sticker-section">
-                    <div class="sticker-title">👴🏻 유정쌤과 친구들</div>
-                    <div class="sticker-list">
-                        <div class="sticker-btn" data-type="emoji">👴🏻</div>
-                        <div class="sticker-btn" data-type="emoji">👩🏻🏫</div>
-                        <div class="sticker-btn" data-type="emoji">🍎</div>
-                        <div class="sticker-btn" data-type="emoji">🦉</div>
-                        <div class="sticker-btn" data-type="emoji">💡</div>
-                    </div>
-                </div>
-
-                <div class="sticker-section">
                     <div class="sticker-title">📐 수학 기호 & 도구</div>
                     <div class="sticker-list">
                         <div class="sticker-btn" data-type="emoji">📐</div>
@@ -467,6 +435,15 @@
         let placedStickers = [];
         let activeSticker = null;
         let frameColor = '#fce7f3';
+
+        // Preload Mathematician Images
+        const mathematicianImages = {};
+        const MATH_NAMES = ['pythagoras', 'archimedes', 'gauss', 'lovelace', 'turing'];
+        MATH_NAMES.forEach(name => {
+            const img = new Image();
+            img.src = `../assets/stickers/${name}.png`;
+            mathematicianImages[name] = img;
+        });
 
         // 4x6 Layout Settings (2x2 Grid)
         const CANVAS_W = 800;
@@ -648,7 +625,6 @@
                 if (selectedPhotos[i] !== undefined) {
                     const img = new Image();
                     img.src = capturedPhotos[selectedPhotos[i]];
-                    // Note: In real app, images might need onload handling, but since they are dataURLs from canvas, they are usually ready.
                     ctx.drawImage(img, pos.x, pos.y, PHOTO_W, PHOTO_H);
                 } else {
                     ctx.fillStyle = "rgba(255,255,255,0.3)";
@@ -659,6 +635,9 @@
                     ctx.fillText(`${i+1}번째 사진`, pos.x + PHOTO_W/2, pos.y + PHOTO_H/2);
                 }
             }
+
+            // 2.5 Mathematicians as decorations (Fixed positions)
+            drawMathematiciansOnFrame();
 
             // 3. Branding & Date
             const isDark = (frameColor === '#1a1a1a');
@@ -723,8 +702,28 @@
             });
         }
 
+        function drawMathematiciansOnFrame() {
+            const mathPos = [
+                { name: 'pythagoras', x: -30, y: 300, w: 200, h: 200 },  // Left middle
+                { name: 'archimedes', x: 630, y: -30, w: 200, h: 200 },  // Top right
+                { name: 'gauss', x: 640, y: 350, w: 180, h: 180 },      // Right middle
+                { name: 'lovelace', x: -40, y: 800, w: 200, h: 200 },   // Bottom left
+                { name: 'turing', x: 640, y: 800, w: 200, h: 200 }      // Bottom right
+            ];
+
+            mathPos.forEach(p => {
+                const img = mathematicianImages[p.name];
+                if (img.complete) {
+                    ctx.drawImage(img, p.x, p.y, p.w, p.h);
+                } else {
+                    img.onload = () => drawCanvas();
+                }
+            });
+        }
+
         function varToHex(name) {
-            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return val || "#f472b6";
         }
 
         downloadBtn.onclick = () => {
