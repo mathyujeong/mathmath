@@ -183,14 +183,15 @@
         }
 
         .gallery-item {
+            width: 100%;
             aspect-ratio: 3 / 4;
-            border-radius: 8px;
-            background: #eee;
+            border-radius: 12px;
+            background: #f1f5f9;
             cursor: pointer;
             position: relative;
             overflow: hidden;
-            border: 2px solid transparent;
-            transition: 0.2s;
+            border: 3px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -436,14 +437,42 @@
         let activeSticker = null;
         let frameColor = '#fce7f3';
 
-        // Preload Mathematician Images
+        // Preload and Process Mathematician Images (Background Removal)
         const mathematicianImages = {};
+        const processedMathImages = {};
         const MATH_NAMES = ['pythagoras', 'archimedes', 'gauss', 'lovelace', 'turing'];
+        
         MATH_NAMES.forEach(name => {
             const img = new Image();
+            img.crossOrigin = "anonymous";
             img.src = `../assets/stickers/${name}.png`;
             mathematicianImages[name] = img;
+            img.onload = () => {
+                processedMathImages[name] = processImageTransparency(img);
+                drawCanvas();
+            };
         });
+
+        function processImageTransparency(img) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+            
+            const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const data = imageData.data;
+            
+            // Remove white-ish backgrounds
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                if (r > 235 && g > 235 && b > 235) {
+                    data[i+3] = 0;
+                }
+            }
+            tempCtx.putImageData(imageData, 0, 0);
+            return tempCanvas;
+        }
 
         // 4x6 Layout Settings (2x2 Grid)
         const CANVAS_W = 800;
@@ -466,14 +495,23 @@
 
             const constraints = {
                 video: {
-                    facingMode: useFrontCamera ? "user" : "environment",
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    facingMode: useFrontCamera ? "user" : { ideal: "environment" },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
                 }
             };
 
             try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                // Try to get stream with ideal constraints, fallback to simple ones if needed
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch (e) {
+                    console.warn("Retrying with simple constraints...");
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: useFrontCamera ? "user" : "environment" } 
+                    });
+                }
                 video.srcObject = stream;
                 currentStream = stream;
                 
@@ -712,11 +750,9 @@
             ];
 
             mathPos.forEach(p => {
-                const img = mathematicianImages[p.name];
-                if (img.complete) {
+                const img = processedMathImages[p.name];
+                if (img) {
                     ctx.drawImage(img, p.x, p.y, p.w, p.h);
-                } else {
-                    img.onload = () => drawCanvas();
                 }
             });
         }
